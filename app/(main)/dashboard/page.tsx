@@ -22,6 +22,7 @@
  */
 "use client";
 
+// biome-ignore assist/source/organizeImports: <explanation>
 import {
   Card,
   CardContent,
@@ -46,15 +47,13 @@ import {
   Activity,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import {useCurrentUser} from "@/hooks/useCurrentUser";
 
-// ─── Types ─────────────────────────────────────────────────────────────────
 
 type Priority = "high" | "medium" | "low";
 type TicketStatus = "open" | "in-progress" | "closed";
 type HealthStatus = "healthy" | "warning" | "error";
 
-// ─── Static Lookup Maps ────────────────────────────────────────────────────
 
 const priorityVariant: Record<
   Priority,
@@ -83,7 +82,6 @@ const healthDot: Record<HealthStatus, string> = {
   error: "bg-red-500",
 };
 
-// ─── Mock Data ─────────────────────────────────────────────────────────────
 
 const MOCK_STATS = {
   openTickets: 1552,
@@ -172,7 +170,6 @@ const MOCK_SYSTEM_HEALTH = [
   },
 ];
 
-// ─── StatCard ──────────────────────────────────────────────────────────────
 
 function StatCard({
   title,
@@ -224,7 +221,6 @@ function StatCard({
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState(""); // NOTE: was `setuserName` — fixed casing
@@ -238,15 +234,7 @@ export default function DashboardPage() {
     else setGreeting("Good evening");
   }, []);
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUserName(user.user_metadata?.full_name || user.email || "");
-      }
-    });
-  }, []);
-
+    const { user } = useCurrentUser();
   return (
     <div className="space-y-6">
       <div>
@@ -259,7 +247,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {/* invertChange: rising open tickets is bad → positive change shows red */}
         <StatCard
           title="Open Tickets"
           value={MOCK_STATS.openTickets}
@@ -279,7 +266,6 @@ export default function DashboardPage() {
           change={MOCK_STATS.usersChange}
           icon={Users}
         />
-        {/* invertChange: lower resolution time is better → negative change shows green */}
         <StatCard
           title="Avg Resolution"
           value={`${MOCK_STATS.avgResolutionHours}h`}

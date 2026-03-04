@@ -21,6 +21,7 @@
  */
 "use client";
 
+// biome-ignore assist/source/organizeImports: <explanation>
 import {
   Sidebar,
   SidebarContent,
@@ -33,9 +34,8 @@ import {
   SidebarProvider,
   SidebarFooter,
 } from "./ui/sidebar";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Logo from "@/components/Logo";
 import Link from "next/link";
 import {
@@ -48,6 +48,8 @@ import {
   LogOut,
   User,
 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import {createClient} from "@/lib/supabase/client";
 
 // ─── Nav Config ────────────────────────────────────────────────────────────
 
@@ -80,18 +82,11 @@ const NAV_ITEMS = [
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const [userName, setUserName] = useState(""); // NOTE: was `setuserName` — fixed casing
+  const [userName, setUserName] = useState("");
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUserName(user.user_metadata?.full_name || user.email || "");
-      }
-    });
-  }, []);
+const { user } = useCurrentUser();
 
-  async function handleLogout(
+    async function handleLogout(
     _event: React.MouseEvent<HTMLButtonElement>,
   ): Promise<void> {
     const supabase = createClient();
