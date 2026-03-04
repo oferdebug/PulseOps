@@ -216,7 +216,10 @@ export default function ArticleDetailPage({
             <Pencil size={16} className={'mr-2'} />
             Edit The Document
           </Button>
-          <Button size={16} variant={'ghost'} className={'text-red-500 hover:text-red-600 hover:bg-red-50' onclick={handleDelete} disabled={deleting}} />
+          <Button size={'sm'} variant={'ghost'} className={'text-red-500 hover:text-red-600 hover:bg-red-50'} onClick={handleDelete} disabled={deleting}>
+            <Trash2 size={16} className={'mr-2'} />
+            Delete
+          </Button>
         </div>
       )}
     </div>
