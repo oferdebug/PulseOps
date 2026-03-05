@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+/** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
