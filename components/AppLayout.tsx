@@ -19,7 +19,7 @@
  * - `max-h-[calc(100vh-4rem)]` on SidebarInset assumes a 4rem top bar — document
  *   or extract this as a layout constant if the structure ever changes.
  */
-"use client";
+'use client';
 
 // biome-ignore assist/source/organizeImports: <explanation>
 import {
@@ -33,11 +33,11 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarFooter,
-} from "./ui/sidebar";
-import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
-import Logo from "@/components/Logo";
-import Link from "next/link";
+} from './ui/sidebar';
+import { useRouter, usePathname } from 'next/navigation';
+import { useState } from 'react';
+import Logo from '@/components/Logo';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   BookOpen,
@@ -47,51 +47,59 @@ import {
   Settings,
   LogOut,
   User,
-} from "lucide-react";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import {createClient} from "@/lib/supabase/client";
-
+} from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { createClient } from '@/lib/supabase/client';
+import { useTheme } from 'next-themes';
+import { Moon, Sun } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 // ─── Nav Config ────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
   {
-    href: "/dashboard",
-    label: "Dashboard",
+    href: '/dashboard',
+    label: 'Dashboard',
     icon: LayoutDashboard,
     matchPrefix: false,
   },
   {
-    href: "/knowledge-base",
-    label: "Knowledge Base",
+    href: '/knowledge-base',
+    label: 'Knowledge Base',
     icon: BookOpen,
     matchPrefix: true,
   },
-  { href: "/tickets", label: "Tickets", icon: Ticket, matchPrefix: true },
-  { href: "/users", label: "Users", icon: Users, matchPrefix: true },
+  { href: '/tickets', label: 'Tickets', icon: Ticket, matchPrefix: true },
+  { href: '/users', label: 'Users', icon: Users, matchPrefix: true },
   {
-    href: "/activity-logs",
-    label: "Activity Logs",
+    href: '/activity-logs',
+    label: 'Activity Logs',
     icon: Activity,
     matchPrefix: true,
   },
-  { href: "/settings", label: "Settings", icon: Settings, matchPrefix: true },
+  { href: '/settings', label: 'Settings', icon: Settings, matchPrefix: true },
 ];
 
-// ─── Component ─────────────────────────────────────────────────────────────
-
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
-  const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState('');
+  const { user, loading } = useCurrentUser();
+  console.log('user:', user, 'loading:', loading);
 
-const { user } = useCurrentUser();
-
-    async function handleLogout(
+  async function handleLogout(
     _event: React.MouseEvent<HTMLButtonElement>,
   ): Promise<void> {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/Login");
+    router.push('/Login');
   }
 
   return (
@@ -124,28 +132,41 @@ const { user } = useCurrentUser();
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-
         <SidebarFooter>
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <User size={16} className="text-muted-foreground" />
-              <span className="truncate text-sm text-muted-foreground">
-                {userName}
+          <div className='flex items-center justify-between px-2'>
+            <div className='flex items-center gap-2'>
+              {loading ? (
+                <Skeleton className='w-4 h-4 rounded-full' />
+              ) : (
+                <User size={14} className='text-muted-foreground shrink-0' />
+              )}
+              <span className='truncate text-sm text-muted-foreground'>
+                {user?.fullName}
               </span>
             </div>
-            {/** biome-ignore lint/a11y/useButtonType: <explanation> */}
-            <button
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-red-500"
-              aria-label={"Sign out"}
-            >
-              <LogOut size={18} />
-            </button>
+            <div className='flex items-center gap-1'>
+              <button
+                type='button'
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className='p-1 text-muted-foreground hover:text-foreground transition-colors'
+                aria-label='Toggle theme'
+              >
+                {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
+              <button
+                type='button'
+                onClick={handleLogout}
+                className='p-1 text-muted-foreground hover:text-red-500 transition-colors'
+                aria-label='Sign out'
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
           </div>
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="overflow-y-auto max-h-[calc(100vh-4rem)]">
+      <SidebarInset className='overflow-y-auto max-h-[calc(100vh-4rem)]'>
         {children}
       </SidebarInset>
     </SidebarProvider>
