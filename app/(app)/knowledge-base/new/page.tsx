@@ -65,27 +65,14 @@ export default function NewArticlePage() {
     setError(null);
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/generate-article', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: `You are an IT helpdesk knowledge base writer. 
-Write a clear, practical knowledge base article for IT support staff about: ${title}.`,
-            },
-          ],
-        }),
+        body: JSON.stringify({ title }),
       });
-      const responseData = await response.json();
-      const text =
-        responseData.content?.[0]?.text ??
-        responseData.choices?.[0]?.message?.content ??
-        '';
-      setContent(text);
+      const data = await response.json();
+      setContent(data.content ?? '');
+      console.log(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Generation failed');
     } finally {

@@ -17,6 +17,7 @@
  * - Add AI "improve article" button in edit mode.
  * - Replace window.confirm with AlertDialog.
  */
+/** biome-ignore-all lint/correctness/noUnreachable: <explanation> */
 
 'use client';
 import { useEffect, useState, use } from 'react';
@@ -203,25 +204,80 @@ export default function ArticleDetailPage({
   }
 
   return (
-    <div className={'flex items-center justify-between'}>
-      <Button variant={'ghost'} size={'sm'} asChild>
-        <Link href={'/knowledge-base'}>
-          <ArrowLeft size={16} className={'mr-2'} />
-        </Link>
-      </Button>
+    <>
+      <div className={'flex items-center justify-between'}>
+        <Button variant={'ghost'} size={'sm'} asChild>
+          <Link href={'/knowledge-base'}>
+            <ArrowLeft size={16} className={'mr-2'} />
+          </Link>
+        </Button>
 
-      {isAuthor && !editing && (
-        <div className={'flex gap-2'}>
-          <Button size={'sm'} variant={'outline'} onClick={enterEditMode}>
-            <Pencil size={16} className={'mr-2'} />
-            Edit The Document
-          </Button>
-          <Button size={'sm'} variant={'ghost'} className={'text-red-500 hover:text-red-600 hover:bg-red-50'} onClick={handleDelete} disabled={deleting}>
-            <Trash2 size={16} className={'mr-2'} />
-            Delete
-          </Button>
-        </div>
-      )}
-    </div>
+        {isAuthor && !editing && (
+          <div className={'flex gap-2'}>
+            <Button size={'sm'} variant={'outline'} onClick={enterEditMode}>
+              <Pencil size={16} className={'mr-2'} />
+              Edit The Document
+            </Button>
+            <Button
+              size={'sm'}
+              variant={'ghost'}
+              className={'text-red-500 hover:text-red-600 hover:bg-red-50'}
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              <Trash2 size={16} className={'mr-2'} />
+              Delete
+            </Button>
+          </div>
+        )}
+        {editing && (
+          <div className='flex gap-2'>
+            <Button size='sm' onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <Loader2 size={14} className='mr-1 animate-spin' />
+              ) : (
+                <Check size={14} className='mr-1' />
+              )}
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={() => setEditing(false)}
+              disabled={saving}
+            >
+              <X size={14} className='mr-1' />
+              Cancel
+            </Button>
+          </div>
+        )}
+      </div>
+      <Card>
+        <CardHeader className='space-y-3 pb-4'>
+          {editing ? (
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className='text-xl font-semibold'
+              disabled={saving}
+            />
+          ) : (
+            <h1 className='text-2xl font-semibold'>{article.title}</h1>
+          )}
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          {editing ? (
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className='min-h-[200px] font-mono text-sm'
+              disabled={saving}
+            />
+          ) : (
+            <div className='whitespace-pre-wrap text-sm'>{article.content}</div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
