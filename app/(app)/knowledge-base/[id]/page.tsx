@@ -1,53 +1,15 @@
-/**
- * Article Detail Page — /knowledge-base/[id]
- *
- * Displays a full article with rendered Markdown.
- * Toggle between view mode and edit mode inline.
- * Only the article author can edit or delete.
- *
- * Architecture notes:
- * - Markdown is rendered using a simple approach with `white-space: pre-wrap`
- *   for now. Replace with a proper Markdown renderer (react-markdown) for
- *   full formatting support.
- * - Edit mode is inline — no separate route needed.
- * - Optimistic status update on publish/unpublish.
- *
- * TODO:
- * - Add react-markdown + rehype-highlight for proper rendering.
- * - Add AI "improve article" button in edit mode.
- * - Replace window.confirm with AlertDialog.
- */
-/** biome-ignore-all lint/correctness/noUnreachable: <explanation> */
-
 'use client';
-import { useEffect, useState, use } from 'react';
+
+import { ArrowLeft, Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { use, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import {
-  ArrowLeft,
-  Loader2,
-  Pencil,
-  Trash2,
-  Check,
-  X,
-  Globe,
-  FileText,
-} from 'lucide-react';
-import Link from 'next/link';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { createClient } from '@/lib/supabase/client';
 
 type ArticleStatus = 'draft' | 'published';
 type ArticleCategory =
@@ -70,28 +32,6 @@ interface ArticleRow {
   updated_at: string;
 }
 
-const CATEGORY_LABELS: Record<ArticleCategory, string> = {
-  networking: 'Networking',
-  hardware: 'Hardware',
-  software: 'Software',
-  security: 'Security',
-  'active-directory': 'Active Directory',
-  email: 'Email',
-  general: 'General',
-};
-
-const STATUS_VARIANT: Record<ArticleStatus, 'default' | 'secondary'> = {
-  published: 'default',
-  draft: 'secondary',
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
-}
-
 export default function ArticleDetailPage({
   params,
 }: {
@@ -100,14 +40,12 @@ export default function ArticleDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { user } = useCurrentUser();
-
   const [article, setArticle] = useState<ArticleRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editCategory, setEditCategory] = useState<ArticleCategory>('general');
@@ -115,16 +53,11 @@ export default function ArticleDetailPage({
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from('articles')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (error) setError(error.message);
-        else setArticle(data);
-        setLoading(false);
-      });
+    supabase.from('articles').select('*').eq('id', id).single().then(({ data, error: err }) => {
+      if (err) setError(err.message);
+      else setArticle(data);
+      setLoading(false);
+    });
   }, [id]);
 
   function enterEditMode() {
@@ -139,9 +72,8 @@ export default function ArticleDetailPage({
   async function handleSave() {
     if (!article) return;
     setSaving(true);
-
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { data, error: err } = await supabase
       .from('articles')
       .update({
         title: editTitle.trim(),
@@ -152,10 +84,8 @@ export default function ArticleDetailPage({
       .eq('id', id)
       .select()
       .single();
-
-    if (error) {
-      setError(error.message);
-    } else {
+    if (err) setError(err.message);
+    else {
       setArticle(data);
       setEditing(false);
     }
@@ -163,40 +93,35 @@ export default function ArticleDetailPage({
   }
 
   async function handleDelete() {
-    if (!window.confirm('Delete this article? This action cannot be undone.'))
-      return;
+    if (!window.confirm('Delete this article? This action cannot be undone.')) return;
     setDeleting(true);
     const supabase = createClient();
-    const { error } = await supabase.from('articles').delete().eq('id', id);
-    if (error) {
-      setError(error.message);
-    } else {
-      router.push('/knowledge-base');
-    }
+    const { error: err } = await supabase.from('articles').delete().eq('id', id);
+    if (err) setError(err.message);
+    else router.push('/knowledge-base');
     setDeleting(false);
-    return;
   }
 
   const isAuthor = article?.created_by === user?.id;
 
   if (loading) {
     return (
-      <div className={'flex h-48 items-center justify-center-safe'}>
-        <Loader2 size={24} className={'animate-spin text-muted-foreground'} />
+      <div className="flex min-h-[240px] items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (error || !article) {
     return (
-      <div className={'space-y-6'}>
-        <p className={'text-sm text-red-500'}>
-          {error ?? 'Article Not Found,Please Try Again'}
+      <div className="section max-w-2xl">
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error ?? 'Article not found. Please try again.'}
         </p>
-        <Button variant={'outline'} asChild>
-          <Link href='/knowledge-base'>
-            <ArrowLeft size={14} className={'mr-2'} />
-            Back To Knowladge Base
+        <Button variant="outline" className="btn-secondary mt-4" asChild>
+          <Link href="/knowledge-base">
+            <ArrowLeft size={16} className="mr-2" />
+            Back to Knowledge Base
           </Link>
         </Button>
       </div>
@@ -204,80 +129,72 @@ export default function ArticleDetailPage({
   }
 
   return (
-    <>
-      <div className={'flex items-center justify-between'}>
-        <Button variant={'ghost'} size={'sm'} asChild>
-          <Link href={'/knowledge-base'}>
-            <ArrowLeft size={16} className={'mr-2'} />
+    <div className="section">
+      <header className="page-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="ghost" size="sm" className="btn-secondary w-fit" asChild>
+          <Link href="/knowledge-base">
+            <ArrowLeft size={16} className="mr-2" />
+            Back to Knowledge Base
           </Link>
         </Button>
-
         {isAuthor && !editing && (
-          <div className={'flex gap-2'}>
-            <Button size={'sm'} variant={'outline'} onClick={enterEditMode}>
-              <Pencil size={16} className={'mr-2'} />
-              Edit The Document
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="btn-secondary" onClick={enterEditMode}>
+              <Pencil size={16} className="mr-2" />
+              Edit
             </Button>
             <Button
-              size={'sm'}
-              variant={'ghost'}
-              className={'text-red-500 hover:text-red-600 hover:bg-red-50'}
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10"
               onClick={handleDelete}
               disabled={deleting}
             >
-              <Trash2 size={16} className={'mr-2'} />
+              <Trash2 size={16} className="mr-2" />
               Delete
             </Button>
           </div>
         )}
         {editing && (
-          <div className='flex gap-2'>
-            <Button size='sm' onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <Loader2 size={14} className='mr-1 animate-spin' />
-              ) : (
-                <Check size={14} className='mr-1' />
-              )}
+          <div className="flex gap-2">
+            <Button size="sm" className="btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Check size={14} className="mr-2" />}
               {saving ? 'Saving…' : 'Save'}
             </Button>
-            <Button
-              size='sm'
-              variant='ghost'
-              onClick={() => setEditing(false)}
-              disabled={saving}
-            >
-              <X size={14} className='mr-1' />
+            <Button size="sm" variant="outline" className="btn-secondary" onClick={() => setEditing(false)} disabled={saving}>
+              <X size={14} className="mr-2" />
               Cancel
             </Button>
           </div>
         )}
-      </div>
-      <Card>
-        <CardHeader className='space-y-3 pb-4'>
+      </header>
+
+      <Card className="card-surface">
+        <CardHeader className="pb-4">
           {editing ? (
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className='text-xl font-semibold'
+              className="text-xl font-bold border-border bg-background"
               disabled={saving}
             />
           ) : (
-            <h1 className='text-2xl font-semibold'>{article.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{article.title}</h1>
           )}
         </CardHeader>
-        <CardContent className='space-y-4'>
+        <CardContent className="space-y-4">
           {editing ? (
             <Textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className='min-h-[200px] font-mono text-sm'
+              className="min-h-[200px] font-mono text-sm border-border bg-background"
               disabled={saving}
             />
           ) : (
-            <div className='whitespace-pre-wrap text-sm'>{article.content}</div>
+            <div className="whitespace-pre-wrap text-sm text-muted-foreground">{article.content}</div>
           )}
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

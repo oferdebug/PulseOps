@@ -1,66 +1,34 @@
-/**
- * AppLayout
- *
- * Root layout wrapper for all authenticated pages. Renders the sidebar,
- * user display, logout button, and the main scrollable content area.
- *
- * Architecture notes:
- * - Nav items are driven from the NAV_ITEMS config array below instead of
- *   repeating JSX per item — easier to add/reorder/remove without touching the component.
- * - `matchPrefix` controls active state: exact match for /dashboard,
- *   startsWith for all section routes (/tickets, /users, etc.).
- * - The `getUser()` call is duplicated in DashboardPage — worth extracting into
- *   a shared `useCurrentUser()` hook (hooks/useCurrentUser.ts) to stay DRY.
- *
- * TODO:
- * - `/Login` route uses a capital L — verify this matches the actual file name.
- *   Next.js routes are case-sensitive on Linux (prod) even if they work on macOS (dev).
- * - Add `aria-label="Sign out"` to the logout button for accessibility.
- * - `max-h-[calc(100vh-4rem)]` on SidebarInset assumes a 4rem top bar — document
- *   or extract this as a layout constant if the structure ever changes.
- */
 'use client';
 
-// biome-ignore assist/source/organizeImports: <explanation>
+import {
+  Activity,
+  BookOpen,
+  LayoutDashboard,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  Ticket,
+  Users,
+  Zap,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarProvider,
-  SidebarFooter,
-} from './ui/sidebar';
-import { useRouter, usePathname } from 'next/navigation';
-import { useState } from 'react';
-import Logo from '@/components/Logo';
-import Link from 'next/link';
-import {
-  LayoutDashboard,
-  BookOpen,
-  Ticket,
-  Users,
-  Activity,
-  Settings,
-  LogOut,
-  User,
-} from 'lucide-react';
+} from '@/components/ui/sidebar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
-import { useTheme } from 'next-themes';
-import { Moon, Sun } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Button } from './ui/button';
-import { Skeleton } from './ui/skeleton';
-// ─── Nav Config ────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
   {
@@ -86,17 +54,13 @@ const NAV_ITEMS = [
   { href: '/settings', label: 'Settings', icon: Settings, matchPrefix: true },
 ];
 
-const AppLayout = ({ children }: { children: React.ReactNode }) => {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
-  const [userName, setUserName] = useState('');
-  const { user, loading } = useCurrentUser();
-  console.log('user:', user, 'loading:', loading);
+  const { user } = useCurrentUser();
 
-  async function handleLogout(
-    _event: React.MouseEvent<HTMLButtonElement>,
-  ): Promise<void> {
+  async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/Login');
@@ -104,73 +68,209 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <Logo />
+      <Sidebar
+        style={{
+          background: 'rgba(6,6,15,0.9)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        {/* Ambient glows */}
+        <div
+          className='pointer-events-none absolute inset-0 overflow-hidden'
+          style={{ zIndex: 0 }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: '-30%',
+              left: '-20%',
+              width: '140%',
+              height: '50%',
+              borderRadius: '50%',
+              background:
+                'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '0',
+              right: '-20%',
+              width: '100%',
+              height: '30%',
+              borderRadius: '50%',
+              background:
+                'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
+            }}
+          />
+        </div>
+
+        {/* ── Logo ── */}
+        <SidebarHeader
+          className='relative px-5 py-5'
+          style={{
+            borderBottom: '1px solid rgba(255,255,255,0.05)',
+            zIndex: 1,
+          }}
+        >
+          <Link href='/dashboard' className='group flex items-center gap-3'>
+            <div
+              className='flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105'
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                boxShadow:
+                  '0 4px 16px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+              }}
+            >
+              <Zap size={16} color='#fff' />
+            </div>
+            <span className='text-base font-black tracking-tight'>
+              <span style={{ color: 'rgba(255,255,255,0.9)' }}>Pulse</span>
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #a5b4fc, #6366f1)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Ops
+              </span>
+            </span>
+          </Link>
         </SidebarHeader>
 
-        <SidebarContent>
+        {/* ── Nav ── */}
+        <SidebarContent className='relative px-3 py-4' style={{ zIndex: 1 }}>
           <SidebarGroup>
-            <SidebarMenu>
-              {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={
-                      matchPrefix
-                        ? pathname.startsWith(href)
-                        : pathname === href
-                    }
-                  >
-                    <Link href={href}>
-                      <Icon size={18} />
-                      <span>{label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className='gap-1'>
+              {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => {
+                const isActive = matchPrefix
+                  ? pathname.startsWith(href)
+                  : pathname === href;
+
+                return (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className='h-10 rounded-xl px-3 text-sm font-medium transition-all duration-200'
+                      style={
+                        isActive
+                          ? {
+                              background: 'rgba(99,102,241,0.15)',
+                              border: '1px solid rgba(99,102,241,0.3)',
+                              color: '#a5b4fc',
+                              boxShadow: '0 0 20px rgba(99,102,241,0.1)',
+                            }
+                          : {
+                              background: 'transparent',
+                              border: '1px solid transparent',
+                              color: 'rgba(255,255,255,0.4)',
+                            }
+                      }
+                    >
+                      <Link href={href} className='flex items-center gap-3'>
+                        <Icon
+                          size={16}
+                          style={{
+                            color: isActive
+                              ? '#818cf8'
+                              : 'rgba(255,255,255,0.3)',
+                          }}
+                        />
+                        <span>{label}</span>
+                        {isActive && (
+                          <span
+                            className='ml-auto h-1.5 w-1.5 rounded-full'
+                            style={{
+                              background: '#818cf8',
+                              boxShadow: '0 0 6px #818cf8',
+                            }}
+                          />
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          <div className='flex items-center justify-between px-2'>
-            <div className='flex items-center gap-2'>
-              {loading ? (
-                <Skeleton className='w-4 h-4 rounded-full' />
-              ) : (
-                <User size={14} className='text-muted-foreground shrink-0' />
-              )}
-              <span className='truncate text-sm text-muted-foreground'>
-                {user?.fullName}
-              </span>
+
+        {/* ── Footer ── */}
+        <SidebarFooter
+          className='relative p-3'
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 1 }}
+        >
+          <div
+            className='flex items-center gap-2 rounded-xl p-2'
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            {/* Avatar */}
+            <div
+              className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black'
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: '#fff',
+                boxShadow: '0 2px 8px rgba(99,102,241,0.4)',
+              }}
+            >
+              {user?.fullName?.[0]?.toUpperCase() ?? '?'}
             </div>
-            <div className='flex items-center gap-1'>
-              <button
-                type='button'
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className='p-1 text-muted-foreground hover:text-foreground transition-colors'
-                aria-label='Toggle theme'
+
+            {/* Name + email */}
+            <div className='min-w-0 flex-1'>
+              <p
+                className='truncate text-xs font-semibold'
+                style={{ color: 'rgba(255,255,255,0.7)' }}
               >
-                {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-              </button>
-              <button
-                type='button'
-                onClick={handleLogout}
-                className='p-1 text-muted-foreground hover:text-red-500 transition-colors'
-                aria-label='Sign out'
+                {user?.fullName ?? '—'}
+              </p>
+              <p
+                className='truncate text-[10px]'
+                style={{ color: 'rgba(255,255,255,0.3)' }}
               >
-                <LogOut size={14} />
-              </button>
+                {user?.email ?? ''}
+              </p>
             </div>
+
+            {/* Theme toggle */}
+            <button
+              type='button'
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 hover:bg-white/10'
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+              aria-label='Toggle theme'
+            >
+              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
+
+            {/* Logout */}
+            <button
+              type='button'
+              onClick={handleLogout}
+              className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 hover:bg-red-500/15'
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+              aria-label='Sign out'
+            >
+              <LogOut size={13} />
+            </button>
           </div>
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className='overflow-y-auto max-h-[calc(100vh-4rem)]'>
-        {children}
+      {/* ── Main ── */}
+      <SidebarInset
+        className='flex flex-col overflow-hidden'
+        style={{ background: '#06060f' }}
+      >
+        <main className='flex-1 overflow-y-auto'>{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
-};
-
-export default AppLayout;
+}

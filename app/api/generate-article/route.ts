@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
+/** biome-ignore-all lint/style/noNonNullAssertion: API env vars validated at runtime */
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

@@ -1,12 +1,9 @@
-/** biome-ignore-all lint/a11y/noLabelWithoutControl: labels are associated with controls via id/aria */
-/** biome-ignore-all assist/source/organizeImports: import order kept intentional */
 'use client';
 
-import { useState } from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -14,9 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
+type UserRole = 'admin' | 'technician' | 'user';
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
@@ -62,32 +59,30 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase',
 };
 
-export default function NewTicketPage() {
+export default function NewUserPage() {
   const router = useRouter();
-  const { log } = useActivityLogger();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<TicketPriority>('medium');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<UserRole>('user');
+  const [department, setDepartment] = useState('');
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!fullName.trim() || !email.trim()) return;
     setSubmitting(true);
     setError(null);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     const { data, error: err } = await supabase
-      .from('tickets')
+      .from('profiles')
       .insert({
-        title: title.trim(),
-        description: description.trim() || null,
-        priority,
-        status: 'open',
-        created_by: user?.id ?? null,
+        full_name: fullName.trim(),
+        email: email.trim(),
+        role,
+        department: department.trim() || null,
+        phone: phone.trim() || null,
       })
       .select('id')
       .single();
@@ -96,14 +91,7 @@ export default function NewTicketPage() {
       setSubmitting(false);
       return;
     }
-    await log({
-      action: 'created',
-      entity: 'ticket',
-      entity_id: data.id,
-      description: `Created ticket: ${title.trim()}`,
-      metadata: { priority },
-    });
-    router.push(`/tickets/${data.id}`);
+    router.push(`/users/${data.id}`);
   }
 
   return (
@@ -111,7 +99,6 @@ export default function NewTicketPage() {
       className='relative min-h-screen p-8'
       style={{ background: '#06060f' }}
     >
-      {/* Ambient */}
       <div className='pointer-events-none fixed inset-0' style={{ zIndex: 0 }}>
         <div
           style={{
@@ -140,19 +127,17 @@ export default function NewTicketPage() {
         className='relative mx-auto max-w-2xl space-y-6'
         style={{ zIndex: 1 }}
       >
-        {/* Back */}
         <Link
-          href='/tickets'
+          href='/users'
           className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
           style={{
             border: '1px solid rgba(255,255,255,0.08)',
             color: 'rgba(255,255,255,0.4)',
           }}
         >
-          <ArrowLeft size={13} /> Back to Tickets
+          <ArrowLeft size={13} /> Back to Users
         </Link>
 
-        {/* Header */}
         <div
           className='animate-fade-in-up opacity-0'
           style={{ animationFillMode: 'forwards' }}
@@ -161,7 +146,7 @@ export default function NewTicketPage() {
             className='mb-1 text-xs font-bold uppercase tracking-widest'
             style={{ color: 'rgba(255,255,255,0.25)' }}
           >
-            Helpdesk
+            Team
           </p>
           <h1
             className='text-4xl font-black tracking-tight'
@@ -172,82 +157,114 @@ export default function NewTicketPage() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            New Ticket
+            Add User
           </h1>
           <p
             className='mt-1 text-sm'
             style={{ color: 'rgba(255,255,255,0.3)' }}
           >
-            Describe the issue and we'll get it logged.
+            Add a new user to PulseOps.
           </p>
         </div>
 
-        {/* Form */}
         <Panel>
           <div
             className='px-6 py-5'
             style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
           >
-            <p className='text-sm font-bold text-white'>Ticket Details</p>
+            <p className='text-sm font-bold text-white'>User Details</p>
             <p className='text-xs' style={{ color: 'rgba(255,255,255,0.3)' }}>
               Fields marked * are required
             </p>
           </div>
           <form onSubmit={handleSubmit} className='space-y-5 p-6'>
             <div>
-              <label style={labelStyle}>Title *</label>
+              <label htmlFor='full-name' style={labelStyle}>
+                Full Name *
+              </label>
               <input
+                id='full-name'
                 style={inputStyle}
-                placeholder='e.g. VPN not connecting after update'
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                placeholder='e.g. Dana Cohen'
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 required
                 disabled={submitting}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Description</label>
-              <textarea
-                style={{
-                  ...inputStyle,
-                  height: 'auto',
-                  minHeight: '120px',
-                  padding: '12px',
-                  resize: 'vertical',
-                }}
-                placeholder='Describe the issue in detail — steps to reproduce, affected users, error messages…'
-                rows={5}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+              <label htmlFor='email' style={labelStyle}>
+                Email *
+              </label>
+              <input
+                id='email'
+                type='email'
+                style={inputStyle}
+                placeholder='e.g. dana@company.com'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 disabled={submitting}
               />
             </div>
 
-            <div>
-              <label style={labelStyle}>Priority *</label>
-              <Select
-                value={priority}
-                onValueChange={(v) => setPriority(v as TicketPriority)}
-                disabled={submitting}
-              >
-                <SelectTrigger
-                  className='h-10 w-48 rounded-xl text-sm'
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.85)',
-                  }}
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <div>
+                <label htmlFor='role-select' style={labelStyle}>
+                  Role *
+                </label>
+                <Select
+                  value={role}
+                  onValueChange={(v) => setRole(v as UserRole)}
+                  disabled={submitting}
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='low'>Low</SelectItem>
-                  <SelectItem value='medium'>Medium</SelectItem>
-                  <SelectItem value='high'>High</SelectItem>
-                  <SelectItem value='critical'>Critical</SelectItem>
-                </SelectContent>
-              </Select>
+                  <SelectTrigger
+                    id='role-select'
+                    className='h-10 rounded-xl text-sm'
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.85)',
+                    }}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='user'>User</SelectItem>
+                    <SelectItem value='technician'>Technician</SelectItem>
+                    <SelectItem value='admin'>Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label htmlFor='department' style={labelStyle}>
+                  Department
+                </label>
+                <input
+                  id='department'
+                  style={inputStyle}
+                  placeholder='e.g. IT, HR, Finance'
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor='phone' style={labelStyle}>
+                Phone
+              </label>
+              <input
+                id='phone'
+                type='tel'
+                style={inputStyle}
+                placeholder='e.g. +972-50-000-0000'
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={submitting}
+              />
             </div>
 
             {error && (
@@ -266,7 +283,7 @@ export default function NewTicketPage() {
             <div className='flex gap-3 pt-2'>
               <button
                 type='submit'
-                disabled={submitting || !title.trim()}
+                disabled={submitting || !fullName.trim() || !email.trim()}
                 className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
                   background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -274,10 +291,10 @@ export default function NewTicketPage() {
                 }}
               >
                 {submitting && <Loader2 size={14} className='animate-spin' />}
-                {submitting ? 'Submitting…' : 'Open Ticket'}
+                {submitting ? 'Saving…' : 'Add User'}
               </button>
               <Link
-                href='/tickets'
+                href='/users'
                 className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-white/5'
                 style={{
                   border: '1px solid rgba(255,255,255,0.08)',
