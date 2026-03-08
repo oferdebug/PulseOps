@@ -80,11 +80,13 @@ const NAV_ITEMS = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading: userLoading } = useCurrentUser();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const isDarkTheme = (resolvedTheme ?? theme) === 'dark';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -95,6 +97,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   async function handleLogout() {
@@ -315,11 +321,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             <button
               type='button'
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
               className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200'
               style={{
                 color: 'var(--app-icon-btn-color)',
               }}
+              disabled={!mounted}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
               }}
@@ -328,7 +335,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               }}
               aria-label='Toggle theme'
             >
-              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+              {mounted ? (
+                isDarkTheme ? (
+                  <Sun size={13} />
+                ) : (
+                  <Moon size={13} />
+                )
+              ) : (
+                <span className='h-[13px] w-[13px]' aria-hidden='true' />
+              )}
             </button>
 
             <button

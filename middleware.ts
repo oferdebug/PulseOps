@@ -1,13 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export async function middleware(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  let supabaseUrl: string;
+  let supabaseKey: string;
 
-  // Fail early with a clear message if env vars are missing
-  if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing Supabase environment variables in middleware");
+  try {
+    const env = getSupabasePublicEnv();
+    supabaseUrl = env.url;
+    supabaseKey = env.key;
+  } catch (error) {
+    console.error(
+      "Missing Supabase environment variables in middleware:",
+      error,
+    );
     return NextResponse.next();
   }
 
@@ -17,7 +25,13 @@ export async function middleware(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+      setAll(
+        cookiesToSet: {
+          name: string;
+          value: string;
+          options: Parameters<typeof response.cookies.set>[2];
+        }[],
+      ) {
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
