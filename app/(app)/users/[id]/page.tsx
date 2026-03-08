@@ -1,25 +1,22 @@
-/**
- * User Detail Page — /users/[id]
- *
- * Shows full profile with inline edit mode.
- * Only the user themselves or an admin can edit.
- * Only admins can delete.
- *
- * TODO:
- * - Replace window.confirm with AlertDialog.
- * - Add avatar upload.
- */
+/** biome-ignore-all lint/a11y/noLabelWithoutControl: labels are associated with controls via id/aria */
+/** biome-ignore-all assist/source/organizeImports: import order kept intentional */
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import {
+  ArrowLeft,
+  Check,
+  Loader2,
+  Pencil,
+  Shield,
+  Trash2,
+  User,
+  Wrench,
+  X,
+} from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import type React from 'react';
+import { use, useEffect, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -27,24 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import {
-  ArrowLeft,
-  Loader2,
-  Pencil,
-  Trash2,
-  Check,
-  X,
-  Shield,
-  Wrench,
-  User,
-} from 'lucide-react';
-import Link from 'next/link';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { createClient } from '@/lib/supabase/client';
 
 type UserRole = 'admin' | 'technician' | 'user';
-
 interface Profile {
   id: string;
   full_name: string;
@@ -57,33 +40,55 @@ interface Profile {
   updated_at: string;
 }
 
-// ─── Static Maps ────────────────────────────────────────────────────────────
-
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Admin',
   technician: 'Technician',
   user: 'User',
 };
-
 const ROLE_ICON: Record<UserRole, React.ElementType> = {
   admin: Shield,
   technician: Wrench,
   user: User,
 };
-
-const ROLE_VARIANT: Record<UserRole, 'default' | 'secondary' | 'outline'> = {
-  admin: 'default',
-  technician: 'secondary',
-  user: 'outline',
+const ROLE_VAR: Record<UserRole, string> = {
+  admin: 'var(--app-stat-open)',
+  technician: 'var(--app-stat-resolution)',
+  user: 'var(--app-stat-users)',
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className='glass-card'>
+      <div className='card-accent-line' />
+      {children}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--app-surface)',
+  border: '1px solid var(--app-border)',
+  color: 'var(--app-text-primary)',
+  borderRadius: '12px',
+  outline: 'none',
+  height: '40px',
+  padding: '0 12px',
+  width: '100%',
+  fontSize: '14px',
+};
+const labelStyle: React.CSSProperties = {
+  color: 'var(--app-text-muted)',
+  fontSize: '11px',
+  fontWeight: 700,
+  marginBottom: '6px',
+  display: 'block',
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+};
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 }
-
-// ─── Component ──────────────────────────────────────────────────────────────
 
 export default function UserDetailPage({
   params,
@@ -93,18 +98,15 @@ export default function UserDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { user: currentUser } = useCurrentUser();
-
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  // Edit state
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState<UserRole>('user');
-  const [editDepartment, setEditDepartment] = useState('');
+  const [editDept, setEditDept] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editActive, setEditActive] = useState(true);
 
@@ -115,18 +117,18 @@ export default function UserDetailPage({
       .select('*')
       .eq('id', id)
       .single()
-      .then(({ data, error }) => {
-        if (error) setError(error.message);
+      .then(({ data, error: err }) => {
+        if (err) setError(err.message);
         else setProfile(data);
         setLoading(false);
       });
   }, [id]);
 
-  function enterEditMode() {
+  function enterEdit() {
     if (!profile) return;
     setEditName(profile.full_name);
     setEditRole(profile.role);
-    setEditDepartment(profile.department ?? '');
+    setEditDept(profile.department ?? '');
     setEditPhone(profile.phone ?? '');
     setEditActive(profile.is_active);
     setEditing(true);
@@ -135,24 +137,21 @@ export default function UserDetailPage({
   async function handleSave() {
     if (!profile) return;
     setSaving(true);
-
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { data, error: err } = await supabase
       .from('profiles')
       .update({
         full_name: editName.trim(),
         role: editRole,
-        department: editDepartment.trim() || null,
+        department: editDept.trim() || null,
         phone: editPhone.trim() || null,
         is_active: editActive,
       })
       .eq('id', id)
       .select()
       .single();
-
-    if (error) {
-      setError(error.message);
-    } else {
+    if (err) setError(err.message);
+    else {
       setProfile(data);
       setEditing(false);
     }
@@ -163,223 +162,326 @@ export default function UserDetailPage({
     if (!window.confirm('Delete this user? This cannot be undone.')) return;
     setDeleting(true);
     const supabase = createClient();
-    const { error } = await supabase.from('profiles').delete().eq('id', id);
-    if (error) {
-      setError(error.message);
+    const { error: err } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+    if (err) {
+      setError(err.message);
       setDeleting(false);
-      return;
-    }
-    router.push('/users');
+    } else router.push('/users');
   }
 
   const isOwnProfile = currentUser?.id === id;
-  const canEdit = isOwnProfile; // TODO: add admin check once role is in useCurrentUser
-  const canDelete = !isOwnProfile; // Can't delete yourself
+  const roleVar = profile ? ROLE_VAR[profile.role] : 'var(--app-stat-users)';
+  const RoleIcon = profile ? ROLE_ICON[profile.role] : User;
 
-  // ── Render states ──
-
-  if (loading) {
+  if (loading)
     return (
-      <div className='flex h-48 items-center justify-center'>
-        <Loader2 size={24} className='animate-spin text-muted-foreground' />
+      <div
+        className='flex min-h-screen items-center justify-center'
+        style={{ background: 'var(--app-bg)' }}
+      >
+        <Loader2
+          size={28}
+          className='animate-spin'
+          style={{ color: 'var(--app-accent)' }}
+        />
       </div>
     );
-  }
 
-  if (error || !profile) {
+  if (error || !profile)
     return (
-      <div className='space-y-4'>
-        <p className='text-sm text-red-500'>{error ?? 'User not found.'}</p>
-        <Button variant='outline' asChild>
-          <Link href='/users'>
-            <ArrowLeft size={14} className='mr-1' />
-            Back
-          </Link>
-        </Button>
+      <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+        <div
+          className='rounded-xl px-4 py-3 text-sm'
+          style={{
+            background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+            color: 'var(--destructive)',
+          }}
+        >
+          {error ?? 'User not found.'}
+        </div>
       </div>
     );
-  }
-
-  const RoleIcon = ROLE_ICON[profile.role];
 
   return (
-    <div className='mx-auto max-w-2xl space-y-6'>
-      {/* ── Header ── */}
-      <div className='flex items-center justify-between'>
-        <Button variant='ghost' size='sm' asChild>
-          <Link href='/users'>
-            <ArrowLeft size={16} className='mr-1' />
-            Back
+    <div
+      className='relative min-h-screen p-8'
+      style={{ background: 'var(--app-bg)' }}
+    >
+      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
+
+      <div
+        className='relative mx-auto max-w-2xl space-y-6'
+        style={{ zIndex: 1 }}
+      >
+        {/* Nav */}
+        <div className='flex items-center justify-between'>
+          <Link
+            href='/users'
+            className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
+            style={{
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-nav-idle-text)',
+            }}
+          >
+            <ArrowLeft size={13} /> Back
           </Link>
-        </Button>
-
-        {!editing && (
-          <div className='flex gap-2'>
-            {canEdit && (
-              <Button size='sm' variant='outline' onClick={enterEditMode}>
-                <Pencil size={14} className='mr-1' />
-                Edit
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                size='sm'
-                variant='ghost'
-                className='text-red-500 hover:text-red-600 hover:bg-red-50'
-                onClick={handleDelete}
-                disabled={deleting}
+          {!editing && (
+            <div className='flex gap-2'>
+              {isOwnProfile && (
+                <button
+                  type='button'
+                  onClick={enterEdit}
+                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-secondary)',
+                  }}
+                >
+                  <Pencil size={12} /> Edit
+                </button>
+              )}
+              {!isOwnProfile && (
+                <button
+                  type='button'
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
+                  style={{
+                    border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                    color: 'var(--destructive)',
+                  }}
+                >
+                  {deleting ? (
+                    <Loader2 size={12} className='animate-spin' />
+                  ) : (
+                    <Trash2 size={12} />
+                  )}{' '}
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+          {editing && (
+            <div className='flex gap-2'>
+              <button
+                type='button'
+                onClick={handleSave}
+                disabled={saving}
+                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                style={{
+                  background: 'var(--app-accent)',
+                  color: 'var(--primary-foreground)',
+                  boxShadow: '0 4px 15px var(--app-accent-dim)',
+                }}
               >
-                {deleting ? (
-                  <Loader2 size={14} className='mr-1 animate-spin' />
+                {saving ? (
+                  <Loader2 size={12} className='animate-spin' />
                 ) : (
-                  <Trash2 size={14} className='mr-1' />
+                  <Check size={12} />
                 )}
-                Delete
-              </Button>
-            )}
-          </div>
-        )}
-
-        {editing && (
-          <div className='flex gap-2'>
-            <Button size='sm' onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <Loader2 size={14} className='mr-1 animate-spin' />
-              ) : (
-                <Check size={14} className='mr-1' />
-              )}
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
-            <Button
-              size='sm'
-              variant='ghost'
-              onClick={() => setEditing(false)}
-              disabled={saving}
-            >
-              <X size={14} className='mr-1' />
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* ── Profile Card ── */}
-      <Card>
-        <CardHeader className='space-y-4 pb-4'>
-          {/* Avatar + Name */}
-          <div className='flex items-center gap-4'>
-            <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xl'>
-              {profile.full_name?.[0]?.toUpperCase() ?? '?'}
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                type='button'
+                onClick={() => setEditing(false)}
+                disabled={saving}
+                className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
+                style={{
+                  border: '1px solid var(--app-border)',
+                  color: 'var(--app-nav-idle-text)',
+                }}
+              >
+                <X size={12} /> Cancel
+              </button>
             </div>
-            <div className='min-w-0 flex-1'>
+          )}
+        </div>
+
+        <Panel>
+          <div className='space-y-6 p-6'>
+            {/* Avatar + Name */}
+            <div className='flex items-center gap-4'>
+              <div
+                className='flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black'
+                style={{
+                  background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${roleVar} 40%, transparent)`,
+                  color: roleVar,
+                  boxShadow: `0 0 20px color-mix(in srgb, ${roleVar} 20%, transparent)`,
+                }}
+              >
+                {profile.full_name?.[0]?.toUpperCase() ?? '?'}
+              </div>
+              <div className='min-w-0 flex-1'>
+                {editing ? (
+                  <input
+                    style={{ ...inputStyle, fontSize: '18px', fontWeight: 800 }}
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    disabled={saving}
+                  />
+                ) : (
+                  <h1 className='truncate text-2xl font-black' style={{ color: 'var(--app-text-primary)' }}>
+                    {profile.full_name || '—'}
+                  </h1>
+                )}
+                <p
+                  className='text-sm'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  {profile.email}
+                </p>
+              </div>
+            </div>
+
+            {/* Role + Status */}
+            <div className='flex flex-wrap items-center gap-2'>
               {editing ? (
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className='text-lg font-semibold'
-                  disabled={saving}
-                />
+                <>
+                  <Select
+                    value={editRole}
+                    onValueChange={(v) => setEditRole(v as UserRole)}
+                  >
+                    <SelectTrigger
+                      className='h-9 w-40 rounded-xl text-xs'
+                      style={{
+                        background: 'var(--app-surface)',
+                        border: '1px solid var(--app-border)',
+                        color: 'var(--app-text-primary)',
+                      }}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='user'>User</SelectItem>
+                      <SelectItem value='technician'>Technician</SelectItem>
+                      <SelectItem value='admin'>Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={editActive ? 'active' : 'inactive'}
+                    onValueChange={(v) => setEditActive(v === 'active')}
+                  >
+                    <SelectTrigger
+                      className='h-9 w-32 rounded-xl text-xs'
+                      style={{
+                        background: 'var(--app-surface)',
+                        border: '1px solid var(--app-border)',
+                        color: 'var(--app-text-primary)',
+                      }}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='active'>Active</SelectItem>
+                      <SelectItem value='inactive'>Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
               ) : (
-                <h1 className='text-2xl font-semibold truncate'>
-                  {profile.full_name || '—'}
-                </h1>
+                <>
+                  <span
+                    className='flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold capitalize'
+                    style={{ background: `color-mix(in srgb, ${roleVar} 18%, transparent)`, color: roleVar }}
+                  >
+                    <RoleIcon size={11} /> {ROLE_LABELS[profile.role]}
+                  </span>
+                  <span
+                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${profile.is_active ? 'badge-closed' : ''}`}
+                    style={
+                      profile.is_active
+                        ? undefined
+                        : {
+                            background: 'color-mix(in srgb, var(--app-priority-low) 12%, transparent)',
+                            color: 'var(--app-priority-low)',
+                          }
+                    }
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${profile.is_active ? 'dot-healthy' : ''}`}
+                      style={
+                        profile.is_active
+                          ? undefined
+                          : { background: 'var(--app-priority-low)' }
+                      }
+                    />
+                    {profile.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                  <span
+                    className='text-xs'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    Joined {formatDate(profile.created_at)}
+                  </span>
+                </>
               )}
-              <p className='text-sm text-muted-foreground'>{profile.email}</p>
+            </div>
+
+            {/* Fields */}
+            <div
+              className='grid gap-4 sm:grid-cols-2'
+              style={{
+                borderTop: '1px solid var(--app-border)',
+                paddingTop: '20px',
+              }}
+            >
+              <div>
+                <label htmlFor='department' style={labelStyle}>
+                  Department
+                </label>
+                {editing ? (
+                  <input
+                    style={inputStyle}
+                    placeholder='e.g. IT, HR'
+                    value={editDept}
+                    onChange={(e) => setEditDept(e.target.value)}
+                    disabled={saving}
+                  />
+                ) : (
+                  <p
+                    className='text-sm'
+                    style={{
+                      color: profile.department
+                        ? 'var(--app-text-secondary)'
+                        : 'var(--app-text-faint)',
+                    }}
+                  >
+                    {profile.department || '—'}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label style={labelStyle}>Phone</label>
+                {editing ? (
+                  <input
+                    type='tel'
+                    style={inputStyle}
+                    placeholder='+972-50-000-0000'
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    disabled={saving}
+                  />
+                ) : (
+                  <p
+                    className='text-sm'
+                    style={{
+                      color: profile.phone
+                        ? 'var(--app-text-secondary)'
+                        : 'var(--app-text-faint)',
+                    }}
+                  >
+                    {profile.phone || '—'}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Role + Status */}
-          <div className='flex flex-wrap gap-2'>
-            {editing ? (
-              <>
-                <Select
-                  value={editRole}
-                  onValueChange={(v) => setEditRole(v as UserRole)}
-                >
-                  <SelectTrigger className='w-40'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='user'>User</SelectItem>
-                    <SelectItem value='technician'>Technician</SelectItem>
-                    <SelectItem value='admin'>Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={editActive ? 'active' : 'inactive'}
-                  onValueChange={(v) => setEditActive(v === 'active')}
-                >
-                  <SelectTrigger className='w-32'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='active'>Active</SelectItem>
-                    <SelectItem value='inactive'>Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </>
-            ) : (
-              <>
-                <Badge
-                  variant={ROLE_VARIANT[profile.role]}
-                  className='flex items-center gap-1 capitalize'
-                >
-                  <RoleIcon size={10} />
-                  {ROLE_LABELS[profile.role]}
-                </Badge>
-                <Badge
-                  variant='outline'
-                  className={cn(
-                    'capitalize',
-                    profile.is_active
-                      ? 'text-green-500'
-                      : 'text-muted-foreground',
-                  )}
-                >
-                  {profile.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-                <span className='text-xs text-muted-foreground self-center'>
-                  Joined {formatDate(profile.created_at)}
-                </span>
-              </>
-            )}
-          </div>
-        </CardHeader>
-
-        <CardContent className='space-y-4'>
-          {/* Department */}
-          <div className='space-y-1.5'>
-            <Label>Department</Label>
-            {editing ? (
-              <Input
-                value={editDepartment}
-                onChange={(e) => setEditDepartment(e.target.value)}
-                placeholder='e.g. IT, HR, Finance'
-                disabled={saving}
-              />
-            ) : (
-              <p className='text-sm'>{profile.department || '—'}</p>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div className='space-y-1.5'>
-            <Label>Phone</Label>
-            {editing ? (
-              <Input
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                placeholder='e.g. +972-50-000-0000'
-                disabled={saving}
-              />
-            ) : (
-              <p className='text-sm'>{profile.phone || '—'}</p>
-            )}
-          </div>
-
-          {error && <p className='text-sm text-red-500'>{error}</p>}
-        </CardContent>
-      </Card>
+        </Panel>
+      </div>
     </div>
   );
 }

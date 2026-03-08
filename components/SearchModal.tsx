@@ -1,0 +1,343 @@
+'use client';
+
+import { BookOpen, Loader2, Search, Ticket } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { ArticleResult, TicketResult } from '@/hooks/useSearch';
+import { useSearch } from '@/hooks/useSearch';
+
+const STATUS_BADGE: Record<string, string> = {
+  open: 'badge-open',
+  in_progress: 'badge-progress',
+  pending: 'badge-pending',
+  closed: 'badge-closed',
+};
+
+interface SearchModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+type ResultItem =
+  | { type: 'ticket'; route: string; data: TicketResult }
+  | { type: 'article'; route: string; data: ArticleResult };
+
+export default function SearchModal({ open, onClose }: SearchModalProps) {
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const { results, loading } = useSearch(query);
+
+  const flatItems: ResultItem[] = useMemo(() => {
+    const items: ResultItem[] = [];
+    results.tickets.forEach((t) => {
+      items.push({ type: 'ticket', route: `/tickets/${t.id}`, data: t });
+    });
+    results.articles.forEach((a) => {
+      items.push({ type: 'article', route: `/knowledge-base/${a.id}`, data: a });
+    });
+    return items;
+  }, [results.tickets, results.articles]);
+
+  const totalCount = flatItems.length;
+  const hasResults = totalCount > 0;
+  const isEmpty = query.trim().length >= 2 && !loading && !hasResults;
+
+  const goTo = useCallback(
+    (item: ResultItem) => {
+      router.push(item.route);
+      onClose();
+      setQuery('');
+      setHighlightIndex(0);
+    },
+    [router, onClose],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setQuery('');
+    setHighlightIndex(0);
+    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, [open]);
+
+  useEffect(() => {
+    setHighlightIndex((i) => (i < totalCount ? i : Math.max(0, totalCount - 1)));
+  }, [totalCount]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setHighlightIndex((i) => (i + 1) % Math.max(1, totalCount));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setHighlightIndex((i) =>
+          i <= 0 ? Math.max(0, totalCount - 1) : i - 1,
+        );
+        return;
+      }
+      if (e.key === 'Enter' && flatItems[highlightIndex]) {
+        e.preventDefault();
+        goTo(flatItems[highlightIndex]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, totalCount, highlightIndex, flatItems, onClose, goTo]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className='fixed inset-0 z-50 flex items-start justify-center pt-[15vh] backdrop-blur-md'
+      style={{ background: 'var(--app-surface-overlay)' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
+      role='dialog'
+      aria-modal='true'
+      aria-label='Search'
+    >
+      <div
+        className='glass-card w-full max-w-[600px] overflow-hidden'
+      >
+        <div className='card-accent-line' />
+
+        <div className='p-4' style={{ borderBottom: '1px solid var(--app-border)' }}>
+          <div
+            className='flex items-center gap-3 rounded-xl px-4 py-2.5'
+            style={{
+              background: 'var(--app-surface-raised)',
+              border: '1px solid var(--app-border)',
+            }}
+          >
+            <Search size={18} style={{ color: 'var(--app-text-muted)' }} />
+            <input
+              ref={inputRef}
+              type='text'
+              placeholder='Search tickets and articles…'
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className='flex-1 bg-transparent text-sm outline-none placeholder:opacity-60'
+              style={{ color: 'var(--app-text-primary)' }}
+              autoComplete='off'
+              aria-autocomplete='list'
+              aria-controls='search-results-listbox'
+              aria-activedescendant={
+                hasResults && flatItems[highlightIndex]
+                  ? `search-result-${highlightIndex}`
+                  : undefined
+              }
+            />
+            {loading && (
+              <Loader2
+                size={18}
+                className='animate-spin'
+                style={{ color: 'var(--app-text-muted)' }}
+              />
+            )}
+          </div>
+        </div>
+
+        <div
+          id='search-results'
+          className='max-h-[60vh] overflow-y-auto p-4'
+          role='listbox'
+        >
+          {loading && !hasResults && (
+            <div
+              className='flex items-center justify-center gap-2 py-8 text-sm'
+              style={{ color: 'var(--app-text-muted)' }}
+            >
+              <Loader2 size={16} className='animate-spin' />
+              Searching…
+            </div>
+          )}
+
+          {!loading && isEmpty && (
+            <p
+              className='py-8 text-center text-sm'
+              style={{ color: 'var(--app-text-muted)' }}
+            >
+              No results for &quot;{query.trim()}&quot;
+            </p>
+          )}
+
+          {!loading && hasResults && (
+            <div className='space-y-4' role='listbox' id='search-results-listbox' aria-label='Search results'>
+              {results.tickets.length > 0 && (
+                <fieldset className='border-0 p-0 m-0 min-w-0'>
+                  <legend
+                    className='mb-2 px-1 text-[11px] font-bold uppercase tracking-wider'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    Tickets
+                  </legend>
+                  <ul className='space-y-0.5 list-none p-0 m-0'>
+                    {results.tickets.map((ticket) => {
+                      const flatIdx = flatItems.findIndex(
+                        (it) => it.type === 'ticket' && it.data.id === ticket.id,
+                      );
+                      const isHighlight = flatIdx === highlightIndex;
+                      const badgeClass = STATUS_BADGE[ticket.status] ?? 'badge-pending';
+                      return (
+                        <li key={ticket.id}>
+                          <button
+                            id={flatIdx === highlightIndex ? `search-result-${flatIdx}` : undefined}
+                            type='button'
+                            role='option'
+                            tabIndex={isHighlight ? 0 : -1}
+                            aria-selected={isHighlight}
+                            className='flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors'
+                            style={{
+                              background: isHighlight
+                                ? 'var(--app-surface-raised)'
+                                : 'transparent',
+                              border:
+                                isHighlight
+                                  ? '1px solid var(--app-border)'
+                                  : '1px solid transparent',
+                            }}
+                            onClick={() =>
+                              goTo({
+                                type: 'ticket',
+                                route: `/tickets/${ticket.id}`,
+                                data: ticket,
+                              })
+                            }
+                            onMouseEnter={() => setHighlightIndex(flatIdx)}
+                          >
+                            <div
+                              className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'
+                              style={{
+                                background: 'var(--app-accent-dim)',
+                                color: 'var(--app-accent-text)',
+                              }}
+                            >
+                              <Ticket size={14} />
+                            </div>
+                            <span
+                              className='min-w-0 flex-1 truncate text-sm font-medium'
+                              style={{ color: 'var(--app-text-primary)' }}
+                            >
+                              {ticket.title}
+                            </span>
+                            <span
+                              className={`shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold capitalize ${badgeClass}`}
+                            >
+                              {ticket.status.replace('_', ' ')}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </fieldset>
+              )}
+
+              {results.articles.length > 0 && (
+                <fieldset className='border-0 p-0 m-0 min-w-0'>
+                  <legend
+                    className='mb-2 px-1 text-[11px] font-bold uppercase tracking-wider'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    Knowledge Base
+                  </legend>
+                  <ul className='space-y-0.5 list-none p-0 m-0'>
+                    {results.articles.map((article) => {
+                      const flatIdx = flatItems.findIndex(
+                        (it) =>
+                          it.type === 'article' && it.data.id === article.id,
+                      );
+                      const isHighlight = flatIdx === highlightIndex;
+                      const categoryLabel =
+                        article.category === 'active-directory'
+                          ? 'Active Directory'
+                          : article.category.charAt(0).toUpperCase() +
+                            article.category.slice(1);
+                      return (
+                        <li key={article.id}>
+                          <button
+                            id={flatIdx === highlightIndex ? `search-result-${flatIdx}` : undefined}
+                            type='button'
+                            role='option'
+                            tabIndex={isHighlight ? 0 : -1}
+                            aria-selected={isHighlight}
+                            className='flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors'
+                            style={{
+                              background: isHighlight
+                                ? 'var(--app-surface-raised)'
+                                : 'transparent',
+                              border:
+                                isHighlight
+                                  ? '1px solid var(--app-border)'
+                                  : '1px solid transparent',
+                            }}
+                            onClick={() =>
+                              goTo({
+                                type: 'article',
+                                route: `/knowledge-base/${article.id}`,
+                                data: article,
+                              })
+                            }
+                            onMouseEnter={() => setHighlightIndex(flatIdx)}
+                          >
+                            <div
+                              className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'
+                              style={{
+                                background: 'var(--app-accent-dim)',
+                                color: 'var(--app-accent-text)',
+                              }}
+                            >
+                              <BookOpen size={14} />
+                            </div>
+                            <span
+                              className='min-w-0 flex-1 truncate text-sm font-medium'
+                              style={{ color: 'var(--app-text-primary)' }}
+                            >
+                              {article.title}
+                            </span>
+                            <span
+                              className='shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold capitalize'
+                              style={{
+                                background: 'var(--app-surface-raised)',
+                                color: 'var(--app-text-secondary)',
+                                border: '1px solid var(--app-border)',
+                              }}
+                            >
+                              {categoryLabel}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </fieldset>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

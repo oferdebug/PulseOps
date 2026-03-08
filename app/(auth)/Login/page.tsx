@@ -1,118 +1,131 @@
-"use client";
+'use client';
 
-import Logo from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Logo from '@/components/Logo';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Form,
-  FormLabel,
   FormControl,
-  FormItem,
-  FormMessage,
-  FormField,
   FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { FieldValues, useForm } from "react-hook-form";
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import type { FieldValues } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 export default function LoginPage() {
   const form = useForm<FieldValues>({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: '', password: '' },
   });
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async (data: FieldValues) => {
+  async function onSubmit(data: FieldValues) {
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: err } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      router.push("/dashboard");
+    if (err) {
+      setError(err.message);
+      return;
     }
-  };
+    router.push('/dashboard');
+  }
+
   return (
-    <Card className="w-[400px] bg-white/10 backdrop-blur-lg border-white/20">
-      <CardHeader className="space-y-2">
-        <Logo />
-        <CardTitle className="text-white">Login To PulseOps</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Form {...form}>
-          {error && <p className="text-red-500">{error}</p>}
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white/70" htmlFor="email">
-                    Email
-                  </FormLabel>
-                  <FormDescription className="text-white/70">
-                    Please enter your email
-                  </FormDescription>
-                  <FormControl>
-                    <Input
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                      type="email"
-                      {...field}
-                      placeholder="your@email.com"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+    <div className="auth-layout">
+      <Card className="auth-card">
+        <CardHeader className="space-y-4 px-0 pt-0">
+          <Logo />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Sign in to PulseOps
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter your credentials to access the helpdesk.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="px-0 pb-0 pt-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              {error && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
               )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white/70" htmlFor="password">
-                    Password
-                  </FormLabel>
-                  <FormDescription className="text-white/70">
-                    Please enter your Password
-                  </FormDescription>
-                  <FormControl>
-                    <Input
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                      type="password"
-                      placeholder="Enter your Password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="form-group">
+                    <FormLabel htmlFor="email" className="form-label">
+                      Email
+                    </FormLabel>
+                    <FormDescription className="text-xs text-muted-foreground">
+                      Your account email
+                    </FormDescription>
+                    <FormControl>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@company.com"
+                        className="h-10 border-border bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="form-group">
+                    <FormLabel htmlFor="password" className="form-label">
+                      Password
+                    </FormLabel>
+                    <FormDescription className="text-xs text-muted-foreground">
+                      Your password
+                    </FormDescription>
+                    <FormControl>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="h-10 border-border bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="btn-primary h-10 w-full">
+                Sign in
+              </Button>
+            </form>
+          </Form>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{' '}
+            <Link
+              href="/register"
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              Login
-            </Button>
-          </form>
-        </Form>
-        <Link
-          href="/register"
-          className="text-emerald-400 hover:text-emerald-300 text-sm mt-4 block text-center"
-        >
-          Create an account
-        </Link>
-      </CardContent>
-    </Card>
+              Create one
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

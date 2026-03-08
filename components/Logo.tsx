@@ -1,14 +1,31 @@
-import { Activity } from "lucide-react";
+import { Zap } from 'lucide-react';
+import Link from 'next/link';
 
-const Logo = () => {
+export default function Logo() {
   return (
-    <div className="flex items-center gap-2">
-      <Activity size={28} className="text-emerald-500" />
-      <span className="text-xl font-bold text-forground">
-        Pulse<span className="text-emerald-500">Ops</span>
+    <Link href='/dashboard' className='group flex items-center gap-3'>
+      <div
+        className='flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105'
+        style={{
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          boxShadow:
+            '0 4px 16px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+        }}
+      >
+        <Zap size={16} color='#fff' />
+      </div>
+      <span className='text-base font-black tracking-tight'>
+        <span style={{ color: 'rgba(255,255,255,0.9)' }}>Pulse</span>
+        <span
+          style={{
+            background: 'linear-gradient(135deg, #a5b4fc, #6366f1)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          Ops
+        </span>
       </span>
-    </div>
+    </Link>
   );
-};
-
-export default Logo;
+}

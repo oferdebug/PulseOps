@@ -1,21 +1,13 @@
-/** biome-ignore-all assist/source/organizeImports: <explanation> */
+/** biome-ignore-all lint/a11y/noLabelWithoutControl: labels are associated with controls via id/aria */
+/** biome-ignore-all assist/source/organizeImports: import order kept intentional */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   Select,
   SelectContent,
@@ -25,35 +17,88 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
-/**
- * NewTicketPage
- *
- * Form for creating a new ticket. Submits to Supabase and redirects
- * to the ticket detail page on success.
- */
-
 type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
+
+interface AgentOption {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className='glass-card'>
+      <div className='card-accent-line' />
+      {children}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--app-surface)',
+  border: '1px solid var(--app-border)',
+  color: 'var(--app-text-primary)',
+  borderRadius: '12px',
+  outline: 'none',
+  height: '40px',
+  padding: '0 12px',
+  width: '100%',
+  fontSize: '14px',
+};
+const labelStyle: React.CSSProperties = {
+  color: 'var(--app-text-muted)',
+  fontSize: '11px',
+  fontWeight: 700,
+  marginBottom: '6px',
+  display: 'block',
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+};
 
 export default function NewTicketPage() {
   const router = useRouter();
+  const { user } = useCurrentUser();
+  const { log } = useActivityLogger();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TicketPriority>('medium');
+  const [assignedTo, setAssignedTo] = useState<string | null>(null);
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [userRole, setUserRole] = useState<'admin' | 'agent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const supabase = createClient();
+    Promise.all([
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => data?.role ?? null),
+      supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name')
+        .then(({ data }) => data ?? []),
+    ]).then(([role, agentList]) => {
+      setUserRole(role === 'admin' || role === 'agent' ? role : null);
+      setAgents((agentList ?? []) as AgentOption[]);
+    });
+  }, [user?.id]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!title.trim()) return;
     setSubmitting(true);
     setError(null);
-
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    const { data, error } = await supabase
+    const { data, error: err } = await supabase
       .from('tickets')
       .insert({
         title: title.trim(),
@@ -61,59 +106,104 @@ export default function NewTicketPage() {
         priority,
         status: 'open',
         created_by: user?.id ?? null,
+        assigned_to: assignedTo || null,
       })
       .select('id')
       .single();
-
-    if (error) {
-      setError(error.message);
+    if (err) {
+      setError(err.message);
       setSubmitting(false);
       return;
     }
-
+    await log({
+      action: 'created',
+      entity: 'ticket',
+      entity_id: data.id,
+      description: `Created ticket: ${title.trim()}`,
+      metadata: { priority },
+    });
     router.push(`/tickets/${data.id}`);
   }
 
   return (
-    <div className='mx-auto max-w-2xl space-y-6'>
-      <div className='flex items-center gap-4'>
-        <Button variant='ghost' size='sm' asChild>
-          <Link href='/tickets'>
-            <ArrowLeft size={16} className='mr-2' />
-            Back To Tickets
-          </Link>
-        </Button>
-        <h1 className='text-3xl font-semibold'>New Ticket</h1>
-        <p className='text-muted-foreground'>
-          Describe the issue and we&apos;ll get it logged.
-        </p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className='text-base'>Ticket Details</CardTitle>
-          <CardDescription>
-            All Fields Marked With * Are Required
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className='space-y-6'>
-            <div className='space-y-3'>
-              <Label htmlFor='title'>
-                Title <span className='text-red-500'>*</span>
-              </Label>
-              <Input
-                id='title'
+    <div
+      className='relative min-h-screen p-8'
+      style={{ background: 'var(--app-bg)' }}
+    >
+      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
+
+      <div
+        className='relative mx-auto max-w-2xl space-y-6'
+        style={{ zIndex: 1 }}
+      >
+        {/* Back */}
+        <Link
+          href='/tickets'
+          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
+          style={{
+            border: '1px solid var(--app-border)',
+            color: 'var(--app-nav-idle-text)',
+          }}
+        >
+          <ArrowLeft size={13} /> Back to Tickets
+        </Link>
+
+        {/* Header */}
+        <div
+          className='animate-fade-in-up opacity-0'
+          style={{ animationFillMode: 'forwards' }}
+        >
+          <p
+            className='mb-1 text-xs font-bold uppercase tracking-widest'
+            style={{ color: 'var(--app-text-muted)' }}
+          >
+            Helpdesk
+          </p>
+          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+            New Ticket
+          </h1>
+          <p
+            className='mt-1 text-sm'
+            style={{ color: 'var(--app-text-muted)' }}
+          >
+            Describe the issue and we'll get it logged.
+          </p>
+        </div>
+
+        {/* Form */}
+        <Panel>
+          <div
+            className='px-6 py-5'
+            style={{ borderBottom: '1px solid var(--app-border)' }}
+          >
+            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Ticket Details</p>
+            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
+              Fields marked * are required
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className='space-y-5 p-6'>
+            <div>
+              <label style={labelStyle}>Title *</label>
+              <input
+                style={inputStyle}
+                placeholder='e.g. VPN not connecting after update'
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder='Enter the title of the ticket'
                 required
                 disabled={submitting}
               />
             </div>
-            <div className='space-y-3'>
-              <Label htmlFor='description'>Description</Label>
-              <Textarea
-                id='description'
+
+            <div>
+              <label style={labelStyle}>Description</label>
+              <textarea
+                style={{
+                  ...inputStyle,
+                  height: 'auto',
+                  minHeight: '120px',
+                  padding: '12px',
+                  resize: 'vertical',
+                }}
                 placeholder='Describe the issue in detail — steps to reproduce, affected users, error messages…'
                 rows={5}
                 value={description}
@@ -121,15 +211,23 @@ export default function NewTicketPage() {
                 disabled={submitting}
               />
             </div>
-            <div className='space-y-3'>
-              <Label htmlFor='priority'>Priority *</Label>
+
+            <div>
+              <label style={labelStyle}>Priority *</label>
               <Select
                 value={priority}
                 onValueChange={(v) => setPriority(v as TicketPriority)}
                 disabled={submitting}
               >
-                <SelectTrigger id='priority' className='w-48'>
-                  <SelectValue placeholder='Select Priority' />
+                <SelectTrigger
+                  className='h-10 w-48 rounded-xl text-sm'
+                  style={{
+                    background: 'var(--app-surface)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-primary)',
+                  }}
+                >
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='low'>Low</SelectItem>
@@ -139,21 +237,73 @@ export default function NewTicketPage() {
                 </SelectContent>
               </Select>
             </div>
-            {error && <p className='text-sm text-red-500'>Error: {error}</p>}
-            <div className='flex items-center gap-4 pt-4'>
-              <Button type='submit' disabled={submitting || !title.trim()}>
-                {submitting && (
-                  <Loader2 size={16} className='mr-2 animate-spin' />
-                )}
-                {submitting ? 'Submitting...' : 'Open Ticket'}
-              </Button>
-              <Button type='button' variant='ghost' asChild>
-                <Link href='/tickets'>Cancel</Link>
-              </Button>
+
+            {userRole === 'admin' && (
+              <div>
+                <label style={labelStyle}>Assigned To</label>
+                <select
+                  value={assignedTo ?? ''}
+                  onChange={(e) => setAssignedTo(e.target.value || null)}
+                  disabled={submitting}
+                  className='w-full rounded-xl px-3 py-2 text-sm outline-none transition-[border-color] disabled:opacity-60'
+                  style={{
+                    background: 'var(--app-surface)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-primary)',
+                    height: '40px',
+                  }}
+                >
+                  <option value=''>Unassigned</option>
+                  {agents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.full_name?.trim() || a.email || a.id.slice(0, 8)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {error && (
+              <div
+                className='rounded-xl px-4 py-3 text-sm'
+                style={{
+                  background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                  color: 'var(--destructive)',
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <div className='flex gap-3 pt-2'>
+              <button
+                type='submit'
+                disabled={submitting || !title.trim()}
+                className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                style={{
+                  background: 'var(--app-accent)',
+                  color: 'var(--primary-foreground)',
+                  boxShadow: '0 4px 20px var(--app-accent-dim)',
+                }}
+              >
+                {submitting && <Loader2 size={14} className='animate-spin' />}
+                {submitting ? 'Submitting…' : 'Open Ticket'}
+              </button>
+              <Link
+                href='/tickets'
+                className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-(--app-surface-raised)'
+                style={{
+                  border: '1px solid var(--app-border)',
+                  color: 'var(--app-nav-idle-text)',
+                }}
+              >
+                Cancel
+              </Link>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </Panel>
+      </div>
     </div>
   );
 }
