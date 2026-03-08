@@ -4,6 +4,33 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+/**
+ * New User Page — /users/new
+ *
+ * Creates a new user via Supabase Auth Admin API (invite by email).
+ * Profile is auto-created by the on_auth_user_created trigger.
+ *
+ * Note: Supabase's inviteUserByEmail requires the service role key,
+ * so we route through a Next.js API endpoint.
+ *
+ * TODO:
+ * - Add avatar upload via Supabase Storage.
+ */
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -47,6 +74,14 @@ const labelStyle: React.CSSProperties = {
 
 export default function NewUserPage() {
   const router = useRouter();
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+
+type UserRole = 'admin' | 'technician' | 'user';
+
+export default function NewUserPage() {
+  const router = useRouter();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('user');
@@ -62,6 +97,15 @@ export default function NewUserPage() {
     setError(null);
     const supabase = createClient();
     const { data, error: err } = await supabase
+
+    setSubmitting(true);
+    setError(null);
+
+    const supabase = createClient();
+
+    // Insert directly into profiles (for users already in auth.users)
+    // In production, use /api/invite-user for new signups
+    const { data, error } = await supabase
       .from('profiles')
       .insert({
         full_name: fullName.trim(),
@@ -77,6 +121,13 @@ export default function NewUserPage() {
       setSubmitting(false);
       return;
     }
+
+    if (error) {
+      setError(error.message);
+      setSubmitting(false);
+      return;
+    }
+
     router.push(`/users/${data.id}`);
   }
 
@@ -141,6 +192,33 @@ export default function NewUserPage() {
               <input
                 id='full-name'
                 style={inputStyle}
+    <div className='mx-auto max-w-2xl space-y-6'>
+      {/* ── Header ── */}
+      <div className='flex items-center gap-3'>
+        <Button variant='ghost' size='sm' asChild>
+          <Link href='/users'>
+            <ArrowLeft size={16} className='mr-1' />
+            Back
+          </Link>
+        </Button>
+        <div>
+          <h1 className='text-3xl font-semibold'>Add User</h1>
+          <p className='text-muted-foreground'>Add a new user to PulseOps.</p>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-base'>User Details</CardTitle>
+          <CardDescription>Fields marked * are required.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className='space-y-5'>
+            {/* Full Name */}
+            <div className='space-y-1.5'>
+              <Label htmlFor='fullName'>Full Name *</Label>
+              <Input
+                id='fullName'
                 placeholder='e.g. Dana Cohen'
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -157,6 +235,12 @@ export default function NewUserPage() {
                 id='email'
                 type='email'
                 style={inputStyle}
+            {/* Email */}
+            <div className='space-y-1.5'>
+              <Label htmlFor='email'>Email *</Label>
+              <Input
+                id='email'
+                type='email'
                 placeholder='e.g. dana@company.com'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -170,6 +254,10 @@ export default function NewUserPage() {
                 <label htmlFor='role-select' style={labelStyle}>
                   Role *
                 </label>
+            {/* Role + Department */}
+            <div className='flex gap-4'>
+              <div className='space-y-1.5 flex-1'>
+                <Label htmlFor='role'>Role *</Label>
                 <Select
                   value={role}
                   onValueChange={(v) => setRole(v as UserRole)}
@@ -184,6 +272,7 @@ style={{
                     color: 'var(--app-text-primary)',
                   }}
                   >
+                  <SelectTrigger id='role'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -200,6 +289,11 @@ style={{
                 <input
                   id='department'
                   style={inputStyle}
+
+              <div className='space-y-1.5 flex-1'>
+                <Label htmlFor='department'>Department</Label>
+                <Input
+                  id='department'
                   placeholder='e.g. IT, HR, Finance'
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
@@ -216,6 +310,12 @@ style={{
                 id='phone'
                 type='tel'
                 style={inputStyle}
+            {/* Phone */}
+            <div className='space-y-1.5'>
+              <Label htmlFor='phone'>Phone</Label>
+              <Input
+                id='phone'
+                type='tel'
                 placeholder='e.g. +972-50-000-0000'
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -264,6 +364,25 @@ style={{
           </form>
         </Panel>
       </div>
+            {error && <p className='text-sm text-red-500'>{error}</p>}
+
+            <div className='flex items-center gap-3 pt-2'>
+              <Button
+                type='submit'
+                disabled={submitting || !fullName.trim() || !email.trim()}
+              >
+                {submitting && (
+                  <Loader2 size={14} className='mr-2 animate-spin' />
+                )}
+                {submitting ? 'Saving…' : 'Add User'}
+              </Button>
+              <Button type='button' variant='ghost' asChild>
+                <Link href='/users'>Cancel</Link>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
