@@ -39,10 +39,10 @@ const ROLE_ICON: Record<UserRole, React.ElementType> = {
   technician: Wrench,
   user: User,
 };
-const ROLE_COLOR: Record<UserRole, string> = {
-  admin: '#f43f5e',
-  technician: '#fb923c',
-  user: '#818cf8',
+const ROLE_VAR: Record<UserRole, string> = {
+  admin: 'var(--app-stat-open)',
+  technician: 'var(--app-stat-resolution)',
+  user: 'var(--app-stat-users)',
 };
 const ALL_ROLES: Array<UserRole | 'all'> = [
   'all',
@@ -61,23 +61,8 @@ function Panel({
   style?: React.CSSProperties;
 }) {
   return (
-    <div
-      className={`overflow-hidden rounded-2xl ${className}`}
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        ...style,
-      }}
-    >
-      <div
-        className='h-px'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className={`glass-card ${className}`} style={style}>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
@@ -100,14 +85,14 @@ function Pill({
       style={
         active
           ? {
-              background: 'rgba(99,102,241,0.2)',
-              border: '1px solid rgba(99,102,241,0.4)',
-              color: '#a5b4fc',
+              background: 'var(--app-nav-active-bg)',
+              border: '1px solid var(--app-nav-active-border)',
+              color: 'var(--app-nav-active-text)',
             }
           : {
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.4)',
+              background: 'var(--app-surface)',
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-nav-idle-text)',
             }
       }
     >
@@ -153,47 +138,12 @@ export default function UsersPage() {
   return (
     <div
       className='relative min-h-screen space-y-6 p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      {/* Ambient */}
       <div
-        className='pointer-events-none fixed inset-0 overflow-hidden'
+        className='app-mesh pointer-events-none fixed inset-0 overflow-hidden'
         style={{ zIndex: 0 }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '0',
-            right: '0',
-            width: '30vw',
-            height: '30vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      />
 
       <div className='relative' style={{ zIndex: 1 }}>
         {/* Header */}
@@ -204,24 +154,16 @@ export default function UsersPage() {
           <div>
             <p
               className='mb-1 text-xs font-bold uppercase tracking-widest'
-              style={{ color: 'rgba(255,255,255,0.25)' }}
+              style={{ color: 'var(--app-text-muted)' }}
             >
               Team
             </p>
-            <h1
-              className='text-4xl font-black tracking-tight'
-              style={{
-                background:
-                  'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
+            <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
               Users
             </h1>
             <p
               className='mt-1 text-sm'
-              style={{ color: 'rgba(255,255,255,0.3)' }}
+              style={{ color: 'var(--app-text-muted)' }}
             >
               {loading
                 ? 'Loading…'
@@ -230,11 +172,11 @@ export default function UsersPage() {
           </div>
           <Link
             href='/users/new'
-            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
+            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
             style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow:
-                '0 4px 20px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+              background: 'var(--app-accent)',
+              color: 'var(--primary-foreground)',
+              boxShadow: '0 4px 20px var(--app-accent-dim)',
             }}
           >
             <Plus size={14} /> Add User
@@ -256,15 +198,15 @@ export default function UsersPage() {
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'
-                style={{ color: 'rgba(255,255,255,0.25)' }}
+                style={{ color: 'var(--app-text-muted)' }}
               />
               <input
                 placeholder='Search by name or email…'
                 className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none'
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.8)',
+                  background: 'var(--app-surface)',
+                  border: '1px solid var(--app-border)',
+                  color: 'var(--app-text-primary)',
                 }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -284,8 +226,8 @@ export default function UsersPage() {
               type='button'
               onClick={fetchProfiles}
               disabled={loading}
-              className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10'
-              style={{ color: 'rgba(255,255,255,0.3)' }}
+              className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-(--app-surface-raised)'
+              style={{ color: 'var(--app-text-muted)' }}
             >
               <RefreshCw size={13} className={cn(loading && 'animate-spin')} />
             </button>
@@ -304,10 +246,10 @@ export default function UsersPage() {
         >
           <div
             className='px-5 py-4'
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold text-white'>All Users</p>
-            <p className='text-xs' style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>All Users</p>
+            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Click a user to view or edit
             </p>
           </div>
@@ -316,9 +258,9 @@ export default function UsersPage() {
             <div
               className='mx-5 my-3 rounded-xl px-4 py-3 text-sm'
               style={{
-                background: 'rgba(244,63,94,0.1)',
-                border: '1px solid rgba(244,63,94,0.2)',
-                color: '#fca5a5',
+                background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                color: 'var(--destructive)',
               }}
             >
               Failed to load: {error}
@@ -328,7 +270,7 @@ export default function UsersPage() {
           {!loading && !error && filtered.length === 0 && (
             <div
               className='flex flex-col items-center gap-3 py-16'
-              style={{ color: 'rgba(255,255,255,0.2)' }}
+              style={{ color: 'var(--app-text-faint)' }}
             >
               <Users size={36} />
               <p className='text-sm font-medium'>No users found</p>
@@ -339,10 +281,10 @@ export default function UsersPage() {
                     setSearch('');
                     setRoleFilter('all');
                   }}
-                  className='rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-white/10'
+                  className='rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-(--app-surface-raised)'
                   style={{
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.4)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-nav-idle-text)',
                   }}
                 >
                   Clear filters
@@ -354,83 +296,78 @@ export default function UsersPage() {
           {!error &&
             filtered.map((profile, i) => {
               const RoleIcon = ROLE_ICON[profile.role];
-              const roleColor = ROLE_COLOR[profile.role];
+              const roleVar = ROLE_VAR[profile.role];
               return (
                 <Link
                   key={profile.id}
                   href={`/users/${profile.id}`}
-                  className='flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-white/3'
+                  className='flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-(--app-surface-raised)'
                   style={{
                     borderBottom:
                       i < filtered.length - 1
-                        ? '1px solid rgba(255,255,255,0.04)'
+                        ? '1px solid var(--app-border)'
                         : 'none',
                   }}
                 >
-                  {/* Avatar */}
                   <div
                     className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black'
                     style={{
-                      background: `${roleColor}20`,
-                      border: `1px solid ${roleColor}40`,
-                      color: roleColor,
+                      background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
+                      border: `1px solid color-mix(in srgb, ${roleVar} 40%, transparent)`,
+                      color: roleVar,
                     }}
                   >
                     {profile.full_name?.[0]?.toUpperCase() ?? '?'}
                   </div>
-
-                  {/* Name + email */}
                   <div className='min-w-0 flex-1'>
                     <p
                       className='truncate text-sm font-semibold'
-                      style={{ color: 'rgba(255,255,255,0.85)' }}
+                      style={{ color: 'var(--app-text-primary)' }}
                     >
                       {profile.full_name || '—'}
                     </p>
                     <p
                       className='truncate text-xs'
-                      style={{ color: 'rgba(255,255,255,0.3)' }}
+                      style={{ color: 'var(--app-text-muted)' }}
                     >
                       {profile.email}
                     </p>
                   </div>
-
-                  {/* Department */}
                   {profile.department && (
                     <span
                       className='hidden shrink-0 text-xs sm:block'
-                      style={{ color: 'rgba(255,255,255,0.25)' }}
+                      style={{ color: 'var(--app-text-muted)' }}
                     >
                       {profile.department}
                     </span>
                   )}
-
-                  {/* Role badge */}
                   <span
                     className='flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize'
-                    style={{ background: `${roleColor}18`, color: roleColor }}
+                    style={{
+                      background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
+                      color: roleVar,
+                    }}
                   >
                     <RoleIcon size={10} />
                     {ROLE_LABELS[profile.role]}
                   </span>
-
-                  {/* Status dot */}
                   <div className='flex shrink-0 items-center gap-1.5'>
                     <span
-                      className='h-1.5 w-1.5 rounded-full'
-                      style={{
-                        background: profile.is_active ? '#4ade80' : '#4b5563',
-                        boxShadow: profile.is_active
-                          ? '0 0 6px #4ade80'
-                          : 'none',
-                      }}
+                      className={`h-1.5 w-1.5 rounded-full ${profile.is_active ? 'dot-healthy' : ''}`}
+                      style={
+                        profile.is_active
+                          ? undefined
+                          : {
+                              background: 'var(--app-priority-low)',
+                            }
+                      }
                     />
                     <span
                       className='text-xs font-medium'
                       style={{
                         color: profile.is_active
-                          ? '#4ade80'
-                          : 'rgba(255,255,255,0.25)',
+                          ? 'var(--app-health-healthy)'
+                          : 'var(--app-text-muted)',
                       }}
                     >
                       {profile.is_active ? 'Active' : 'Inactive'}

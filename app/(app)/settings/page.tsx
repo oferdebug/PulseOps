@@ -22,31 +22,17 @@ function Panel({
   className?: string;
 }) {
   return (
-    <div
-      className={`overflow-hidden rounded-2xl ${className}`}
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <div
-        className='h-px'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className={`glass-card ${className}`}>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: 'rgba(255,255,255,0.85)',
+  background: 'var(--app-surface)',
+  border: '1px solid var(--app-border)',
+  color: 'var(--app-text-primary)',
   borderRadius: '12px',
   outline: 'none',
   height: '40px',
@@ -56,7 +42,7 @@ const inputStyle: React.CSSProperties = {
   transition: 'border-color 0.2s',
 };
 const labelStyle: React.CSSProperties = {
-  color: 'rgba(255,255,255,0.45)',
+  color: 'var(--app-text-muted)',
   fontSize: '11px',
   fontWeight: 700,
   marginBottom: '6px',
@@ -89,9 +75,9 @@ function Toggle({
       className='relative h-6 w-11 shrink-0 rounded-full transition-all duration-200'
       style={{
         background: checked
-          ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-          : 'rgba(255,255,255,0.1)',
-        boxShadow: checked ? '0 0 12px rgba(99,102,241,0.4)' : 'none',
+          ? 'var(--app-accent)'
+          : 'var(--app-surface-raised)',
+        boxShadow: checked ? '0 0 12px var(--app-accent-dim)' : 'none',
       }}
     >
       <span
@@ -163,17 +149,17 @@ function ProfileTab() {
         <div
           className='flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black'
           style={{
-            background: 'rgba(99,102,241,0.2)',
-            border: '1px solid rgba(99,102,241,0.4)',
-            color: '#a5b4fc',
-            boxShadow: '0 0 20px rgba(99,102,241,0.2)',
+            background: 'var(--app-nav-active-bg)',
+            border: '1px solid var(--app-nav-active-border)',
+            color: 'var(--app-nav-active-text)',
+            boxShadow: '0 0 20px var(--app-nav-active-glow)',
           }}
         >
           {initial}
         </div>
         <div>
-          <p className='text-sm font-bold text-white'>{fullName || '—'}</p>
-          <p className='text-xs' style={{ color: 'rgba(255,255,255,0.35)' }}>
+          <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>{fullName || '—'}</p>
+          <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
             {email || user?.email}
           </p>
         </div>
@@ -239,9 +225,9 @@ function ProfileTab() {
         <div
           className='rounded-xl px-4 py-3 text-sm'
           style={{
-            background: 'rgba(244,63,94,0.1)',
-            border: '1px solid rgba(244,63,94,0.2)',
-            color: '#fca5a5',
+            background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+            color: 'var(--destructive)',
           }}
         >
           {error}
@@ -251,12 +237,13 @@ function ProfileTab() {
       <button
         type='submit'
         disabled={saving}
-        className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
+        className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
         style={{
           background: saved
-            ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-            : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
+            ? 'var(--app-health-healthy)'
+            : 'var(--app-accent)',
+          color: saved ? 'var(--app-bg)' : 'var(--primary-foreground)',
+          boxShadow: saved ? 'none' : '0 4px 20px var(--app-accent-dim)',
         }}
       >
         {saving ? (
@@ -322,15 +309,15 @@ function NotificationsTab() {
       {rows.map(({ key, label, desc }, i) => (
         <div
           key={key}
-          className='flex items-center justify-between rounded-xl px-4 py-3.5 transition-colors hover:bg-white/3'
+          className='flex items-center justify-between rounded-xl px-4 py-3.5 transition-colors hover:bg-(--app-surface-raised)'
           style={{
             borderBottom:
-              i < rows.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              i < rows.length - 1 ? '1px solid var(--app-border)' : 'none',
           }}
         >
           <div>
-            <p className='text-sm font-medium text-white'>{label}</p>
-            <p className='text-xs' style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className='text-sm font-medium' style={{ color: 'var(--app-text-primary)' }}>{label}</p>
+            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               {desc}
             </p>
           </div>
@@ -394,7 +381,7 @@ function SecurityTab() {
     <div className='space-y-8'>
       {/* Change password */}
       <div>
-        <p className='mb-4 text-sm font-bold text-white'>Change Password</p>
+        <p className='mb-4 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Change Password</p>
         <form onSubmit={handleChangePassword} className='space-y-4'>
           <div>
             <label style={labelStyle} htmlFor='settings-current-password'>
@@ -446,14 +433,14 @@ function SecurityTab() {
               style={
                 msg.type === 'ok'
                   ? {
-                      background: 'rgba(74,222,128,0.1)',
-                      border: '1px solid rgba(74,222,128,0.2)',
-                      color: '#86efac',
+                      background: 'color-mix(in srgb, var(--app-health-healthy) 12%, transparent)',
+                      border: '1px solid color-mix(in srgb, var(--app-health-healthy) 25%, transparent)',
+                      color: 'var(--app-health-healthy)',
                     }
                   : {
-                      background: 'rgba(244,63,94,0.1)',
-                      border: '1px solid rgba(244,63,94,0.2)',
-                      color: '#fca5a5',
+                      background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                      border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                      color: 'var(--destructive)',
                     }
               }
             >
@@ -465,8 +452,9 @@ function SecurityTab() {
             disabled={loading || !current || !newPw || !confirm}
             className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
             style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
+              background: 'var(--app-accent)',
+              color: 'var(--primary-foreground)',
+              boxShadow: '0 4px 20px var(--app-accent-dim)',
             }}
           >
             {loading && <Loader2 size={14} className='animate-spin' />}
@@ -477,27 +465,27 @@ function SecurityTab() {
 
       {/* Active sessions */}
       <div>
-        <p className='mb-3 text-sm font-bold text-white'>Active Sessions</p>
+        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Active Sessions</p>
         <div className='space-y-2'>
           {sessions.map((s) => (
             <div
               key={s.device}
               className='flex items-center justify-between rounded-xl px-4 py-3'
               style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'var(--app-surface)',
+                border: '1px solid var(--app-border)',
               }}
             >
               <div>
                 <p
                   className='text-xs font-semibold'
-                  style={{ color: 'rgba(255,255,255,0.8)' }}
+                  style={{ color: 'var(--app-text-primary)' }}
                 >
                   {s.device}
                 </p>
                 <p
                   className='text-[11px]'
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  style={{ color: 'var(--app-text-muted)' }}
                 >
                   {s.location} · {s.time}
                 </p>
@@ -506,8 +494,8 @@ function SecurityTab() {
                 <span
                   className='rounded-lg px-2 py-0.5 text-[10px] font-bold'
                   style={{
-                    background: 'rgba(74,222,128,0.15)',
-                    color: '#4ade80',
+                    background: 'color-mix(in srgb, var(--app-health-healthy) 15%, transparent)',
+                    color: 'var(--app-health-healthy)',
                   }}
                 >
                   Active
@@ -515,8 +503,8 @@ function SecurityTab() {
               ) : (
                 <button
                   type='button'
-                  className='rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors hover:bg-red-500/15'
-                  style={{ color: '#f87171' }}
+                  className='rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors hover:bg-(--app-logout-hover)'
+                  style={{ color: 'var(--destructive)' }}
                 >
                   Revoke
                 </button>
@@ -549,7 +537,7 @@ function AppearanceTab() {
     <div className='space-y-8'>
       {/* Theme (always dark) */}
       <div>
-        <p className='mb-3 text-sm font-bold text-white'>Theme</p>
+        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Theme</p>
         <div className='flex gap-3'>
           {(['dark', 'light'] as const).map((t) => (
             <button
@@ -563,27 +551,27 @@ function AppearanceTab() {
                 style={
                   t === 'dark'
                     ? {
-                        background: '#06060f',
-                        border: '2px solid rgba(99,102,241,0.6)',
-                        boxShadow: '0 0 12px rgba(99,102,241,0.3)',
+                        background: 'var(--app-bg)',
+                        border: '2px solid var(--app-accent-border)',
+                        boxShadow: '0 0 12px var(--app-accent-dim)',
                       }
                     : {
-                        background: '#f8fafc',
-                        border: '2px solid rgba(255,255,255,0.08)',
+                        background: 'var(--app-surface)',
+                        border: '2px solid var(--app-border)',
                         opacity: 0.4,
                       }
                 }
               >
                 {t === 'dark' ? (
-                  <span className='text-xs text-white/50'>Dark</span>
+                  <span className='text-xs' style={{ color: 'var(--app-text-muted)' }}>Dark</span>
                 ) : (
-                  <span className='text-xs text-black/40'>Light</span>
+                  <span className='text-xs' style={{ color: 'var(--app-text-faint)' }}>Light</span>
                 )}
               </div>
               <p
                 className='text-xs font-semibold capitalize'
                 style={{
-                  color: t === 'dark' ? '#a5b4fc' : 'rgba(255,255,255,0.3)',
+                  color: t === 'dark' ? 'var(--app-accent-text)' : 'var(--app-text-muted)',
                 }}
               >
                 {t === 'dark' ? '✓ Dark' : 'Light (soon)'}
@@ -595,7 +583,7 @@ function AppearanceTab() {
 
       {/* Accent color */}
       <div>
-        <p className='mb-3 text-sm font-bold text-white'>Accent Color</p>
+        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Accent Color</p>
         <div className='flex flex-wrap gap-3'>
           {accents.map(({ color, label }) => (
             <button
@@ -618,7 +606,7 @@ function AppearanceTab() {
               />
               <span
                 className='text-[10px]'
-                style={{ color: 'rgba(255,255,255,0.3)' }}
+                style={{ color: 'var(--app-text-muted)' }}
               >
                 {label}
               </span>
@@ -629,7 +617,7 @@ function AppearanceTab() {
 
       {/* Density */}
       <div>
-        <p className='mb-3 text-sm font-bold text-white'>Density</p>
+        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Density</p>
         <div className='flex gap-2'>
           {(['compact', 'normal', 'comfortable'] as const).map((d) => (
             <button
@@ -640,14 +628,14 @@ function AppearanceTab() {
               style={
                 density === d
                   ? {
-                      background: 'rgba(99,102,241,0.2)',
-                      border: '1px solid rgba(99,102,241,0.4)',
-                      color: '#a5b4fc',
+                      background: 'var(--app-nav-active-bg)',
+                      border: '1px solid var(--app-nav-active-border)',
+                      color: 'var(--app-nav-active-text)',
                     }
                   : {
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.4)',
+                      background: 'var(--app-surface)',
+                      border: '1px solid var(--app-border)',
+                      color: 'var(--app-nav-idle-text)',
                     }
               }
             >
@@ -672,44 +660,9 @@ export default function SettingsPage() {
   return (
     <div
       className='relative min-h-screen space-y-6 p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      {/* Ambient */}
-      <div className='pointer-events-none fixed inset-0' style={{ zIndex: 0 }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            width: '30vw',
-            height: '30vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
 
       <div className='relative' style={{ zIndex: 1 }}>
         {/* Header */}
@@ -719,24 +672,16 @@ export default function SettingsPage() {
         >
           <p
             className='mb-1 text-xs font-bold uppercase tracking-widest'
-            style={{ color: 'rgba(255,255,255,0.25)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             Configuration
           </p>
-          <h1
-            className='text-4xl font-black tracking-tight'
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
+          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
             Settings
           </h1>
           <p
             className='mt-1 text-sm'
-            style={{ color: 'rgba(255,255,255,0.3)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             Manage your account and preferences.
           </p>
@@ -756,12 +701,12 @@ export default function SettingsPage() {
                     style={
                       activeTab === id
                         ? {
-                            background: 'rgba(99,102,241,0.15)',
-                            color: '#a5b4fc',
-                            borderLeft: '2px solid #6366f1',
+                            background: 'var(--app-nav-active-bg)',
+                            color: 'var(--app-nav-active-text)',
+                            borderLeft: '2px solid var(--app-accent)',
                           }
                         : {
-                            color: 'rgba(255,255,255,0.45)',
+                            color: 'var(--app-text-muted)',
                             borderLeft: '2px solid transparent',
                           }
                     }
@@ -771,7 +716,7 @@ export default function SettingsPage() {
                       {label}
                     </div>
                     {activeTab === id && (
-                      <ChevronRight size={12} style={{ color: '#6366f1' }} />
+                      <ChevronRight size={12} style={{ color: 'var(--app-accent)' }} />
                     )}
                   </button>
                 ))}
@@ -784,9 +729,9 @@ export default function SettingsPage() {
             <Panel>
               <div
                 className='px-6 py-5'
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                style={{ borderBottom: '1px solid var(--app-border)' }}
               >
-                <p className='text-sm font-bold text-white'>
+                <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>
                   {TABS.find((t) => t.id === activeTab)?.label}
                 </p>
               </div>

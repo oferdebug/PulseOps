@@ -103,23 +103,8 @@ function Panel({
   style?: React.CSSProperties;
 }) {
   return (
-    <div
-      className={`overflow-hidden rounded-2xl ${className}`}
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        ...style,
-      }}
-    >
-      <div
-        className='h-px'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className={`glass-card ${className}`} style={style}>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
@@ -142,14 +127,14 @@ function Pill({
       style={
         active
           ? {
-              background: 'rgba(99,102,241,0.2)',
-              border: '1px solid rgba(99,102,241,0.4)',
-              color: '#a5b4fc',
+              background: 'var(--app-nav-active-bg)',
+              border: '1px solid var(--app-nav-active-border)',
+              color: 'var(--app-nav-active-text)',
             }
           : {
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.4)',
+              background: 'var(--app-surface)',
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-nav-idle-text)',
             }
       }
     >
@@ -198,31 +183,9 @@ export default function ActivityLogsPage() {
   return (
     <div
       className='relative min-h-screen space-y-6 p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      <div className='pointer-events-none fixed inset-0' style={{ zIndex: 0 }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            right: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
 
       <div className='relative' style={{ zIndex: 1 }}>
         {/* Header */}
@@ -232,24 +195,16 @@ export default function ActivityLogsPage() {
         >
           <p
             className='mb-1 text-xs font-bold uppercase tracking-widest'
-            style={{ color: 'rgba(255,255,255,0.25)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             Audit
           </p>
-          <h1
-            className='text-4xl font-black tracking-tight'
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
+          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
             Activity Logs
           </h1>
           <p
             className='mt-1 text-sm'
-            style={{ color: 'rgba(255,255,255,0.3)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             {loading
               ? 'Loading…'
@@ -271,15 +226,15 @@ export default function ActivityLogsPage() {
                 <Search
                   size={13}
                   className='absolute left-3 top-1/2 -translate-y-1/2'
-                  style={{ color: 'rgba(255,255,255,0.25)' }}
+                  style={{ color: 'var(--app-text-muted)' }}
                 />
                 <input
                   placeholder='Search description or user…'
                   className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none'
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.8)',
+                    background: 'var(--app-surface)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-primary)',
                   }}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -291,22 +246,22 @@ export default function ActivityLogsPage() {
                   type='date'
                   className='h-9 rounded-xl px-3 text-xs outline-none'
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.6)',
+                    background: 'var(--app-surface)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-secondary)',
                     colorScheme: 'dark',
                   }}
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
                 />
-                <span style={{ color: 'rgba(255,255,255,0.2)' }}>→</span>
+                <span style={{ color: 'var(--app-text-faint)' }}>→</span>
                 <input
                   type='date'
                   className='h-9 rounded-xl px-3 text-xs outline-none'
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.6)',
+                    background: 'var(--app-surface)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-secondary)',
                     colorScheme: 'dark',
                   }}
                   value={dateTo}
@@ -319,8 +274,8 @@ export default function ActivityLogsPage() {
                       setDateFrom('');
                       setDateTo('');
                     }}
-                    className='rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-white/10'
-                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                    className='rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-nav-idle-text)' }}
                   >
                     Clear
                   </button>
@@ -330,8 +285,8 @@ export default function ActivityLogsPage() {
                 type='button'
                 onClick={fetchLogs}
                 disabled={loading}
-                className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10'
-                style={{ color: 'rgba(255,255,255,0.3)' }}
+                className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-(--app-surface-raised)'
+                style={{ color: 'var(--app-text-muted)' }}
               >
                 <RefreshCw
                   size={13}
@@ -363,10 +318,10 @@ export default function ActivityLogsPage() {
         >
           <div
             className='px-5 py-4'
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold text-white'>Events</p>
-            <p className='text-xs' style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Events</p>
+            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Showing last 200 events
             </p>
           </div>
@@ -375,9 +330,9 @@ export default function ActivityLogsPage() {
             <div
               className='mx-5 my-3 rounded-xl px-4 py-3 text-sm'
               style={{
-                background: 'rgba(244,63,94,0.1)',
-                border: '1px solid rgba(244,63,94,0.2)',
-                color: '#fca5a5',
+                background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                color: 'var(--destructive)',
               }}
             >
               Failed to load: {error}
@@ -387,7 +342,7 @@ export default function ActivityLogsPage() {
           {!loading && !error && filtered.length === 0 && (
             <div
               className='flex flex-col items-center gap-3 py-16'
-              style={{ color: 'rgba(255,255,255,0.2)' }}
+              style={{ color: 'var(--app-text-faint)' }}
             >
               <Activity size={36} />
               <p className='text-sm font-medium'>No events found</p>
@@ -401,11 +356,11 @@ export default function ActivityLogsPage() {
               return (
                 <div
                   key={log.id}
-                  className='flex items-start gap-4 px-5 py-4 transition-colors hover:bg-white/2'
+                  className='flex items-start gap-4 px-5 py-4 transition-colors hover:bg-(--app-surface-raised)'
                   style={{
                     borderBottom:
                       i < filtered.length - 1
-                        ? '1px solid rgba(255,255,255,0.04)'
+                        ? '1px solid var(--app-border)'
                         : 'none',
                   }}
                 >
@@ -424,22 +379,22 @@ export default function ActivityLogsPage() {
                   <div className='min-w-0 flex-1'>
                     <p
                       className='truncate text-sm font-medium'
-                      style={{ color: 'rgba(255,255,255,0.8)' }}
+                      style={{ color: 'var(--app-text-primary)' }}
                     >
                       {log.description}
                     </p>
                     <div className='mt-1.5 flex flex-wrap items-center gap-2'>
                       <span
                         className='rounded-lg px-2 py-0.5 text-[10px] font-bold capitalize'
-                        style={{ background: `${color}18`, color }}
+                        style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
                       >
                         {ACTION_LABELS[log.action]}
                       </span>
                       <span
                         className='rounded-lg px-2 py-0.5 text-[10px] font-bold capitalize'
                         style={{
-                          background: 'rgba(255,255,255,0.06)',
-                          color: 'rgba(255,255,255,0.4)',
+                          background: 'var(--app-surface)',
+                          color: 'var(--app-nav-idle-text)',
                         }}
                       >
                         {ENTITY_LABELS[log.entity]}
@@ -447,7 +402,7 @@ export default function ActivityLogsPage() {
                       {log.user_email && (
                         <span
                           className='truncate text-[11px]'
-                          style={{ color: 'rgba(255,255,255,0.25)' }}
+                          style={{ color: 'var(--app-text-muted)' }}
                         >
                           {log.user_email}
                         </span>
@@ -459,13 +414,13 @@ export default function ActivityLogsPage() {
                   <div className='shrink-0 text-right'>
                     <p
                       className='text-xs font-semibold'
-                      style={{ color: 'rgba(255,255,255,0.4)' }}
+                      style={{ color: 'var(--app-text-muted)' }}
                     >
                       {timeAgo(log.created_at)}
                     </p>
                     <p
                       className='text-[10px]'
-                      style={{ color: 'rgba(255,255,255,0.2)' }}
+                      style={{ color: 'var(--app-text-faint)' }}
                     >
                       {formatDate(log.created_at)}
                     </p>

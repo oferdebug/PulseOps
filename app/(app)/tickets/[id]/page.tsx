@@ -15,7 +15,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
+
+interface AgentOption {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
 
 type TicketStatus = 'open' | 'in_progress' | 'pending' | 'closed';
 type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
@@ -44,17 +51,17 @@ const STATUS_ICONS: Record<TicketStatus, React.ElementType> = {
   pending: AlertTriangle,
   closed: CheckCircle2,
 };
-const STATUS_COLOR: Record<TicketStatus, string> = {
-  open: '#60a5fa',
-  in_progress: '#fbbf24',
-  pending: '#fb923c',
-  closed: '#4ade80',
+const STATUS_BADGE: Record<TicketStatus, string> = {
+  open: 'badge-open',
+  in_progress: 'badge-progress',
+  pending: 'badge-pending',
+  closed: 'badge-closed',
 };
-const PRIORITY_COLOR: Record<TicketPriority, string> = {
-  low: '#6b7280',
-  medium: '#fb923c',
-  high: '#f43f5e',
-  critical: '#f43f5e',
+const _PRIORITY_DOT: Record<TicketPriority, string> = {
+  low: 'dot-low',
+  medium: 'dot-medium',
+  high: 'dot-high',
+  critical: 'dot-critical',
 };
 const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   open: ['in_progress', 'pending', 'closed'],
@@ -75,22 +82,8 @@ function formatDate(iso: string) {
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className='overflow-hidden rounded-2xl'
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <div
-        className='h-px'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className='glass-card'>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
@@ -103,12 +96,18 @@ export default function TicketDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useCurrentUser();
   const { log } = useActivityLogger();
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [profileAgentsLoading, setProfileAgentsLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
+  const [assignmentSuccess, setAssignmentSuccess] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -123,6 +122,31 @@ export default function TicketDetailPage({
         setLoading(false);
       });
   }, [id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setProfileAgentsLoading(false);
+      return;
+    }
+    const supabase = createClient();
+    Promise.all([
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => data?.role === 'admin'),
+      supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name')
+        .then(({ data }) => data ?? []),
+    ]).then(([admin, agentList]) => {
+      setIsAdmin(!!admin);
+      setAgents(agentList as AgentOption[]);
+      setProfileAgentsLoading(false);
+    });
+  }, [user?.id]);
 
   async function handleStatusChange(newStatus: TicketStatus) {
     if (!ticket) return;
@@ -148,6 +172,31 @@ export default function TicketDetailPage({
     setUpdating(false);
   }
 
+  async function handleAssignmentChange(newAssignedTo: string | null) {
+    if (!ticket) return;
+    setAssigning(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: err } = await supabase
+      .from('tickets')
+      .update({ assigned_to: newAssignedTo })
+      .eq('id', id);
+    if (err) {
+      setError(err.message);
+      setAssigning(false);
+      return;
+    }
+    const { data } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (data) setTicket(data);
+    setAssignmentSuccess(true);
+    setTimeout(() => setAssignmentSuccess(false), 3000);
+    setAssigning(false);
+  }
+
   async function handleDelete() {
     if (!window.confirm('Delete this ticket? This cannot be undone.')) return;
     setDeleting(true);
@@ -171,25 +220,27 @@ export default function TicketDetailPage({
     return (
       <div
         className='flex min-h-screen items-center justify-center'
-        style={{ background: '#06060f' }}
+        style={{ background: 'var(--app-bg)' }}
       >
         <Loader2
           size={28}
           className='animate-spin'
-          style={{ color: '#6366f1' }}
+          style={{ color: 'var(--app-accent)' }}
         />
       </div>
     );
 
   if (error || !ticket)
     return (
-      <div className='min-h-screen p-8' style={{ background: '#06060f' }}>
+      <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
         <div
           className='rounded-xl px-4 py-3 text-sm'
           style={{
-            background: 'rgba(244,63,94,0.1)',
-            border: '1px solid rgba(244,63,94,0.2)',
-            color: '#fca5a5',
+            background:
+              'color-mix(in srgb, var(--destructive) 12%, transparent)',
+            border:
+              '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+            color: 'var(--destructive)',
           }}
         >
           {error ?? 'Ticket not found.'}
@@ -199,35 +250,17 @@ export default function TicketDetailPage({
 
   const StatusIcon = STATUS_ICONS[ticket.status];
   const nextStatuses = STATUS_TRANSITIONS[ticket.status];
+  const statusBadgeClass = STATUS_BADGE[ticket.status];
 
   return (
     <div
       className='relative min-h-screen p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      <div className='pointer-events-none fixed inset-0' style={{ zIndex: 0 }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      <div
+        className='app-mesh pointer-events-none fixed inset-0'
+        style={{ zIndex: 0 }}
+      />
 
       <div
         className='relative mx-auto max-w-2xl space-y-6'
@@ -235,10 +268,10 @@ export default function TicketDetailPage({
       >
         <Link
           href='/tickets'
-          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
+          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
           style={{
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.4)',
+            border: '1px solid var(--app-border)',
+            color: 'var(--app-nav-idle-text)',
           }}
         >
           <ArrowLeft size={13} /> Back to Tickets
@@ -250,11 +283,14 @@ export default function TicketDetailPage({
             <div>
               <p
                 className='mb-1 font-mono text-xs font-bold'
-                style={{ color: 'rgba(255,255,255,0.2)' }}
+                style={{ color: 'var(--app-text-faint)' }}
               >
                 {ticket.id.slice(0, 8).toUpperCase()}
               </p>
-              <h1 className='text-2xl font-black tracking-tight text-white'>
+              <h1
+                className='text-2xl font-black tracking-tight'
+                style={{ color: 'var(--app-text-primary)' }}
+              >
                 {ticket.title}
               </h1>
             </div>
@@ -262,34 +298,22 @@ export default function TicketDetailPage({
             {/* Status + Priority row */}
             <div className='flex flex-wrap items-center gap-3'>
               <div
-                className='flex items-center gap-2 rounded-xl px-3 py-1.5'
-                style={{
-                  background: `${STATUS_COLOR[ticket.status]}15`,
-                  border: `1px solid ${STATUS_COLOR[ticket.status]}30`,
-                }}
+                className={`flex items-center gap-2 rounded-xl px-3 py-1.5 ${statusBadgeClass}`}
               >
-                <StatusIcon
-                  size={13}
-                  style={{ color: STATUS_COLOR[ticket.status] }}
-                />
-                <span
-                  className='text-xs font-bold'
-                  style={{ color: STATUS_COLOR[ticket.status] }}
-                >
+                <StatusIcon size={13} />
+                <span className='text-xs font-bold'>
                   {STATUS_LABELS[ticket.status]}
                 </span>
               </div>
               <div
                 className='rounded-xl px-3 py-1.5'
                 style={{
-                  background: `${PRIORITY_COLOR[ticket.priority]}15`,
-                  border: `1px solid ${PRIORITY_COLOR[ticket.priority]}30`,
+                  background: `color-mix(in srgb, var(--app-priority-${ticket.priority}) 15%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--app-priority-${ticket.priority}) 30%, transparent)`,
+                  color: `var(--app-priority-${ticket.priority})`,
                 }}
               >
-                <span
-                  className='text-xs font-bold capitalize'
-                  style={{ color: PRIORITY_COLOR[ticket.priority] }}
-                >
+                <span className='text-xs font-bold capitalize'>
                   {ticket.priority}
                 </span>
               </div>
@@ -298,7 +322,7 @@ export default function TicketDetailPage({
             {/* Meta */}
             <div
               className='flex flex-wrap gap-4 text-xs'
-              style={{ color: 'rgba(255,255,255,0.25)' }}
+              style={{ color: 'var(--app-text-muted)' }}
             >
               <span className='flex items-center gap-1.5'>
                 <Clock size={12} /> Created {formatDate(ticket.created_at)}
@@ -313,24 +337,99 @@ export default function TicketDetailPage({
               )}
             </div>
 
+            {/* Assigned To */}
+            <div
+              style={{
+                borderTop: '1px solid var(--app-border)',
+                paddingTop: '16px',
+              }}
+            >
+              <p
+                className='mb-2 text-[11px] font-bold uppercase tracking-widest'
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                Assigned To
+              </p>
+              {profileAgentsLoading ? (
+                <span
+                  className='text-sm'
+                  style={{ color: 'var(--app-text-faint)' }}
+                >
+                  …
+                </span>
+              ) : isAdmin ? (
+                <div className='flex flex-wrap items-center gap-2'>
+                  <select
+                    value={ticket.assigned_to ?? ''}
+                    onChange={(e) =>
+                      handleAssignmentChange(e.target.value || null)
+                    }
+                    disabled={assigning}
+                    className='rounded-xl px-3 py-2 text-sm outline-none transition-[border-color] disabled:opacity-60'
+                    style={{
+                      background: 'var(--app-surface)',
+                      border: '1px solid var(--app-border)',
+                      color: 'var(--app-text-primary)',
+                      minWidth: '200px',
+                    }}
+                  >
+                    <option value=''>Unassigned</option>
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.full_name?.trim() || a.email || a.id.slice(0, 8)}
+                      </option>
+                    ))}
+                  </select>
+                  {assigning && (
+                    <Loader2
+                      size={16}
+                      className='animate-spin'
+                      style={{ color: 'var(--app-accent)' }}
+                    />
+                  )}
+                  {assignmentSuccess && (
+                    <span
+                      className='text-xs font-semibold'
+                      style={{ color: 'var(--app-health-healthy)' }}
+                    >
+                      Saved
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span
+                  className='text-sm'
+                  style={{ color: 'var(--app-text-secondary)' }}
+                >
+                  {ticket.assigned_to
+                    ? agents
+                        .find((a) => a.id === ticket.assigned_to)
+                        ?.full_name?.trim() ||
+                      agents.find((a) => a.id === ticket.assigned_to)?.email ||
+                      'Unassigned'
+                    : 'Unassigned'}
+                </span>
+              )}
+            </div>
+
             {/* Description */}
             <div
               style={{
-                borderTop: '1px solid rgba(255,255,255,0.06)',
+                borderTop: '1px solid var(--app-border)',
                 paddingTop: '20px',
               }}
             >
               {ticket.description ? (
                 <p
                   className='whitespace-pre-wrap text-sm leading-relaxed'
-                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  style={{ color: 'var(--app-text-secondary)' }}
                 >
                   {ticket.description}
                 </p>
               ) : (
                 <p
                   className='text-sm italic'
-                  style={{ color: 'rgba(255,255,255,0.2)' }}
+                  style={{ color: 'var(--app-text-faint)' }}
                 >
                   No description provided.
                 </p>
@@ -340,13 +439,13 @@ export default function TicketDetailPage({
             {/* Status transitions */}
             <div
               style={{
-                borderTop: '1px solid rgba(255,255,255,0.06)',
+                borderTop: '1px solid var(--app-border)',
                 paddingTop: '20px',
               }}
             >
               <p
                 className='mb-3 text-[11px] font-bold uppercase tracking-widest'
-                style={{ color: 'rgba(255,255,255,0.25)' }}
+                style={{ color: 'var(--app-text-muted)' }}
               >
                 Change Status
               </p>
@@ -357,18 +456,18 @@ export default function TicketDetailPage({
                     type='button'
                     onClick={() => handleStatusChange(s)}
                     disabled={updating || deleting}
-                    className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
+                    className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
                     style={
                       s === 'closed'
                         ? {
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            color: 'rgba(255,255,255,0.6)',
+                            background: 'var(--app-surface)',
+                            border: '1px solid var(--app-border)',
+                            color: 'var(--app-text-secondary)',
                           }
                         : {
-                            background:
-                              'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                            boxShadow: '0 4px 15px rgba(99,102,241,0.3)',
+                            background: 'var(--app-accent)',
+                            color: 'var(--primary-foreground)',
+                            boxShadow: '0 4px 15px var(--app-accent-dim)',
                           }
                     }
                   >
@@ -383,7 +482,7 @@ export default function TicketDetailPage({
             <div
               className='flex justify-end'
               style={{
-                borderTop: '1px solid rgba(255,255,255,0.06)',
+                borderTop: '1px solid var(--app-border)',
                 paddingTop: '16px',
               }}
             >
@@ -391,8 +490,8 @@ export default function TicketDetailPage({
                 type='button'
                 onClick={handleDelete}
                 disabled={deleting}
-                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all hover:bg-red-500/15'
-                style={{ color: '#f87171' }}
+                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
+                style={{ color: 'var(--destructive)' }}
               >
                 {deleting ? (
                   <Loader2 size={12} className='animate-spin' />

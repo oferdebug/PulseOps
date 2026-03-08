@@ -3,12 +3,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Plus, RefreshCw, Search, Ticket } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { Check, Plus, RefreshCw, Search, Ticket } from 'lucide-react';
 
 type TicketStatus = 'open' | 'in_progress' | 'pending' | 'closed';
 type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
+
+interface AgentOption {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
 
 interface TicketRow {
   id: string;
@@ -32,25 +38,18 @@ const STATUS_LABELS: Record<TicketStatus, string> = {
   closed: 'Closed',
 };
 
-const STATUS_STYLE: Record<TicketStatus, { bg: string; color: string }> = {
-  open: { bg: 'rgba(96,165,250,0.15)', color: '#93c5fd' },
-  in_progress: { bg: 'rgba(251,191,36,0.15)', color: '#fcd34d' },
-  pending: { bg: 'rgba(156,163,175,0.15)', color: '#9ca3af' },
-  closed: { bg: 'rgba(74,222,128,0.15)', color: '#86efac' },
+const STATUS_BADGE: Record<TicketStatus, string> = {
+  open: 'badge-open',
+  in_progress: 'badge-progress',
+  pending: 'badge-pending',
+  closed: 'badge-closed',
 };
 
-const PRIORITY_COLOR: Record<TicketPriority, string> = {
-  low: '#6b7280',
-  medium: '#fb923c',
-  high: '#f43f5e',
-  critical: '#f43f5e',
-};
-
-const PRIORITY_GLOW: Record<TicketPriority, string> = {
-  low: 'none',
-  medium: '0 0 6px #fb923c',
-  high: '0 0 6px #f43f5e',
-  critical: '0 0 8px #f43f5e',
+const PRIORITY_DOT: Record<TicketPriority, string> = {
+  low: 'dot-low',
+  medium: 'dot-medium',
+  high: 'dot-high',
+  critical: 'dot-critical',
 };
 
 function formatDate(iso: string) {
@@ -75,14 +74,14 @@ function Pill({
       style={
         active
           ? {
-              background: 'rgba(99,102,241,0.2)',
-              border: '1px solid rgba(99,102,241,0.4)',
-              color: '#a5b4fc',
+              background: 'var(--app-nav-active-bg)',
+              border: '1px solid var(--app-nav-active-border)',
+              color: 'var(--app-nav-active-text)',
             }
           : {
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.4)',
+              background: 'var(--app-surface)',
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-nav-idle-text)',
             }
       }
     >
@@ -102,23 +101,8 @@ function Panel({
   style?: React.CSSProperties;
 }) {
   return (
-    <div
-      className={`overflow-hidden rounded-2xl ${className}`}
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        ...style,
-      }}
-    >
-      <div
-        className='h-[1px]'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className={`glass-card ${className}`} style={style}>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
@@ -126,12 +110,17 @@ function Panel({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function TicketsPage() {
+  const { user } = useCurrentUser();
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [priority, setPriority] = useState('all');
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [userRole, setUserRole] = useState<'admin' | 'agent' | null>(null);
+  const [savedTicketId, setSavedTicketId] = useState<string | null>(null);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -150,6 +139,56 @@ export default function TicketsPage() {
     fetchTickets();
   }, [fetchTickets]);
 
+  useEffect(() => {
+    console.log('user?.id:', user?.id);
+    if (!user?.id) return;
+    const supabase = createClient();
+    Promise.all([
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => data?.role ?? null),
+      supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name')
+        .then(({ data }) => data ?? []),
+    ]).then(([role, agentList]) => {
+      setUserRole(role === 'admin' || role === 'agent' ? role : null);
+      setAgents((agentList ?? []) as AgentOption[]);
+    });
+  }, [user?.id]);
+
+  async function handleAssignChange(
+    ticketId: string,
+    newAssignedTo: string | null,
+  ) {
+    setAssigningId(ticketId);
+    const supabase = createClient();
+    const { error: err } = await supabase
+      .from('tickets')
+      .update({ assigned_to: newAssignedTo })
+      .eq('id', ticketId);
+    if (!err) {
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === ticketId ? { ...t, assigned_to: newAssignedTo } : t,
+        ),
+      );
+      setSavedTicketId(ticketId);
+      setTimeout(() => setSavedTicketId(null), 2000);
+    }
+    setAssigningId(null);
+  }
+
+  function assigneeDisplay(ticket: TicketRow): string {
+    if (!ticket.assigned_to) return 'Unassigned';
+    const a = agents.find((x) => x.id === ticket.assigned_to);
+    return a?.full_name?.trim() || a?.email || 'Unassigned';
+  }
+
   const filtered = tickets.filter((t) => {
     return (
       t.title.toLowerCase().includes(search.toLowerCase()) &&
@@ -161,47 +200,12 @@ export default function TicketsPage() {
   return (
     <div
       className='relative min-h-screen space-y-6 p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      {/* Ambient glows */}
       <div
-        className='pointer-events-none fixed inset-0 overflow-hidden'
+        className='app-mesh pointer-events-none fixed inset-0 overflow-hidden'
         style={{ zIndex: 0 }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '0',
-            right: '0',
-            width: '30vw',
-            height: '30vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      />
 
       <div className='relative' style={{ zIndex: 1 }}>
         {/* ── Header ── */}
@@ -212,24 +216,16 @@ export default function TicketsPage() {
           <div>
             <p
               className='mb-1 text-xs font-bold uppercase tracking-widest'
-              style={{ color: 'rgba(255,255,255,0.25)' }}
+              style={{ color: 'var(--app-text-muted)' }}
             >
               Helpdesk
             </p>
-            <h1
-              className='text-4xl font-black tracking-tight'
-              style={{
-                background:
-                  'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
+            <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
               Tickets
             </h1>
             <p
               className='mt-1 text-sm'
-              style={{ color: 'rgba(255,255,255,0.3)' }}
+              style={{ color: 'var(--app-text-muted)' }}
             >
               {loading
                 ? 'Loading…'
@@ -238,11 +234,11 @@ export default function TicketsPage() {
           </div>
           <Link
             href='/tickets/new'
-            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
+            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
             style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow:
-                '0 4px 20px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+              background: 'var(--app-accent)',
+              color: 'var(--primary-foreground)',
+              boxShadow: '0 4px 20px var(--app-accent-dim)',
             }}
           >
             <Plus size={14} /> New Ticket
@@ -263,15 +259,15 @@ export default function TicketsPage() {
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'
-                style={{ color: 'rgba(255,255,255,0.25)' }}
+                style={{ color: 'var(--app-text-muted)' }}
               />
               <input
                 placeholder='Search tickets…'
                 className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none transition-all'
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.8)',
+                  background: 'var(--app-surface)',
+                  border: '1px solid var(--app-border)',
+                  color: 'var(--app-text-primary)',
                 }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -306,8 +302,8 @@ export default function TicketsPage() {
               type='button'
               onClick={fetchTickets}
               disabled={loading}
-              className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10'
-              style={{ color: 'rgba(255,255,255,0.3)' }}
+              className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-(--app-surface-raised)'
+              style={{ color: 'var(--app-text-muted)' }}
             >
               <RefreshCw size={13} className={cn(loading && 'animate-spin')} />
             </button>
@@ -324,10 +320,15 @@ export default function TicketsPage() {
         >
           <div
             className='px-5 py-4'
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold text-white'>All Tickets</p>
-            <p className='text-xs' style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p
+              className='text-sm font-bold'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              All Tickets
+            </p>
+            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Click a ticket to view details
             </p>
           </div>
@@ -336,9 +337,11 @@ export default function TicketsPage() {
             <div
               className='mx-5 my-3 rounded-xl px-4 py-3 text-sm'
               style={{
-                background: 'rgba(244,63,94,0.1)',
-                border: '1px solid rgba(244,63,94,0.2)',
-                color: '#fca5a5',
+                background:
+                  'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                border:
+                  '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                color: 'var(--destructive)',
               }}
             >
               Failed to load: {error}
@@ -348,7 +351,7 @@ export default function TicketsPage() {
           {!loading && !error && filtered.length === 0 && (
             <div
               className='flex flex-col items-center gap-3 py-16'
-              style={{ color: 'rgba(255,255,255,0.2)' }}
+              style={{ color: 'var(--app-text-faint)' }}
             >
               <Ticket size={36} />
               <p className='text-sm font-medium'>No tickets found</p>
@@ -360,10 +363,10 @@ export default function TicketsPage() {
                     setStatus('all');
                     setPriority('all');
                   }}
-                  className='rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-white/10'
+                  className='rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-(--app-surface-raised)'
                   style={{
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.4)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-nav-idle-text)',
                   }}
                 >
                   Clear filters
@@ -373,74 +376,104 @@ export default function TicketsPage() {
           )}
 
           {!error &&
-            filtered.map((ticket, i) => {
-              const ss = STATUS_STYLE[ticket.status];
-              return (
-                <Link
-                  key={ticket.id}
-                  href={`/tickets/${ticket.id}`}
-                  className='flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-white/[0.03]'
+            filtered.map((ticket, i) => (
+              <Link
+                key={ticket.id}
+                href={`/tickets/${ticket.id}`}
+                className='flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-(--app-surface-raised)'
+                style={{
+                  borderBottom:
+                    i < filtered.length - 1
+                      ? '1px solid var(--app-border)'
+                      : 'none',
+                }}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('[data-assign-cell]')) {
+                    e.preventDefault();
+                  }
+                }}
+              >
+                <span
+                  className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[ticket.priority]}`}
+                />
+                <span
+                  className='shrink-0 font-mono text-[11px] font-bold'
+                  style={{ color: 'var(--app-text-faint)' }}
+                >
+                  {ticket.id.slice(0, 8).toUpperCase()}
+                </span>
+                <span
+                  className='flex-1 truncate text-sm font-medium'
+                  style={{ color: 'var(--app-text-primary)' }}
+                >
+                  {ticket.title}
+                </span>
+                <span
+                  className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold ${STATUS_BADGE[ticket.status]}`}
+                >
+                  {STATUS_LABELS[ticket.status]}
+                </span>
+                <span
+                  className='shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold capitalize'
                   style={{
-                    borderBottom:
-                      i < filtered.length - 1
-                        ? '1px solid rgba(255,255,255,0.04)'
-                        : 'none',
+                    background: `color-mix(in srgb, var(--app-priority-${ticket.priority}) 15%, transparent)`,
+                    color: `var(--app-priority-${ticket.priority})`,
                   }}
                 >
-                  {/* Priority dot */}
-                  <span
-                    className='h-2 w-2 shrink-0 rounded-full'
-                    style={{
-                      background: PRIORITY_COLOR[ticket.priority],
-                      boxShadow: PRIORITY_GLOW[ticket.priority],
-                    }}
-                  />
-
-                  {/* ID */}
-                  <span
-                    className='shrink-0 font-mono text-[11px] font-bold'
-                    style={{ color: 'rgba(255,255,255,0.2)' }}
-                  >
-                    {ticket.id.slice(0, 8).toUpperCase()}
-                  </span>
-
-                  {/* Title */}
-                  <span
-                    className='flex-1 truncate text-sm font-medium'
-                    style={{ color: 'rgba(255,255,255,0.8)' }}
-                  >
-                    {ticket.title}
-                  </span>
-
-                  {/* Status */}
-                  <span
-                    className='shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold'
-                    style={{ background: ss.bg, color: ss.color }}
-                  >
-                    {STATUS_LABELS[ticket.status]}
-                  </span>
-
-                  {/* Priority */}
-                  <span
-                    className='shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold capitalize'
-                    style={{
-                      background: `${PRIORITY_COLOR[ticket.priority]}20`,
-                      color: PRIORITY_COLOR[ticket.priority],
-                    }}
-                  >
-                    {ticket.priority}
-                  </span>
-
-                  {/* Date */}
-                  <span
-                    className='hidden shrink-0 text-xs sm:block'
-                    style={{ color: 'rgba(255,255,255,0.2)' }}
-                  >
-                    {formatDate(ticket.created_at)}
-                  </span>
-                </Link>
-              );
-            })}
+                  {ticket.priority}
+                </span>
+                <span
+                  className='flex shrink-0 items-center gap-1.5'
+                  data-assign-cell
+                >
+                  {userRole === 'admin' && agents.length > 0 ? (
+                    <>
+                      <select
+                        value={ticket.assigned_to ?? ''}
+                        onChange={(e) => {
+                          handleAssignChange(ticket.id, e.target.value || null);
+                        }}
+                        disabled={assigningId === ticket.id}
+                        className='min-w-[100px] max-w-[140px] rounded-lg px-2 py-1 text-[11px] outline-none disabled:opacity-60'
+                        style={{
+                          background: 'var(--app-surface)',
+                          border: '1px solid var(--app-border)',
+                          color: 'var(--app-text-primary)',
+                        }}
+                      >
+                        <option value=''>Unassigned</option>
+                        {agents.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.full_name?.trim() || a.email || a.id.slice(0, 8)}
+                          </option>
+                        ))}
+                      </select>
+                      {savedTicketId === ticket.id && (
+                        <span
+                          className='shrink-0 text-xs font-bold'
+                          style={{ color: 'var(--app-health-healthy)' }}
+                        >
+                          <Check size={12} />
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span
+                      className='text-xs'
+                      style={{ color: 'var(--app-text-muted)' }}
+                    >
+                      {assigneeDisplay(ticket)}
+                    </span>
+                  )}
+                </span>
+                <span
+                  className='hidden shrink-0 text-xs sm:block'
+                  style={{ color: 'var(--app-text-faint)' }}
+                >
+                  {formatDate(ticket.created_at)}
+                </span>
+              </Link>
+            ))}
         </Panel>
       </div>
     </div>

@@ -17,31 +17,17 @@ type UserRole = 'admin' | 'technician' | 'user';
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className='overflow-hidden rounded-2xl'
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <div
-        className='h-px'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className='glass-card'>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: 'rgba(255,255,255,0.85)',
+  background: 'var(--app-surface)',
+  border: '1px solid var(--app-border)',
+  color: 'var(--app-text-primary)',
   borderRadius: '12px',
   outline: 'none',
   height: '40px',
@@ -50,7 +36,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: '14px',
 };
 const labelStyle: React.CSSProperties = {
-  color: 'rgba(255,255,255,0.45)',
+  color: 'var(--app-text-muted)',
   fontSize: '11px',
   fontWeight: 700,
   marginBottom: '6px',
@@ -97,31 +83,9 @@ export default function NewUserPage() {
   return (
     <div
       className='relative min-h-screen p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      <div className='pointer-events-none fixed inset-0' style={{ zIndex: 0 }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
 
       <div
         className='relative mx-auto max-w-2xl space-y-6'
@@ -129,10 +93,10 @@ export default function NewUserPage() {
       >
         <Link
           href='/users'
-          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
+          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
           style={{
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.4)',
+            border: '1px solid var(--app-border)',
+            color: 'var(--app-nav-idle-text)',
           }}
         >
           <ArrowLeft size={13} /> Back to Users
@@ -144,24 +108,16 @@ export default function NewUserPage() {
         >
           <p
             className='mb-1 text-xs font-bold uppercase tracking-widest'
-            style={{ color: 'rgba(255,255,255,0.25)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             Team
           </p>
-          <h1
-            className='text-4xl font-black tracking-tight'
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
+          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
             Add User
           </h1>
           <p
             className='mt-1 text-sm'
-            style={{ color: 'rgba(255,255,255,0.3)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             Add a new user to PulseOps.
           </p>
@@ -170,10 +126,10 @@ export default function NewUserPage() {
         <Panel>
           <div
             className='px-6 py-5'
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold text-white'>User Details</p>
-            <p className='text-xs' style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>User Details</p>
+            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Fields marked * are required
             </p>
           </div>
@@ -222,11 +178,11 @@ export default function NewUserPage() {
                   <SelectTrigger
                     id='role-select'
                     className='h-10 rounded-xl text-sm'
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.85)',
-                    }}
+style={{
+                    background: 'var(--app-surface)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-primary)',
+                  }}
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -271,9 +227,9 @@ export default function NewUserPage() {
               <div
                 className='rounded-xl px-4 py-3 text-sm'
                 style={{
-                  background: 'rgba(244,63,94,0.1)',
-                  border: '1px solid rgba(244,63,94,0.2)',
-                  color: '#fca5a5',
+                  background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                  color: 'var(--destructive)',
                 }}
               >
                 {error}
@@ -284,10 +240,11 @@ export default function NewUserPage() {
               <button
                 type='submit'
                 disabled={submitting || !fullName.trim() || !email.trim()}
-                className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
+                className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+                  background: 'var(--app-accent)',
+                  color: 'var(--primary-foreground)',
+                  boxShadow: '0 4px 20px var(--app-accent-dim)',
                 }}
               >
                 {submitting && <Loader2 size={14} className='animate-spin' />}
@@ -295,10 +252,10 @@ export default function NewUserPage() {
               </button>
               <Link
                 href='/users'
-                className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-white/5'
+                className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-(--app-surface-raised)'
                 style={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.4)',
+                  border: '1px solid var(--app-border)',
+                  color: 'var(--app-nav-idle-text)',
                 }}
               >
                 Cancel

@@ -50,39 +50,25 @@ const ROLE_ICON: Record<UserRole, React.ElementType> = {
   technician: Wrench,
   user: User,
 };
-const ROLE_COLOR: Record<UserRole, string> = {
-  admin: '#f43f5e',
-  technician: '#fb923c',
-  user: '#818cf8',
+const ROLE_VAR: Record<UserRole, string> = {
+  admin: 'var(--app-stat-open)',
+  technician: 'var(--app-stat-resolution)',
+  user: 'var(--app-stat-users)',
 };
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className='overflow-hidden rounded-2xl'
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <div
-        className='h-px'
-        style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)',
-        }}
-      />
+    <div className='glass-card'>
+      <div className='card-accent-line' />
       {children}
     </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: 'rgba(255,255,255,0.85)',
+  background: 'var(--app-surface)',
+  border: '1px solid var(--app-border)',
+  color: 'var(--app-text-primary)',
   borderRadius: '12px',
   outline: 'none',
   height: '40px',
@@ -91,7 +77,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: '14px',
 };
 const labelStyle: React.CSSProperties = {
-  color: 'rgba(255,255,255,0.45)',
+  color: 'var(--app-text-muted)',
   fontSize: '11px',
   fontWeight: 700,
   marginBottom: '6px',
@@ -187,32 +173,32 @@ export default function UserDetailPage({
   }
 
   const isOwnProfile = currentUser?.id === id;
-  const roleColor = profile ? ROLE_COLOR[profile.role] : '#818cf8';
+  const roleVar = profile ? ROLE_VAR[profile.role] : 'var(--app-stat-users)';
   const RoleIcon = profile ? ROLE_ICON[profile.role] : User;
 
   if (loading)
     return (
       <div
         className='flex min-h-screen items-center justify-center'
-        style={{ background: '#06060f' }}
+        style={{ background: 'var(--app-bg)' }}
       >
         <Loader2
           size={28}
           className='animate-spin'
-          style={{ color: '#6366f1' }}
+          style={{ color: 'var(--app-accent)' }}
         />
       </div>
     );
 
   if (error || !profile)
     return (
-      <div className='min-h-screen p-8' style={{ background: '#06060f' }}>
+      <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
         <div
           className='rounded-xl px-4 py-3 text-sm'
           style={{
-            background: 'rgba(244,63,94,0.1)',
-            border: '1px solid rgba(244,63,94,0.2)',
-            color: '#fca5a5',
+            background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+            color: 'var(--destructive)',
           }}
         >
           {error ?? 'User not found.'}
@@ -223,30 +209,9 @@ export default function UserDetailPage({
   return (
     <div
       className='relative min-h-screen p-8'
-      style={{ background: '#06060f' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      <div className='pointer-events-none fixed inset-0' style={{ zIndex: 0 }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '-10%',
-            width: '50vw',
-            height: '50vw',
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${roleColor}18 0%, transparent 70%)`,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
-          }}
-        />
-      </div>
+      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
 
       <div
         className='relative mx-auto max-w-2xl space-y-6'
@@ -256,10 +221,10 @@ export default function UserDetailPage({
         <div className='flex items-center justify-between'>
           <Link
             href='/users'
-            className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
+            className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
             style={{
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.4)',
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-nav-idle-text)',
             }}
           >
             <ArrowLeft size={13} /> Back
@@ -270,10 +235,10 @@ export default function UserDetailPage({
                 <button
                   type='button'
                   onClick={enterEdit}
-                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
+                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
                   style={{
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.5)',
+                    border: '1px solid var(--app-border)',
+                    color: 'var(--app-text-secondary)',
                   }}
                 >
                   <Pencil size={12} /> Edit
@@ -284,10 +249,10 @@ export default function UserDetailPage({
                   type='button'
                   onClick={handleDelete}
                   disabled={deleting}
-                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-red-500/10'
+                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
                   style={{
-                    border: '1px solid rgba(244,63,94,0.2)',
-                    color: '#f87171',
+                    border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                    color: 'var(--destructive)',
                   }}
                 >
                   {deleting ? (
@@ -306,10 +271,11 @@ export default function UserDetailPage({
                 type='button'
                 onClick={handleSave}
                 disabled={saving}
-                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
+                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  boxShadow: '0 4px 15px rgba(99,102,241,0.3)',
+                  background: 'var(--app-accent)',
+                  color: 'var(--primary-foreground)',
+                  boxShadow: '0 4px 15px var(--app-accent-dim)',
                 }}
               >
                 {saving ? (
@@ -323,10 +289,10 @@ export default function UserDetailPage({
                 type='button'
                 onClick={() => setEditing(false)}
                 disabled={saving}
-                className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
+                className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
                 style={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.4)',
+                  border: '1px solid var(--app-border)',
+                  color: 'var(--app-nav-idle-text)',
                 }}
               >
                 <X size={12} /> Cancel
@@ -342,10 +308,10 @@ export default function UserDetailPage({
               <div
                 className='flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black'
                 style={{
-                  background: `${roleColor}20`,
-                  border: `1px solid ${roleColor}40`,
-                  color: roleColor,
-                  boxShadow: `0 0 20px ${roleColor}20`,
+                  background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${roleVar} 40%, transparent)`,
+                  color: roleVar,
+                  boxShadow: `0 0 20px color-mix(in srgb, ${roleVar} 20%, transparent)`,
                 }}
               >
                 {profile.full_name?.[0]?.toUpperCase() ?? '?'}
@@ -359,13 +325,13 @@ export default function UserDetailPage({
                     disabled={saving}
                   />
                 ) : (
-                  <h1 className='truncate text-2xl font-black text-white'>
+                  <h1 className='truncate text-2xl font-black' style={{ color: 'var(--app-text-primary)' }}>
                     {profile.full_name || '—'}
                   </h1>
                 )}
                 <p
                   className='text-sm'
-                  style={{ color: 'rgba(255,255,255,0.35)' }}
+                  style={{ color: 'var(--app-text-muted)' }}
                 >
                   {profile.email}
                 </p>
@@ -383,9 +349,9 @@ export default function UserDetailPage({
                     <SelectTrigger
                       className='h-9 w-40 rounded-xl text-xs'
                       style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'rgba(255,255,255,0.8)',
+                        background: 'var(--app-surface)',
+                        border: '1px solid var(--app-border)',
+                        color: 'var(--app-text-primary)',
                       }}
                     >
                       <SelectValue />
@@ -403,9 +369,9 @@ export default function UserDetailPage({
                     <SelectTrigger
                       className='h-9 w-32 rounded-xl text-xs'
                       style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'rgba(255,255,255,0.8)',
+                        background: 'var(--app-surface)',
+                        border: '1px solid var(--app-border)',
+                        color: 'var(--app-text-primary)',
                       }}
                     >
                       <SelectValue />
@@ -420,38 +386,34 @@ export default function UserDetailPage({
                 <>
                   <span
                     className='flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold capitalize'
-                    style={{ background: `${roleColor}18`, color: roleColor }}
+                    style={{ background: `color-mix(in srgb, ${roleVar} 18%, transparent)`, color: roleVar }}
                   >
                     <RoleIcon size={11} /> {ROLE_LABELS[profile.role]}
                   </span>
                   <span
-                    className='flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold'
+                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${profile.is_active ? 'badge-closed' : ''}`}
                     style={
                       profile.is_active
-                        ? {
-                            background: 'rgba(74,222,128,0.12)',
-                            color: '#4ade80',
-                          }
+                        ? undefined
                         : {
-                            background: 'rgba(107,114,128,0.12)',
-                            color: '#6b7280',
+                            background: 'color-mix(in srgb, var(--app-priority-low) 12%, transparent)',
+                            color: 'var(--app-priority-low)',
                           }
                     }
                   >
                     <span
-                      className='h-1.5 w-1.5 rounded-full'
-                      style={{
-                        background: profile.is_active ? '#4ade80' : '#6b7280',
-                        boxShadow: profile.is_active
-                          ? '0 0 6px #4ade80'
-                          : 'none',
-                      }}
+                      className={`h-1.5 w-1.5 rounded-full ${profile.is_active ? 'dot-healthy' : ''}`}
+                      style={
+                        profile.is_active
+                          ? undefined
+                          : { background: 'var(--app-priority-low)' }
+                      }
                     />
                     {profile.is_active ? 'Active' : 'Inactive'}
                   </span>
                   <span
                     className='text-xs'
-                    style={{ color: 'rgba(255,255,255,0.25)' }}
+                    style={{ color: 'var(--app-text-muted)' }}
                   >
                     Joined {formatDate(profile.created_at)}
                   </span>
@@ -463,7 +425,7 @@ export default function UserDetailPage({
             <div
               className='grid gap-4 sm:grid-cols-2'
               style={{
-                borderTop: '1px solid rgba(255,255,255,0.06)',
+                borderTop: '1px solid var(--app-border)',
                 paddingTop: '20px',
               }}
             >
@@ -484,8 +446,8 @@ export default function UserDetailPage({
                     className='text-sm'
                     style={{
                       color: profile.department
-                        ? 'rgba(255,255,255,0.6)'
-                        : 'rgba(255,255,255,0.2)',
+                        ? 'var(--app-text-secondary)'
+                        : 'var(--app-text-faint)',
                     }}
                   >
                     {profile.department || '—'}
@@ -508,8 +470,8 @@ export default function UserDetailPage({
                     className='text-sm'
                     style={{
                       color: profile.phone
-                        ? 'rgba(255,255,255,0.6)'
-                        : 'rgba(255,255,255,0.2)',
+                        ? 'var(--app-text-secondary)'
+                        : 'var(--app-text-faint)',
                     }}
                   >
                     {profile.phone || '—'}
