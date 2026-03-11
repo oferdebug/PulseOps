@@ -2,9 +2,11 @@
 
 import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -77,7 +79,7 @@ export default function NewArticlePage() {
       const data = await res.json();
       setContent(data.content ?? '');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Generation failed');
+      toast.error(e instanceof Error ? e.message : 'Generation failed');
     } finally {
       setGenerating(false);
     }
@@ -104,34 +106,24 @@ export default function NewArticlePage() {
       .select('id')
       .single();
     if (err) {
-      setError(err.message);
+      toast.error(err.message);
       setSubmitting(false);
       return;
     }
+    toast.success('Article created');
     router.push(`/knowledge-base/${data.id}`);
   }
 
   return (
     <div
-      className='relative min-h-screen p-8'
+      className='min-h-screen p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
-
       <div
-        className='relative mx-auto max-w-3xl space-y-6'
-        style={{ zIndex: 1 }}
+        className='mx-auto max-w-3xl space-y-6'
+        
       >
-        <Link
-          href='/knowledge-base'
-          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-white/5'
-          style={{
-            border: '1px solid var(--app-border)',
-            color: 'var(--app-nav-idle-text)',
-          }}
-        >
-          <ArrowLeft size={13} /> Back to Knowledge Base
-        </Link>
+        <AppBreadcrumb current='New Article' />
 
         <div
           className='animate-fade-in-up opacity-0'
@@ -143,7 +135,7 @@ export default function NewArticlePage() {
           >
             Documentation
           </p>
-          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
             New Article
           </h1>
           <p
@@ -159,7 +151,12 @@ export default function NewArticlePage() {
             className='px-6 py-5'
             style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Article Details</p>
+            <p
+              className='text-sm font-bold'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              Article Details
+            </p>
             <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Fields marked * are required
             </p>
@@ -184,7 +181,7 @@ export default function NewArticlePage() {
                   type='button'
                   onClick={handleGenerate}
                   disabled={!title.trim() || generating || submitting}
-                  className='flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                  className='flex shrink-0 items-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
                   style={{
                     background: 'var(--app-accent-dim)',
                     border: '1px solid var(--app-accent-border)',
@@ -215,7 +212,7 @@ export default function NewArticlePage() {
                 >
                   <SelectTrigger
                     id='category-select'
-                    className='h-10 rounded-xl text-sm'
+                    className='h-10 rounded-md text-sm'
                     style={{
                       background: 'var(--app-surface)',
                       border: '1px solid var(--app-border)',
@@ -252,7 +249,7 @@ export default function NewArticlePage() {
                 >
                   <SelectTrigger
                     id='status-select'
-                    className='h-10 rounded-xl text-sm'
+                    className='h-10 rounded-md text-sm'
                     style={{
                       background: 'var(--app-surface)',
                       border: '1px solid var(--app-border)',
@@ -295,10 +292,12 @@ export default function NewArticlePage() {
 
             {error && (
               <div
-                className='rounded-xl px-4 py-3 text-sm'
+                className='rounded-md px-4 py-3 text-sm'
                 style={{
-                  background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                  background:
+                    'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
                   color: 'var(--destructive)',
                 }}
               >
@@ -310,11 +309,10 @@ export default function NewArticlePage() {
               <button
                 type='submit'
                 disabled={submitting || !title.trim() || !content.trim()}
-                className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
+                className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
                   background: 'var(--app-accent)',
                   color: 'var(--primary-foreground)',
-                  boxShadow: '0 4px 20px var(--app-accent-dim)',
                 }}
               >
                 {submitting && <Loader2 size={14} className='animate-spin' />}
@@ -322,7 +320,7 @@ export default function NewArticlePage() {
               </button>
               <Link
                 href='/knowledge-base'
-                className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-white/5'
+                className='flex items-center rounded-md px-4 py-2.5 text-sm font-medium transition-all hover:bg-white/5'
                 style={{
                   border: '1px solid var(--app-border)',
                   color: 'var(--app-nav-idle-text)',

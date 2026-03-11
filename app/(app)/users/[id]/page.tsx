@@ -13,6 +13,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 type UserRole = 'admin' | 'technician' | 'user';
 interface Profile {
@@ -150,10 +152,11 @@ export default function UserDetailPage({
       .eq('id', id)
       .select()
       .single();
-    if (err) setError(err.message);
+    if (err) toast.error(err.message);
     else {
       setProfile(data);
       setEditing(false);
+      toast.success('User updated');
     }
     setSaving(false);
   }
@@ -167,9 +170,12 @@ export default function UserDetailPage({
       .delete()
       .eq('id', id);
     if (err) {
-      setError(err.message);
+      toast.error(err.message);
       setDeleting(false);
-    } else router.push('/users');
+    } else {
+      toast.success('User deleted');
+      router.push('/users');
+    }
   }
 
   const isOwnProfile = currentUser?.id === id;
@@ -194,10 +200,12 @@ export default function UserDetailPage({
     return (
       <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
         <div
-          className='rounded-xl px-4 py-3 text-sm'
+          className='rounded-md px-4 py-3 text-sm'
           style={{
-            background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+            background:
+              'color-mix(in srgb, var(--destructive) 12%, transparent)',
+            border:
+              '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
             color: 'var(--destructive)',
           }}
         >
@@ -208,34 +216,24 @@ export default function UserDetailPage({
 
   return (
     <div
-      className='relative min-h-screen p-8'
+      className='min-h-screen p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
 
       <div
-        className='relative mx-auto max-w-2xl space-y-6'
-        style={{ zIndex: 1 }}
+        className='mx-auto max-w-2xl space-y-6'
+       
       >
         {/* Nav */}
         <div className='flex items-center justify-between'>
-          <Link
-            href='/users'
-            className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
-            style={{
-              border: '1px solid var(--app-border)',
-              color: 'var(--app-nav-idle-text)',
-            }}
-          >
-            <ArrowLeft size={13} /> Back
-          </Link>
+          <AppBreadcrumb current={profile.full_name || profile.email || 'User'} />
           {!editing && (
             <div className='flex gap-2'>
               {isOwnProfile && (
                 <button
                   type='button'
                   onClick={enterEdit}
-                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  className='flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
                   style={{
                     border: '1px solid var(--app-border)',
                     color: 'var(--app-text-secondary)',
@@ -249,9 +247,10 @@ export default function UserDetailPage({
                   type='button'
                   onClick={handleDelete}
                   disabled={deleting}
-                  className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
+                  className='flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
                   style={{
-                    border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                    border:
+                      '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
                     color: 'var(--destructive)',
                   }}
                 >
@@ -271,11 +270,10 @@ export default function UserDetailPage({
                 type='button'
                 onClick={handleSave}
                 disabled={saving}
-                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                className='flex items-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
                   background: 'var(--app-accent)',
                   color: 'var(--primary-foreground)',
-                  boxShadow: '0 4px 15px var(--app-accent-dim)',
                 }}
               >
                 {saving ? (
@@ -289,7 +287,7 @@ export default function UserDetailPage({
                 type='button'
                 onClick={() => setEditing(false)}
                 disabled={saving}
-                className='flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
+                className='flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
                 style={{
                   border: '1px solid var(--app-border)',
                   color: 'var(--app-nav-idle-text)',
@@ -306,7 +304,7 @@ export default function UserDetailPage({
             {/* Avatar + Name */}
             <div className='flex items-center gap-4'>
               <div
-                className='flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black'
+                className='flex h-16 w-16 shrink-0 items-center justify-center rounded-lg text-2xl font-bold'
                 style={{
                   background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
                   border: `1px solid color-mix(in srgb, ${roleVar} 40%, transparent)`,
@@ -325,7 +323,10 @@ export default function UserDetailPage({
                     disabled={saving}
                   />
                 ) : (
-                  <h1 className='truncate text-2xl font-black' style={{ color: 'var(--app-text-primary)' }}>
+                  <h1
+                    className='truncate text-2xl font-bold'
+                    style={{ color: 'var(--app-text-primary)' }}
+                  >
                     {profile.full_name || '—'}
                   </h1>
                 )}
@@ -347,7 +348,7 @@ export default function UserDetailPage({
                     onValueChange={(v) => setEditRole(v as UserRole)}
                   >
                     <SelectTrigger
-                      className='h-9 w-40 rounded-xl text-xs'
+                      className='h-9 w-40 rounded-md text-xs'
                       style={{
                         background: 'var(--app-surface)',
                         border: '1px solid var(--app-border)',
@@ -367,7 +368,7 @@ export default function UserDetailPage({
                     onValueChange={(v) => setEditActive(v === 'active')}
                   >
                     <SelectTrigger
-                      className='h-9 w-32 rounded-xl text-xs'
+                      className='h-9 w-32 rounded-md text-xs'
                       style={{
                         background: 'var(--app-surface)',
                         border: '1px solid var(--app-border)',
@@ -385,18 +386,22 @@ export default function UserDetailPage({
               ) : (
                 <>
                   <span
-                    className='flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold capitalize'
-                    style={{ background: `color-mix(in srgb, ${roleVar} 18%, transparent)`, color: roleVar }}
+                    className='flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold capitalize'
+                    style={{
+                      background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
+                      color: roleVar,
+                    }}
                   >
                     <RoleIcon size={11} /> {ROLE_LABELS[profile.role]}
                   </span>
                   <span
-                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${profile.is_active ? 'badge-closed' : ''}`}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold ${profile.is_active ? 'badge-closed' : ''}`}
                     style={
                       profile.is_active
                         ? undefined
                         : {
-                            background: 'color-mix(in srgb, var(--app-priority-low) 12%, transparent)',
+                            background:
+                              'color-mix(in srgb, var(--app-priority-low) 12%, transparent)',
                             color: 'var(--app-priority-low)',
                           }
                     }

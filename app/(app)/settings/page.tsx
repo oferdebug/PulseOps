@@ -3,15 +3,21 @@
 
 import {
   Bell,
-  Check,
+  Bot,
+  Building2,
   ChevronRight,
+  Clock,
+  FileText,
   Loader2,
   Palette,
   Shield,
   User,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useDbNotifications } from '@/hooks/useDbNotifications';
 import { createClient } from '@/lib/supabase/client';
 
 function Panel({
@@ -71,13 +77,12 @@ function Toggle({
   return (
     <button
       type='button'
+      aria-label={`Toggle: ${checked ? 'on' : 'off'}`}
       onClick={() => onChange(!checked)}
-      className='relative h-6 w-11 shrink-0 rounded-full transition-all duration-200'
+      className='h-6 w-11 shrink-0 rounded-full transition-all duration-200'
       style={{
-        background: checked
-          ? 'var(--app-accent)'
-          : 'var(--app-surface-raised)',
-        boxShadow: checked ? '0 0 12px var(--app-accent-dim)' : 'none',
+        background: checked ? 'var(--app-accent)' : 'var(--app-surface-raised)',
+        
       }}
     >
       <span
@@ -96,8 +101,6 @@ function ProfileTab() {
   const [dept, setDept] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Load from Supabase profile
   useEffect(() => {
@@ -122,7 +125,6 @@ function ProfileTab() {
     e.preventDefault();
     if (!user?.id) return;
     setSaving(true);
-    setError(null);
     const supabase = createClient();
     const { error: err } = await supabase
       .from('profiles')
@@ -132,10 +134,9 @@ function ProfileTab() {
         phone: phone.trim() || null,
       })
       .eq('id', user.id);
-    if (err) setError(err.message);
+    if (err) toast.error(err.message);
     else {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      toast.success('Profile saved');
     }
     setSaving(false);
   }
@@ -147,18 +148,22 @@ function ProfileTab() {
       {/* Avatar */}
       <div className='flex items-center gap-4'>
         <div
-          className='flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black'
+          className='flex h-16 w-16 items-center justify-center rounded-lg text-2xl font-bold'
           style={{
             background: 'var(--app-nav-active-bg)',
             border: '1px solid var(--app-nav-active-border)',
             color: 'var(--app-nav-active-text)',
-            boxShadow: '0 0 20px var(--app-nav-active-glow)',
           }}
         >
           {initial}
         </div>
         <div>
-          <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>{fullName || '—'}</p>
+          <p
+            className='text-sm font-bold'
+            style={{ color: 'var(--app-text-primary)' }}
+          >
+            {fullName || '—'}
+          </p>
           <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
             {email || user?.email}
           </p>
@@ -221,37 +226,17 @@ function ProfileTab() {
         </div>
       </div>
 
-      {error && (
-        <div
-          className='rounded-xl px-4 py-3 text-sm'
-          style={{
-            background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
-            color: 'var(--destructive)',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
       <button
         type='submit'
         disabled={saving}
-        className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
+        className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
         style={{
-          background: saved
-            ? 'var(--app-health-healthy)'
-            : 'var(--app-accent)',
-          color: saved ? 'var(--app-bg)' : 'var(--primary-foreground)',
-          boxShadow: saved ? 'none' : '0 4px 20px var(--app-accent-dim)',
+          background: 'var(--app-accent)',
+          color: 'var(--primary-foreground)',
         }}
       >
-        {saving ? (
-          <Loader2 size={14} className='animate-spin' />
-        ) : saved ? (
-          <Check size={14} />
-        ) : null}
-        {saving ? 'Saving…' : saved ? 'Saved!' : 'Save Changes'}
+        {saving && <Loader2 size={14} className='animate-spin' />}
+        {saving ? 'Saving…' : 'Save Changes'}
       </button>
     </form>
   );
@@ -259,69 +244,89 @@ function ProfileTab() {
 
 // ─── Notifications Tab ────────────────────────────────────────────────────────
 function NotificationsTab() {
-  const [prefs, setPrefs] = useState({
-    newTicket: true,
-    ticketUpdated: true,
-    ticketClosed: false,
-    weeklyDigest: true,
-    systemAlerts: true,
-    loginAlerts: false,
-  });
-
-  const set = (k: keyof typeof prefs) => (v: boolean) =>
-    setPrefs((p) => ({ ...p, [k]: v }));
+  const { user } = useCurrentUser();
+  const {
+    preferences,
+    updatePreferences,
+    loading: prefsLoading,
+  } = useDbNotifications(user?.id);
 
   const rows = [
     {
-      key: 'newTicket',
-      label: 'New ticket assigned',
-      desc: 'When a ticket is assigned to you',
+      key: 'ticket_created' as const,
+      label: 'New ticket created',
+      desc: 'When a new ticket is created in your organization',
     },
     {
-      key: 'ticketUpdated',
+      key: 'ticket_updated' as const,
       label: 'Ticket status changed',
       desc: 'When a ticket you own is updated',
     },
     {
-      key: 'ticketClosed',
+      key: 'ticket_closed' as const,
       label: 'Ticket closed',
       desc: 'When a ticket is resolved',
     },
     {
-      key: 'weeklyDigest',
-      label: 'Weekly digest',
-      desc: 'Summary of activity every Monday',
+      key: 'ticket_assigned' as const,
+      label: 'Ticket assigned',
+      desc: 'When a ticket is assigned to you',
     },
     {
-      key: 'systemAlerts',
-      label: 'System health alerts',
-      desc: 'Critical service downtimes',
+      key: 'ticket_commented' as const,
+      label: 'New comments',
+      desc: 'When someone comments on your ticket',
     },
     {
-      key: 'loginAlerts',
-      label: 'New login detected',
-      desc: 'When a login occurs from a new device',
+      key: 'sla_breach' as const,
+      label: 'SLA breach alerts',
+      desc: 'When a ticket approaches or breaches its SLA',
     },
-  ] as const;
+    {
+      key: 'mention' as const,
+      label: 'Mentions',
+      desc: 'When someone mentions you in a comment',
+    },
+  ];
+
+  if (prefsLoading) {
+    return (
+      <div className='flex justify-center py-12'>
+        <Loader2
+          size={18}
+          className='animate-spin'
+          style={{ color: 'var(--app-text-faint)' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className='space-y-2'>
       {rows.map(({ key, label, desc }, i) => (
         <div
           key={key}
-          className='flex items-center justify-between rounded-xl px-4 py-3.5 transition-colors hover:bg-(--app-surface-raised)'
+          className='flex items-center justify-between rounded-md px-4 py-3.5 transition-colors hover:bg-(--app-surface-raised)'
           style={{
             borderBottom:
               i < rows.length - 1 ? '1px solid var(--app-border)' : 'none',
           }}
         >
           <div>
-            <p className='text-sm font-medium' style={{ color: 'var(--app-text-primary)' }}>{label}</p>
+            <p
+              className='text-sm font-medium'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              {label}
+            </p>
             <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               {desc}
             </p>
           </div>
-          <Toggle checked={prefs[key]} onChange={set(key)} />
+          <Toggle
+            checked={preferences[key]}
+            onChange={(v) => updatePreferences({ [key]: v })}
+          />
         </div>
       ))}
     </div>
@@ -334,27 +339,23 @@ function SecurityTab() {
   const [newPw, setNewPw] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(
-    null,
-  );
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     if (newPw !== confirm) {
-      setMsg({ type: 'err', text: 'Passwords do not match.' });
+      toast.error('Passwords do not match.');
       return;
     }
     if (newPw.length < 8) {
-      setMsg({ type: 'err', text: 'Password must be at least 8 characters.' });
+      toast.error('Password must be at least 8 characters.');
       return;
     }
     setLoading(true);
-    setMsg(null);
     const supabase = createClient();
     const { error } = await supabase.auth.updateUser({ password: newPw });
-    if (error) setMsg({ type: 'err', text: error.message });
+    if (error) toast.error(error.message);
     else {
-      setMsg({ type: 'ok', text: 'Password updated successfully.' });
+      toast.success('Password updated successfully.');
       setCurrent('');
       setNewPw('');
       setConfirm('');
@@ -381,7 +382,12 @@ function SecurityTab() {
     <div className='space-y-8'>
       {/* Change password */}
       <div>
-        <p className='mb-4 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Change Password</p>
+        <p
+          className='mb-4 text-sm font-bold'
+          style={{ color: 'var(--app-text-primary)' }}
+        >
+          Change Password
+        </p>
         <form onSubmit={handleChangePassword} className='space-y-4'>
           <div>
             <label style={labelStyle} htmlFor='settings-current-password'>
@@ -427,34 +433,14 @@ function SecurityTab() {
               />
             </div>
           </div>
-          {msg && (
-            <div
-              className='rounded-xl px-4 py-3 text-sm'
-              style={
-                msg.type === 'ok'
-                  ? {
-                      background: 'color-mix(in srgb, var(--app-health-healthy) 12%, transparent)',
-                      border: '1px solid color-mix(in srgb, var(--app-health-healthy) 25%, transparent)',
-                      color: 'var(--app-health-healthy)',
-                    }
-                  : {
-                      background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                      border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
-                      color: 'var(--destructive)',
-                    }
-              }
-            >
-              {msg.text}
-            </div>
-          )}
+
           <button
             type='submit'
             disabled={loading || !current || !newPw || !confirm}
-            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
+            className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40'
             style={{
               background: 'var(--app-accent)',
               color: 'var(--primary-foreground)',
-              boxShadow: '0 4px 20px var(--app-accent-dim)',
             }}
           >
             {loading && <Loader2 size={14} className='animate-spin' />}
@@ -465,12 +451,17 @@ function SecurityTab() {
 
       {/* Active sessions */}
       <div>
-        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Active Sessions</p>
+        <p
+          className='mb-3 text-sm font-bold'
+          style={{ color: 'var(--app-text-primary)' }}
+        >
+          Active Sessions
+        </p>
         <div className='space-y-2'>
           {sessions.map((s) => (
             <div
               key={s.device}
-              className='flex items-center justify-between rounded-xl px-4 py-3'
+              className='flex items-center justify-between rounded-md px-4 py-3'
               style={{
                 background: 'var(--app-surface)',
                 border: '1px solid var(--app-border)',
@@ -494,7 +485,8 @@ function SecurityTab() {
                 <span
                   className='rounded-lg px-2 py-0.5 text-[10px] font-bold'
                   style={{
-                    background: 'color-mix(in srgb, var(--app-health-healthy) 15%, transparent)',
+                    background:
+                      'color-mix(in srgb, var(--app-health-healthy) 15%, transparent)',
                     color: 'var(--app-health-healthy)',
                   }}
                 >
@@ -519,17 +511,17 @@ function SecurityTab() {
 
 // ─── Appearance Tab ───────────────────────────────────────────────────────────
 function AppearanceTab() {
-  const [accent, setAccent] = useState('#6366f1');
+  const [accent, setAccent] = useState('#10b981');
   const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(
     'normal',
   );
 
   const accents = [
+    { color: '#10b981', label: 'Emerald' },
     { color: '#6366f1', label: 'Indigo' },
     { color: '#8b5cf6', label: 'Violet' },
     { color: '#ec4899', label: 'Pink' },
     { color: '#06b6d4', label: 'Cyan' },
-    { color: '#22c55e', label: 'Green' },
     { color: '#f59e0b', label: 'Amber' },
   ];
 
@@ -537,7 +529,12 @@ function AppearanceTab() {
     <div className='space-y-8'>
       {/* Theme (always dark) */}
       <div>
-        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Theme</p>
+        <p
+          className='mb-3 text-sm font-bold'
+          style={{ color: 'var(--app-text-primary)' }}
+        >
+          Theme
+        </p>
         <div className='flex gap-3'>
           {(['dark', 'light'] as const).map((t) => (
             <button
@@ -547,13 +544,12 @@ function AppearanceTab() {
               onClick={() => {}}
             >
               <div
-                className='flex h-20 w-32 items-center justify-center rounded-xl'
+                className='flex h-20 w-32 items-center justify-center rounded-md'
                 style={
                   t === 'dark'
                     ? {
                         background: 'var(--app-bg)',
                         border: '2px solid var(--app-accent-border)',
-                        boxShadow: '0 0 12px var(--app-accent-dim)',
                       }
                     : {
                         background: 'var(--app-surface)',
@@ -563,15 +559,28 @@ function AppearanceTab() {
                 }
               >
                 {t === 'dark' ? (
-                  <span className='text-xs' style={{ color: 'var(--app-text-muted)' }}>Dark</span>
+                  <span
+                    className='text-xs'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    Dark
+                  </span>
                 ) : (
-                  <span className='text-xs' style={{ color: 'var(--app-text-faint)' }}>Light</span>
+                  <span
+                    className='text-xs'
+                    style={{ color: 'var(--app-text-faint)' }}
+                  >
+                    Light
+                  </span>
                 )}
               </div>
               <p
                 className='text-xs font-semibold capitalize'
                 style={{
-                  color: t === 'dark' ? 'var(--app-accent-text)' : 'var(--app-text-muted)',
+                  color:
+                    t === 'dark'
+                      ? 'var(--app-accent-text)'
+                      : 'var(--app-text-muted)',
                 }}
               >
                 {t === 'dark' ? '✓ Dark' : 'Light (soon)'}
@@ -583,7 +592,12 @@ function AppearanceTab() {
 
       {/* Accent color */}
       <div>
-        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Accent Color</p>
+        <p
+          className='mb-3 text-sm font-bold'
+          style={{ color: 'var(--app-text-primary)' }}
+        >
+          Accent Color
+        </p>
         <div className='flex flex-wrap gap-3'>
           {accents.map(({ color, label }) => (
             <button
@@ -594,7 +608,7 @@ function AppearanceTab() {
               title={label}
             >
               <div
-                className='h-8 w-8 rounded-xl transition-all duration-200'
+                className='h-8 w-8 rounded-md transition-all duration-200'
                 style={{
                   background: color,
                   boxShadow:
@@ -617,14 +631,19 @@ function AppearanceTab() {
 
       {/* Density */}
       <div>
-        <p className='mb-3 text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Density</p>
+        <p
+          className='mb-3 text-sm font-bold'
+          style={{ color: 'var(--app-text-primary)' }}
+        >
+          Density
+        </p>
         <div className='flex gap-2'>
           {(['compact', 'normal', 'comfortable'] as const).map((d) => (
             <button
               key={d}
               type='button'
               onClick={() => setDensity(d)}
-              className='rounded-xl px-4 py-2 text-xs font-semibold capitalize transition-all'
+              className='rounded-md px-4 py-2 text-xs font-semibold capitalize transition-all'
               style={
                 density === d
                   ? {
@@ -659,12 +678,10 @@ export default function SettingsPage() {
 
   return (
     <div
-      className='relative min-h-screen space-y-6 p-8'
+      className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
-
-      <div className='relative' style={{ zIndex: 1 }}>
+      <div className='relative' >
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6'
@@ -676,7 +693,7 @@ export default function SettingsPage() {
           >
             Configuration
           </p>
-          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
             Settings
           </h1>
           <p
@@ -716,7 +733,10 @@ export default function SettingsPage() {
                       {label}
                     </div>
                     {activeTab === id && (
-                      <ChevronRight size={12} style={{ color: 'var(--app-accent)' }} />
+                      <ChevronRight
+                        size={12}
+                        style={{ color: 'var(--app-accent)' }}
+                      />
                     )}
                   </button>
                 ))}
@@ -731,13 +751,123 @@ export default function SettingsPage() {
                 className='px-6 py-5'
                 style={{ borderBottom: '1px solid var(--app-border)' }}
               >
-                <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>
+                <p
+                  className='text-sm font-bold'
+                  style={{ color: 'var(--app-text-primary)' }}
+                >
                   {TABS.find((t) => t.id === activeTab)?.label}
                 </p>
               </div>
               <div className='p-6'>
                 <ActiveTabComponent />
               </div>
+            </Panel>
+
+            {/* Admin Links */}
+            <Panel className='mt-6'>
+              <div
+                className='px-6 py-4'
+                style={{ borderBottom: '1px solid var(--app-border)' }}
+              >
+                <p
+                  className='text-sm font-bold'
+                  style={{ color: 'var(--app-text-primary)' }}
+                >
+                  Administration
+                </p>
+                <p
+                  className='text-xs mt-0.5'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  Manage system-wide settings
+                </p>
+              </div>
+              <nav className='py-2'>
+                <Link
+                  href='/settings/sla'
+                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <Clock size={14} />
+                    SLA Management
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    style={{ color: 'var(--app-text-faint)' }}
+                  />
+                </Link>
+                <Link
+                  href='/settings/templates'
+                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <FileText size={14} />
+                    Ticket Templates
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    style={{ color: 'var(--app-text-faint)' }}
+                  />
+                </Link>
+                <Link
+                  href='/settings/notifications'
+                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <Bell size={14} />
+                    Notification Preferences
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    style={{ color: 'var(--app-text-faint)' }}
+                  />
+                </Link>
+                <Link
+                  href='/settings/roles'
+                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <Shield size={14} />
+                    Roles &amp; Permissions
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    style={{ color: 'var(--app-text-faint)' }}
+                  />
+                </Link>
+                <Link
+                  href='/settings/automations'
+                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <Bot size={14} />
+                    Automations
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    style={{ color: 'var(--app-text-faint)' }}
+                  />
+                </Link>
+                <Link
+                  href='/settings/organization'
+                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <Building2 size={14} />
+                    Organization
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    style={{ color: 'var(--app-text-faint)' }}
+                  />
+                </Link>
+              </nav>
             </Panel>
           </div>
         </div>

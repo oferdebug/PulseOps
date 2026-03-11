@@ -1,13 +1,23 @@
-'use client';
+﻿'use client';
 
 import { ArrowLeft, Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
+import FileUpload from '@/components/features/attachments/FileUpload';
+import { ArticleStats } from '@/components/features/kb/ArticleStats';
+import { RelatedArticles } from '@/components/features/kb/RelatedArticles';
+import { TagInput } from '@/components/features/tags/TagInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useArticleAnalytics } from '@/hooks/useArticleAnalytics';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
 
@@ -32,33 +42,54 @@ interface ArticleRow {
   updated_at: string;
 }
 
-export default function ArticleDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+interface ArticlePageParams {
+  id: string;
+}
+
+interface ArticlePageProps {
+  params: Promise<ArticlePageParams>;
+}
+
+export default function ArticleDetailPage({ params }: ArticlePageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useCurrentUser();
+  const analytics = useArticleAnalytics(id, user?.id);
   const [article, setArticle] = useState<ArticleRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
+  const [editing, setEditing] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [editTitle, setEditTitle] = useState<string>('');
+  const [editContent, setEditContent] = useState<string>('');
   const [editCategory, setEditCategory] = useState<ArticleCategory>('general');
   const [editStatus, setEditStatus] = useState<ArticleStatus>('draft');
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from('articles').select('*').eq('id', id).single().then(({ data, error: err }) => {
-      if (err) setError(err.message);
-      else setArticle(data);
-      setLoading(false);
-    });
+    (async () => {
+      try {
+        const { data, error: err } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (err) setError(err.message);
+        else setArticle(data);
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : 'An unknown error occurred',
+        );
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [id]);
+
+  useEffect(() => {
+    if (article && user?.id) analytics.recordView();
+  }, [article, user?.id, analytics.recordView]);
 
   function enterEditMode() {
     if (!article) return;
@@ -84,21 +115,29 @@ export default function ArticleDetailPage({
       .eq('id', id)
       .select()
       .single();
-    if (err) setError(err.message);
+    if (err) toast.error(err.message);
     else {
       setArticle(data);
       setEditing(false);
+      toast.success('Article updated');
     }
     setSaving(false);
   }
 
   async function handleDelete() {
-    if (!window.confirm('Delete this article? This action cannot be undone.')) return;
+    if (!window.confirm('Delete this article? This action cannot be undone.'))
+      return;
     setDeleting(true);
     const supabase = createClient();
-    const { error: err } = await supabase.from('articles').delete().eq('id', id);
-    if (err) setError(err.message);
-    else router.push('/knowledge-base');
+    const { error: err } = await supabase
+      .from('articles')
+      .delete()
+      .eq('id', id);
+    if (err) toast.error(err.message);
+    else {
+      toast.success('Article deleted');
+      router.push('/knowledge-base');
+    }
     setDeleting(false);
   }
 
@@ -106,21 +145,21 @@ export default function ArticleDetailPage({
 
   if (loading) {
     return (
-      <div className="flex min-h-[240px] items-center justify-center">
-        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+      <div className='flex min-h-[240px] items-center justify-center'>
+        <Loader2 size={24} className='animate-spin text-muted-foreground' />
       </div>
     );
   }
 
   if (error || !article) {
     return (
-      <div className="section max-w-2xl">
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+      <div className='section max-w-2xl'>
+        <p className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive'>
           {error ?? 'Article not found. Please try again.'}
         </p>
-        <Button variant="outline" className="btn-secondary mt-4" asChild>
-          <Link href="/knowledge-base">
-            <ArrowLeft size={16} className="mr-2" />
+        <Button variant='outline' className='btn-secondary mt-4' asChild>
+          <Link href='/knowledge-base'>
+            <ArrowLeft size={16} className='mr-2' />
             Back to Knowledge Base
           </Link>
         </Button>
@@ -129,70 +168,174 @@ export default function ArticleDetailPage({
   }
 
   return (
-    <div className="section">
-      <header className="page-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="ghost" size="sm" className="btn-secondary w-fit" asChild>
-          <Link href="/knowledge-base">
-            <ArrowLeft size={16} className="mr-2" />
-            Back to Knowledge Base
-          </Link>
-        </Button>
+    <div className='section'>
+      <header className='page-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <AppBreadcrumb current={article.title} />
         {isAuthor && !editing && (
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="btn-secondary" onClick={enterEditMode}>
-              <Pencil size={16} className="mr-2" />
+          <div className='flex gap-2'>
+            <Button
+              size='sm'
+              variant='outline'
+              className='btn-secondary'
+              onClick={enterEditMode}
+            >
+              <Pencil size={16} className='mr-2' />
               Edit
             </Button>
             <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:bg-destructive/10"
+              size='sm'
+              variant='ghost'
+              className='text-destructive hover:bg-destructive/10'
               onClick={handleDelete}
               disabled={deleting}
             >
-              <Trash2 size={16} className="mr-2" />
+              <Trash2 size={16} className='mr-2' />
               Delete
             </Button>
           </div>
         )}
         {editing && (
-          <div className="flex gap-2">
-            <Button size="sm" className="btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Check size={14} className="mr-2" />}
-              {saving ? 'Saving…' : 'Save'}
+          <div className='flex gap-2'>
+            <Button
+              size='sm'
+              className='btn-primary'
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 size={14} className='mr-2 animate-spin' />
+              ) : (
+                <Check size={14} className='mr-2' />
+              )}
+              {saving ? 'Saving...' : 'Save'}
             </Button>
-            <Button size="sm" variant="outline" className="btn-secondary" onClick={() => setEditing(false)} disabled={saving}>
-              <X size={14} className="mr-2" />
+            <Button
+              size='sm'
+              variant='outline'
+              className='btn-secondary'
+              onClick={() => setEditing(false)}
+              disabled={saving}
+            >
+              <X size={14} className='mr-2' />
               Cancel
             </Button>
           </div>
         )}
       </header>
 
-      <Card className="card-surface">
-        <CardHeader className="pb-4">
+      <Card className='card-surface'>
+        <CardHeader className='pb-4'>
           {editing ? (
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="text-xl font-bold border-border bg-background"
+              className='text-xl font-bold border-border bg-background'
               disabled={saving}
             />
           ) : (
-            <h1 className="text-2xl font-bold text-foreground">{article.title}</h1>
+            <h1 className='text-2xl font-bold text-foreground'>
+              {article.title}
+            </h1>
           )}
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        <CardContent className='space-y-4'>
           {editing ? (
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[200px] font-mono text-sm border-border bg-background"
-              disabled={saving}
-            />
+            <div className='space-y-4'>
+              <div>
+                <label
+                  htmlFor='category'
+                  className='block text-sm font-medium mb-2'
+                >
+                  Category
+                </label>
+                <select
+                  id='category'
+                  value={editCategory}
+                  onChange={(e) =>
+                    setEditCategory(e.target.value as ArticleCategory)
+                  }
+                  className='w-full px-3 py-2 rounded-md border border-border bg-background text-foreground'
+                  disabled={saving}
+                >
+                  <option value='general'>General</option>
+                  <option value='networking'>Networking</option>
+                  <option value='hardware'>Hardware</option>
+                  <option value='software'>Software</option>
+                  <option value='security'>Security</option>
+                  <option value='active-directory'>Active Directory</option>
+                  <option value='email'>Email</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor='status'
+                  className='block text-sm font-medium mb-2'
+                >
+                  Status
+                </label>
+                <select
+                  id='status'
+                  value={editStatus}
+                  onChange={(e) =>
+                    setEditStatus(e.target.value as ArticleStatus)
+                  }
+                  className='w-full px-3 py-2 rounded-md border border-border bg-background text-foreground'
+                  disabled={saving}
+                >
+                  <option value='draft'>Draft</option>
+                  <option value='published'>Published</option>
+                </select>
+              </div>
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className='min-h-[200px] font-mono text-sm border-border bg-background'
+                disabled={saving}
+              />
+            </div>
           ) : (
-            <div className="whitespace-pre-wrap text-sm text-muted-foreground">{article.content}</div>
+            <article className='prose max-w-none'>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+              >
+                {(article.content ?? '').replace(/\\n/g, '\n')}
+              </ReactMarkdown>
+            </article>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Tags */}
+      <Card className='card-surface'>
+        <CardContent className='pt-6'>
+          <h3 className='mb-3 text-sm font-semibold'>Tags</h3>
+          <TagInput entityType='article' entityId={id} />
+        </CardContent>
+      </Card>
+
+      {/* Attachments */}
+      <Card className='card-surface'>
+        <CardContent className='pt-6'>
+          <h3 className='mb-3 text-sm font-semibold'>Attachments</h3>
+          <FileUpload entityType='article' entityId={id} />
+        </CardContent>
+      </Card>
+
+      {/* Analytics */}
+      <Card className='card-surface'>
+        <CardContent className='pt-6'>
+          <h3 className='mb-3 text-sm font-semibold'>Article Stats</h3>
+          <ArticleStats articleId={id} userId={user?.id} />
+        </CardContent>
+      </Card>
+
+      {/* Related Articles */}
+      <Card className='card-surface'>
+        <CardContent className='pt-6'>
+          <h3 className='mb-3 text-sm font-semibold'>Related Articles</h3>
+          <RelatedArticles articleId={id} category={article.category} />
         </CardContent>
       </Card>
     </div>

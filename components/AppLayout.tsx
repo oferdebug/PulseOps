@@ -1,44 +1,25 @@
 /**
  * @module AppLayout
- *
- * Root authenticated shell — wraps every protected page with a themed sidebar
- * and a content inset area.
- *
- * Architecture notes:
- * - Theme-awareness is driven entirely by CSS custom properties defined in
- *   globals.css under the `--app-*` namespace. The sidebar used to carry
- *   hardcoded dark-only rgba() values; those have been replaced so light/dark
- *   both receive intentional colours (vibrant indigo tints for light mode,
- *   the original near-black glass for dark mode).
- * - The shadcn <Sidebar> component controls its own background via the
- *   `--sidebar` token, but we override it with `--app-sidebar-bg` via an
- *   inline `style` so we keep glassmorphism without fighting shadcn internals.
- * - NAV_ITEMS is a static config array — add routes here, never inside JSX.
- * - `useCurrentUser` is intentionally duplicated across Dashboard and here;
- *   once a global user-store exists, both can be refactored to consume it.
- *
- * TODO: replace inline logout handler with a shared `authService.signOut()`
- * TODO: animate sidebar collapse transition (width + opacity)
+ * Root authenticated shell — collapsible sidebar + content area.
+ * Emerald accent, warm surfaces, layered depth.
+ * Ctrl+B toggles sidebar collapse. Ctrl+K opens search. Ctrl+N new ticket.
  */
 'use client';
 
 import {
-  Activity,
-  BookOpen,
-  LayoutDashboard,
+  ChevronsLeft,
+  ChevronsRight,
   LogOut,
   Moon,
   Search,
-  Settings,
   Sun,
-  Ticket,
-  Users,
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import { NotificationBell } from '@/components/NotificationBell';
 import SearchModal from '@/components/SearchModal';
 import {
   Sidebar,
@@ -51,51 +32,43 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { NAV_ITEMS } from '@/lib/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-const NAV_ITEMS = [
-  {
-    href: '/dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    matchPrefix: false,
-  },
-  {
-    href: '/knowledge-base',
-    label: 'Knowledge Base',
-    icon: BookOpen,
-    matchPrefix: true,
-  },
-  { href: '/tickets', label: 'Tickets', icon: Ticket, matchPrefix: true },
-  { href: '/users', label: 'Users', icon: Users, matchPrefix: true },
-  {
-    href: '/activity-logs',
-    label: 'Activity Logs',
-    icon: Activity,
-    matchPrefix: true,
-  },
-  { href: '/settings', label: 'Settings', icon: Settings, matchPrefix: true },
-];
+function SidebarCollapseToggle() {
+  const { state, toggleSidebar } = useSidebar();
+  const collapsed = state === 'collapsed';
+  return (
+    <button
+      type='button'
+      onClick={toggleSidebar}
+      className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+      style={{ color: 'var(--app-icon-btn-color)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+      }}
+      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+    >
+      {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
+    </button>
+  );
+}
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function AppSidebarContent() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading: userLoading } = useCurrentUser();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen((open) => !open);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
 
   async function handleLogout() {
     const supabase = createClient();
@@ -104,200 +77,142 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar
-        style={{
-          background: 'var(--app-sidebar-bg)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderRight: '1px solid var(--app-sidebar-border)',
-        }}
+    <>
+      <SidebarHeader
+        className={collapsed ? 'px-2 py-4' : 'px-4 py-5'}
+        style={{ borderBottom: '1px solid var(--app-sidebar-border)' }}
       >
-        {/* Ambient glow orbs — colours shift per theme via CSS vars */}
-        <div
-          className='pointer-events-none absolute inset-0 overflow-hidden'
-          style={{ zIndex: 0 }}
+        <Link
+          href='/dashboard'
+          className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}
         >
           <div
+            className='flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'
             style={{
-              position: 'absolute',
-              top: '-30%',
-              left: '-20%',
-              width: '140%',
-              height: '50%',
-              borderRadius: '50%',
-              background: `radial-gradient(circle, var(--app-sidebar-glow-top) 0%, transparent 70%)`,
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
             }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '0',
-              right: '-20%',
-              width: '100%',
-              height: '30%',
-              borderRadius: '50%',
-              background: `radial-gradient(circle, var(--app-sidebar-glow-bottom) 0%, transparent 70%)`,
-            }}
-          />
-        </div>
+          >
+            <Zap size={16} color='#fff' />
+          </div>
+          {!collapsed && (
+            <span
+              className='text-[15px] font-bold tracking-tight'
+              style={{ color: 'var(--app-logo-text)' }}
+            >
+              PulseOps
+            </span>
+          )}
+        </Link>
+      </SidebarHeader>
 
-        <SidebarHeader
-          className='relative px-5 py-5'
+      <SidebarContent className={collapsed ? 'px-1.5 py-3' : 'px-2.5 py-3'}>
+        <SidebarGroup>
+          <SidebarMenu className='gap-1'>
+            {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => {
+              const isActive = matchPrefix
+                ? pathname.startsWith(href)
+                : pathname === href;
+              return (
+                <SidebarMenuItem key={href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    tooltip={label}
+                    className={`${collapsed ? 'h-9 justify-center rounded-lg px-0' : 'h-9 rounded-lg px-3'} text-[13px] font-medium transition-all duration-150`}
+                    style={
+                      isActive
+                        ? {
+                            background: 'var(--app-nav-active-bg)',
+                            color: 'var(--app-nav-active-text)',
+                            borderLeft: collapsed ? 'none' : '3px solid var(--app-accent)',
+                            boxShadow: 'inset 0 0 0 1px var(--app-nav-active-border)',
+                          }
+                        : {
+                            background: 'transparent',
+                            color: 'var(--app-nav-idle-text)',
+                            borderLeft: collapsed ? 'none' : '3px solid transparent',
+                          }
+                    }
+                  >
+                    <Link
+                      href={href}
+                      className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'}`}
+                    >
+                      <Icon
+                        size={16}
+                        className='shrink-0'
+                        style={{
+                          color: isActive
+                            ? 'var(--app-nav-active-icon)'
+                            : 'var(--app-nav-idle-icon)',
+                        }}
+                      />
+                      {!collapsed && <span>{label}</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+
+      {/* Search shortcut */}
+      <div
+        className={collapsed ? 'px-1.5 py-2' : 'px-2.5 py-2'}
+        style={{ borderTop: '1px solid var(--app-sidebar-border)' }}
+      >
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SearchTriggerButton collapsed />
+            </TooltipTrigger>
+            <TooltipContent side='right'>Search (Ctrl+K)</TooltipContent>
+          </Tooltip>
+        ) : (
+          <SearchTriggerButton collapsed={false} />
+        )}
+      </div>
+
+      {/* Footer */}
+      <SidebarFooter
+        className={collapsed ? 'p-1.5' : 'p-2.5'}
+        style={{ borderTop: '1px solid var(--app-sidebar-border)' }}
+      >
+        <div
+          className={`flex items-center ${collapsed ? 'flex-col gap-2 p-2' : 'gap-2.5 rounded-lg p-2.5'}`}
           style={{
-            borderBottom: '1px solid var(--app-footer-header-border)',
-            zIndex: 1,
+            background: 'var(--app-footer-bg)',
+            border: '1px solid var(--app-footer-border)',
+            borderRadius: '8px',
           }}
         >
-          <Link href='/dashboard' className='group flex items-center gap-3'>
-            <div
-              className='flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105'
-              style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                boxShadow:
-                  '0 4px 16px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
-              }}
-            >
-              <Zap size={16} color='#fff' />
-            </div>
-            <span className='text-base font-black tracking-tight'>
-              <span style={{ color: 'var(--app-logo-text)' }}>Pulse</span>
-              <span
+          {/* Avatar */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold'
                 style={{
-                  background: 'linear-gradient(135deg, #a5b4fc, #6366f1)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#fff',
+                  boxShadow: '0 1px 4px rgba(16, 185, 129, 0.25)',
                 }}
               >
-                Ops
-              </span>
-            </span>
-          </Link>
-        </SidebarHeader>
+                {userLoading
+                  ? '?'
+                  : (user?.fullName?.[0]?.toUpperCase() ?? '?')}
+              </div>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side='right'>
+                {userLoading ? '…' : (user?.fullName ?? '—')}
+              </TooltipContent>
+            )}
+          </Tooltip>
 
-        <SidebarContent className='relative px-3 py-4' style={{ zIndex: 1 }}>
-          <SidebarGroup>
-            <SidebarMenu className='gap-1'>
-              {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => {
-                const isActive = matchPrefix
-                  ? pathname.startsWith(href)
-                  : pathname === href;
-
-                return (
-                  <SidebarMenuItem key={href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className='h-10 rounded-xl px-3 text-sm font-medium transition-all duration-200'
-                      style={
-                        isActive
-                          ? {
-                              background: 'var(--app-nav-active-bg)',
-                              border: '1px solid var(--app-nav-active-border)',
-                              color: 'var(--app-nav-active-color)',
-                              boxShadow: '0 0 20px var(--app-nav-active-glow)',
-                            }
-                          : {
-                              background: 'transparent',
-                              border: '1px solid transparent',
-                              color: 'var(--app-nav-idle-color)',
-                            }
-                      }
-                    >
-                      <Link href={href} className='flex items-center gap-3'>
-                        <Icon
-                          size={16}
-                          style={{
-                            color: isActive
-                              ? 'var(--app-nav-active-icon)'
-                              : 'var(--app-nav-idle-icon)',
-                          }}
-                        />
-                        <span>{label}</span>
-                        {isActive && (
-                          <span
-                            className='ml-auto h-1.5 w-1.5 rounded-full'
-                            style={{
-                              background: 'var(--app-nav-active-dot)',
-                              boxShadow: '0 0 6px var(--app-nav-active-dot)',
-                            }}
-                          />
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <div
-          className='relative px-3 py-2'
-          style={{
-            zIndex: 1,
-            borderTop: '1px solid var(--app-footer-header-border)',
-          }}
-        >
-          <button
-            type='button'
-            onClick={() => setIsSearchOpen(true)}
-            className='flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200'
-            style={{
-              background: 'transparent',
-              border: '1px solid transparent',
-              color: 'var(--app-nav-idle-text)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
-              e.currentTarget.style.color = 'var(--app-nav-idle-text)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--app-nav-idle-text)';
-            }}
-            aria-label='Search (Ctrl+K)'
-          >
-            <Search size={16} style={{ color: 'var(--app-nav-idle-icon)' }} />
-            <span>Search</span>
-            <kbd
-              className='ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium'
-              style={{
-                background: 'var(--app-surface)',
-                border: '1px solid var(--app-border)',
-                color: 'var(--app-text-muted)',
-              }}
-            >
-              ⌘K
-            </kbd>
-          </button>
-        </div>
-
-        <SidebarFooter
-          className='relative p-3'
-          style={{
-            borderTop: '1px solid var(--app-footer-header-border)',
-            zIndex: 1,
-          }}
-        >
-          <div
-            className='flex items-center gap-2 rounded-xl p-2'
-            style={{
-              background: 'var(--app-footer-bg)',
-              border: '1px solid var(--app-footer-border)',
-            }}
-          >
-            <div
-              className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black'
-              style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: '#fff',
-                boxShadow: '0 2px 8px rgba(99,102,241,0.4)',
-              }}
-            >
-              {userLoading ? '?' : (user?.fullName?.[0]?.toUpperCase() ?? '?')}
-            </div>
-
+          {/* Name + email — hidden when collapsed */}
+          {!collapsed && (
             <div className='min-w-0 flex-1'>
               <p
                 className='truncate text-xs font-semibold'
@@ -312,54 +227,223 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {userLoading ? '…' : (user?.email ?? '')}
               </p>
             </div>
+          )}
 
-            <button
-              type='button'
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200'
-              style={{
-                color: 'var(--app-icon-btn-color)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-              aria-label='Toggle theme'
-            >
-              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-            </button>
+          {/* Collapse toggle */}
+          <SidebarCollapseToggle />
 
-            <button
-              type='button'
-              onClick={handleLogout}
-              className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200'
-              style={{
-                color: 'var(--app-icon-btn-color)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--app-logout-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-              aria-label='Sign out'
-            >
-              <LogOut size={13} />
-            </button>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
+          {/* Theme toggle */}
+          {!collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type='button'
+                  onClick={() =>
+                    setTheme(theme === 'dark' ? 'light' : 'dark')
+                  }
+                  className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                  style={{ color: 'var(--app-icon-btn-color)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      'var(--app-icon-btn-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                  aria-label='Toggle theme'
+                >
+                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side='top'>Toggle theme</TooltipContent>
+            </Tooltip>
+          )}
 
-      <SidebarInset
-        className='flex flex-col overflow-hidden'
-        style={{ background: 'var(--app-inset-bg)' }}
-      >
-        <main className='flex-1 overflow-y-auto'>{children}</main>
-      </SidebarInset>
+          {/* Logout */}
+          {!collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type='button'
+                  onClick={handleLogout}
+                  className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                  style={{ color: 'var(--app-icon-btn-color)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      'var(--app-logout-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                  aria-label='Sign out'
+                >
+                  <LogOut size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side='top'>Sign out</TooltipContent>
+            </Tooltip>
+          )}
 
-      <SearchModal open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-    </SidebarProvider>
+          {/* Collapsed: show theme + logout vertically */}
+          {collapsed && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type='button'
+                    onClick={() =>
+                      setTheme(theme === 'dark' ? 'light' : 'dark')
+                    }
+                    className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                    style={{ color: 'var(--app-icon-btn-color)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        'var(--app-icon-btn-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                    aria-label='Toggle theme'
+                  >
+                    {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side='right'>Toggle theme</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type='button'
+                    onClick={handleLogout}
+                    className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                    style={{ color: 'var(--app-icon-btn-color)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        'var(--app-logout-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                    aria-label='Sign out'
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side='right'>Sign out</TooltipContent>
+              </Tooltip>
+            </>
+          )}
+        </div>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </>
+  );
+}
+
+function SearchTriggerButton({ collapsed }: { collapsed: boolean }) {
+  return (
+    <button
+      type='button'
+      data-search-trigger
+      className={`flex w-full items-center ${collapsed ? 'justify-center rounded-lg p-2' : 'gap-2.5 rounded-lg px-3 py-2'} text-[13px] font-medium transition-colors`}
+      style={{ color: 'var(--app-nav-idle-text)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+      }}
+      aria-label='Search (Ctrl+K)'
+    >
+      <Search size={15} className='shrink-0' style={{ color: 'var(--app-nav-idle-icon)' }} />
+      {!collapsed && (
+        <>
+          <span>Search</span>
+          <kbd
+            className='ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium mono'
+            style={{
+              background: 'var(--app-surface-raised)',
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-text-muted)',
+            }}
+          >
+            ⌘K
+          </kbd>
+        </>
+      )}
+    </button>
+  );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K / Cmd+K → search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((open) => !open);
+      }
+      // Ctrl+N / Cmd+N → new ticket
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        router.push('/tickets/new');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    // Wire search triggers (buttons with data-search-trigger)
+  }, [router]);
+
+  // Listen for clicks on search trigger buttons inside sidebar
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('[data-search-trigger]');
+      if (target) setIsSearchOpen(true);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
+  return (
+    <>
+      <SidebarProvider>
+        <Sidebar
+          collapsible='icon'
+          style={{
+            background: 'var(--app-sidebar-bg)',
+            borderRight: '1px solid var(--app-sidebar-border)',
+            boxShadow: '1px 0 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <AppSidebarContent />
+        </Sidebar>
+
+        <SidebarInset
+          className='flex flex-col overflow-hidden'
+          style={{ background: 'var(--app-inset-bg)' }}
+        >
+          <main className='flex-1 overflow-y-auto'>{children}</main>
+        </SidebarInset>
+
+        <SearchModal
+          open={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
+      </SidebarProvider>
+
+      <div className='fixed bottom-6 right-6' style={{ zIndex: 9999 }}>
+        <NotificationBell
+          open={isNotifOpen}
+          onToggle={() => setIsNotifOpen((o) => !o)}
+          onClose={() => setIsNotifOpen(false)}
+        />
+      </div>
+    </>
   );
 }

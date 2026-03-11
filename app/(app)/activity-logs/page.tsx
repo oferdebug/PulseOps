@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  ArrowUpRight,
   Eye,
   LogIn,
   LogOut,
@@ -11,6 +12,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -182,12 +184,10 @@ export default function ActivityLogsPage() {
 
   return (
     <div
-      className='relative min-h-screen space-y-6 p-8'
+      className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
-
-      <div className='relative' style={{ zIndex: 1 }}>
+      <div className='relative' >
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6'
@@ -199,7 +199,7 @@ export default function ActivityLogsPage() {
           >
             Audit
           </p>
-          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
             Activity Logs
           </h1>
           <p
@@ -222,7 +222,7 @@ export default function ActivityLogsPage() {
         >
           <div className='space-y-3 p-4'>
             <div className='flex flex-wrap items-center gap-3'>
-              <div className='relative min-w-[200px] flex-1'>
+              <div className='min-w-[200px] flex-1'>
                 <Search
                   size={13}
                   className='absolute left-3 top-1/2 -translate-y-1/2'
@@ -230,7 +230,7 @@ export default function ActivityLogsPage() {
                 />
                 <input
                   placeholder='Search description or user…'
-                  className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none'
+                  className='h-9 w-full rounded-md pl-9 pr-4 text-sm outline-none'
                   style={{
                     background: 'var(--app-surface)',
                     border: '1px solid var(--app-border)',
@@ -244,7 +244,7 @@ export default function ActivityLogsPage() {
               <div className='flex items-center gap-2'>
                 <input
                   type='date'
-                  className='h-9 rounded-xl px-3 text-xs outline-none'
+                  className='h-9 rounded-md px-3 text-xs outline-none'
                   style={{
                     background: 'var(--app-surface)',
                     border: '1px solid var(--app-border)',
@@ -257,7 +257,7 @@ export default function ActivityLogsPage() {
                 <span style={{ color: 'var(--app-text-faint)' }}>→</span>
                 <input
                   type='date'
-                  className='h-9 rounded-xl px-3 text-xs outline-none'
+                  className='h-9 rounded-md px-3 text-xs outline-none'
                   style={{
                     background: 'var(--app-surface)',
                     border: '1px solid var(--app-border)',
@@ -320,7 +320,12 @@ export default function ActivityLogsPage() {
             className='px-5 py-4'
             style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Events</p>
+            <p
+              className='text-sm font-bold'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              Events
+            </p>
             <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Showing last 200 events
             </p>
@@ -328,10 +333,12 @@ export default function ActivityLogsPage() {
 
           {error && (
             <div
-              className='mx-5 my-3 rounded-xl px-4 py-3 text-sm'
+              className='mx-5 my-3 rounded-md px-4 py-3 text-sm'
               style={{
-                background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                background:
+                  'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                border:
+                  '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
                 color: 'var(--destructive)',
               }}
             >
@@ -353,20 +360,20 @@ export default function ActivityLogsPage() {
             filtered.map((log, i) => {
               const Icon = ACTION_ICON[log.action];
               const color = ACTION_COLOR[log.action];
-              return (
-                <div
-                  key={log.id}
-                  className='flex items-start gap-4 px-5 py-4 transition-colors hover:bg-(--app-surface-raised)'
-                  style={{
-                    borderBottom:
-                      i < filtered.length - 1
-                        ? '1px solid var(--app-border)'
-                        : 'none',
-                  }}
-                >
+              const entityHref =
+                log.entity_id && log.entity === 'ticket'
+                  ? `/tickets/${log.entity_id}`
+                  : log.entity_id && log.entity === 'article'
+                    ? `/knowledge-base/${log.entity_id}`
+                    : log.entity_id && (log.entity === 'user' || log.entity === 'profile')
+                      ? `/users/${log.entity_id}`
+                      : null;
+
+              const rowContent = (
+                <>
                   {/* Icon */}
                   <div
-                    className='flex h-8 w-8 shrink-0 items-center justify-center rounded-xl'
+                    className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md'
                     style={{
                       background: `${color}18`,
                       border: `1px solid ${color}30`,
@@ -386,7 +393,10 @@ export default function ActivityLogsPage() {
                     <div className='mt-1.5 flex flex-wrap items-center gap-2'>
                       <span
                         className='rounded-lg px-2 py-0.5 text-[10px] font-bold capitalize'
-                        style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
+                        style={{
+                          background: `color-mix(in srgb, ${color} 18%, transparent)`,
+                          color,
+                        }}
                       >
                         {ACTION_LABELS[log.action]}
                       </span>
@@ -410,21 +420,57 @@ export default function ActivityLogsPage() {
                     </div>
                   </div>
 
-                  {/* Time */}
-                  <div className='shrink-0 text-right'>
-                    <p
-                      className='text-xs font-semibold'
-                      style={{ color: 'var(--app-text-muted)' }}
-                    >
-                      {timeAgo(log.created_at)}
-                    </p>
-                    <p
-                      className='text-[10px]'
-                      style={{ color: 'var(--app-text-faint)' }}
-                    >
-                      {formatDate(log.created_at)}
-                    </p>
+                  {/* Time + link hint */}
+                  <div className='shrink-0 text-right flex items-center gap-2'>
+                    <div>
+                      <p
+                        className='text-xs font-semibold'
+                        style={{ color: 'var(--app-text-muted)' }}
+                      >
+                        {timeAgo(log.created_at)}
+                      </p>
+                      <p
+                        className='text-[10px]'
+                        style={{ color: 'var(--app-text-faint)' }}
+                      >
+                        {formatDate(log.created_at)}
+                      </p>
+                    </div>
+                    {entityHref && (
+                      <ArrowUpRight
+                        size={13}
+                        className='opacity-0 group-hover:opacity-100 transition-opacity'
+                        style={{ color: 'var(--app-text-muted)' }}
+                      />
+                    )}
                   </div>
+                </>
+              );
+
+              const sharedClassName = 'group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-(--app-surface-raised)';
+              const sharedStyle = {
+                borderBottom:
+                  i < filtered.length - 1
+                    ? '1px solid var(--app-border)'
+                    : 'none',
+              };
+
+              return entityHref ? (
+                <Link
+                  key={log.id}
+                  href={entityHref}
+                  className={sharedClassName}
+                  style={sharedStyle}
+                >
+                  {rowContent}
+                </Link>
+              ) : (
+                <div
+                  key={log.id}
+                  className={sharedClassName}
+                  style={sharedStyle}
+                >
+                  {rowContent}
                 </div>
               );
             })}

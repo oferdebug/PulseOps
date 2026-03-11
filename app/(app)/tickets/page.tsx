@@ -1,11 +1,29 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  Check,
+  Columns3,
+  List,
+  Plus,
+  RefreshCw,
+  Search,
+  Ticket,
+} from 'lucide-react';
 import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import {
+  BulkActions,
+  BulkCheckbox,
+} from '@/components/features/bulk/BulkActions';
+import { ExportButton } from '@/components/features/export/ExportButton';
+import { SavedFilters } from '@/components/features/filters/SavedFilters';
+import { KanbanBoard } from '@/components/features/kanban/KanbanBoard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Check, Plus, RefreshCw, Search, Ticket } from 'lucide-react';
 
 type TicketStatus = 'open' | 'in_progress' | 'pending' | 'closed';
 type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
@@ -121,6 +139,8 @@ export default function TicketsPage() {
   const [userRole, setUserRole] = useState<'admin' | 'agent' | null>(null);
   const [savedTicketId, setSavedTicketId] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const bulk = useBulkSelection<TicketRow>();
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -179,6 +199,9 @@ export default function TicketsPage() {
       );
       setSavedTicketId(ticketId);
       setTimeout(() => setSavedTicketId(null), 2000);
+      toast.success('Assignment updated');
+    } else {
+      toast.error('Failed to update assignment');
     }
     setAssigningId(null);
   }
@@ -196,6 +219,24 @@ export default function TicketsPage() {
       (priority === 'all' || t.priority === priority)
     );
   });
+
+  async function handleKanbanStatusChange(ticketId: string, newStatus: string) {
+    const supabase = createClient();
+    const { error: err } = await supabase
+      .from('tickets')
+      .update({ status: newStatus })
+      .eq('id', ticketId);
+    if (err) {
+      toast.error('Failed to update status');
+    } else {
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === ticketId ? { ...t, status: newStatus as TicketStatus } : t,
+        ),
+      );
+      toast.success(`Moved to ${newStatus.replace('_', ' ')}`);
+    }
+  }
 
   return (
     <div
@@ -220,7 +261,10 @@ export default function TicketsPage() {
             >
               Helpdesk
             </p>
-            <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+            <h1
+              className='text-xl font-bold tracking-tight'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
               Tickets
             </h1>
             <p
@@ -232,17 +276,63 @@ export default function TicketsPage() {
                 : `${filtered.length} ticket${filtered.length !== 1 ? 's' : ''} found`}
             </p>
           </div>
-          <Link
-            href='/tickets/new'
-            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
-            style={{
-              background: 'var(--app-accent)',
-              color: 'var(--primary-foreground)',
-              boxShadow: '0 4px 20px var(--app-accent-dim)',
-            }}
-          >
-            <Plus size={14} /> New Ticket
-          </Link>
+          <div className='flex items-center gap-3'>
+            {/* View toggle */}
+            <div
+              className='flex rounded-md p-0.5'
+              style={{
+                background: 'var(--app-surface)',
+                border: '1px solid var(--app-border)',
+              }}
+            >
+              <button
+                type='button'
+                onClick={() => setViewMode('list')}
+                className='flex h-8 w-8 items-center justify-center rounded-lg transition-all'
+                style={{
+                  background:
+                    viewMode === 'list'
+                      ? 'var(--app-nav-active-bg)'
+                      : 'transparent',
+                  color:
+                    viewMode === 'list'
+                      ? 'var(--app-nav-active-text)'
+                      : 'var(--app-text-muted)',
+                }}
+                aria-label='List view'
+              >
+                <List size={14} />
+              </button>
+              <button
+                type='button'
+                onClick={() => setViewMode('kanban')}
+                className='flex h-8 w-8 items-center justify-center rounded-lg transition-all'
+                style={{
+                  background:
+                    viewMode === 'kanban'
+                      ? 'var(--app-nav-active-bg)'
+                      : 'transparent',
+                  color:
+                    viewMode === 'kanban'
+                      ? 'var(--app-nav-active-text)'
+                      : 'var(--app-text-muted)',
+                }}
+                aria-label='Kanban view'
+              >
+                <Columns3 size={14} />
+              </button>
+            </div>
+            <Link
+              href='/tickets/new'
+              className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
+              style={{
+                background: 'var(--app-accent)',
+                color: 'var(--primary-foreground)',
+              }}
+            >
+              <Plus size={14} /> New Ticket
+            </Link>
+          </div>
         </div>
 
         {/* ── Filters ── */}
@@ -263,7 +353,7 @@ export default function TicketsPage() {
               />
               <input
                 placeholder='Search tickets…'
-                className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none transition-all'
+                className='h-9 w-full rounded-md pl-9 pr-4 text-sm outline-none transition-all'
                 style={{
                   background: 'var(--app-surface)',
                   border: '1px solid var(--app-border)',
@@ -307,174 +397,267 @@ export default function TicketsPage() {
             >
               <RefreshCw size={13} className={cn(loading && 'animate-spin')} />
             </button>
+
+            <ExportButton
+              getData={() =>
+                filtered.map((t) => ({
+                  id: t.id,
+                  title: t.title,
+                  status: t.status,
+                  priority: t.priority,
+                  assigned_to: t.assigned_to ?? '',
+                  created_at: t.created_at,
+                }))
+              }
+              filename={`tickets-export-${new Date().toISOString().slice(0, 10)}`}
+            />
+          </div>
+          <div className='px-4 pb-4'>
+            <SavedFilters
+              entityType='ticket'
+              userId={user?.id}
+              currentFilters={{ status, priority, search }}
+              onApply={(f) => {
+                setStatus((f.status as string) ?? 'all');
+                setPriority((f.priority as string) ?? 'all');
+                setSearch((f.search as string) ?? '');
+              }}
+            />
           </div>
         </Panel>
 
-        {/* ── List ── */}
-        <Panel
-          className='animate-fade-in-up opacity-0'
-          style={{
-            animationDelay: '160ms',
-            animationFillMode: 'forwards',
-          }}
-        >
+        {/* Bulk Actions Bar */}
+        {bulk.selectedCount > 0 && (
+          <BulkActions
+            selectedIds={bulk.selectedIds}
+            onClearSelection={bulk.clearSelection}
+            onActionComplete={fetchTickets}
+          />
+        )}
+
+        {/* ── Kanban View ── */}
+        {viewMode === 'kanban' && (
           <div
-            className='px-5 py-4'
-            style={{ borderBottom: '1px solid var(--app-border)' }}
+            className='animate-fade-in-up opacity-0'
+            style={{ animationDelay: '160ms', animationFillMode: 'forwards' }}
           >
-            <p
-              className='text-sm font-bold'
-              style={{ color: 'var(--app-text-primary)' }}
-            >
-              All Tickets
-            </p>
-            <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
-              Click a ticket to view details
-            </p>
+            <KanbanBoard
+              tickets={filtered}
+              onStatusChange={handleKanbanStatusChange}
+            />
           </div>
+        )}
 
-          {error && (
+        {/* ── List View ── */}
+        {viewMode === 'list' && (
+          <Panel
+            className='animate-fade-in-up opacity-0'
+            style={{
+              animationDelay: '160ms',
+              animationFillMode: 'forwards',
+            }}
+          >
             <div
-              className='mx-5 my-3 rounded-xl px-4 py-3 text-sm'
-              style={{
-                background:
-                  'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                border:
-                  '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
-                color: 'var(--destructive)',
-              }}
+              className='px-5 py-4'
+              style={{ borderBottom: '1px solid var(--app-border)' }}
             >
-              Failed to load: {error}
+              <p
+                className='text-sm font-bold'
+                style={{ color: 'var(--app-text-primary)' }}
+              >
+                All Tickets
+              </p>
+              <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
+                Click a ticket to view details
+              </p>
             </div>
-          )}
 
-          {!loading && !error && filtered.length === 0 && (
-            <div
-              className='flex flex-col items-center gap-3 py-16'
-              style={{ color: 'var(--app-text-faint)' }}
-            >
-              <Ticket size={36} />
-              <p className='text-sm font-medium'>No tickets found</p>
-              {(search || status !== 'all' || priority !== 'all') && (
-                <button
-                  type='button'
-                  onClick={() => {
-                    setSearch('');
-                    setStatus('all');
-                    setPriority('all');
-                  }}
-                  className='rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-(--app-surface-raised)'
-                  style={{
-                    border: '1px solid var(--app-border)',
-                    color: 'var(--app-nav-idle-text)',
-                  }}
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          )}
-
-          {!error &&
-            filtered.map((ticket, i) => (
-              <Link
-                key={ticket.id}
-                href={`/tickets/${ticket.id}`}
-                className='flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-(--app-surface-raised)'
+            {error && (
+              <div
+                className='mx-5 my-3 rounded-md px-4 py-3 text-sm'
                 style={{
-                  borderBottom:
-                    i < filtered.length - 1
-                      ? '1px solid var(--app-border)'
-                      : 'none',
-                }}
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('[data-assign-cell]')) {
-                    e.preventDefault();
-                  }
+                  background:
+                    'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                  color: 'var(--destructive)',
                 }}
               >
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[ticket.priority]}`}
-                />
-                <span
-                  className='shrink-0 font-mono text-[11px] font-bold'
-                  style={{ color: 'var(--app-text-faint)' }}
-                >
-                  {ticket.id.slice(0, 8).toUpperCase()}
-                </span>
-                <span
-                  className='flex-1 truncate text-sm font-medium'
-                  style={{ color: 'var(--app-text-primary)' }}
-                >
-                  {ticket.title}
-                </span>
-                <span
-                  className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold ${STATUS_BADGE[ticket.status]}`}
-                >
-                  {STATUS_LABELS[ticket.status]}
-                </span>
-                <span
-                  className='shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold capitalize'
+                Failed to load: {error}
+              </div>
+            )}
+
+            {loading && (
+              <div
+                className='divide-y'
+                style={{ borderColor: 'var(--app-border)' }}
+              >
+                {['skel-1', 'skel-2', 'skel-3', 'skel-4', 'skel-5'].map(
+                  (id) => (
+                    <div
+                      key={id}
+                      className='flex items-center gap-4 px-5 py-3.5'
+                    >
+                      <Skeleton className='h-2 w-2 rounded-full' />
+                      <Skeleton className='h-4 w-16' />
+                      <Skeleton className='h-4 flex-1 max-w-[200px]' />
+                      <Skeleton className='h-6 w-20 rounded-lg' />
+                      <Skeleton className='h-6 w-16 rounded-lg' />
+                      <Skeleton className='h-4 w-24' />
+                    </div>
+                  ),
+                )}
+              </div>
+            )}
+
+            {!loading && !error && filtered.length === 0 && (
+              <div
+                className='flex flex-col items-center gap-3 py-16'
+                style={{ color: 'var(--app-text-faint)' }}
+              >
+                <Ticket size={36} />
+                <p className='text-sm font-medium'>No tickets found</p>
+                {(search || status !== 'all' || priority !== 'all') && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setSearch('');
+                      setStatus('all');
+                      setPriority('all');
+                    }}
+                    className='rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-(--app-surface-raised)'
+                    style={{
+                      border: '1px solid var(--app-border)',
+                      color: 'var(--app-nav-idle-text)',
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!error &&
+              filtered.map((ticket, i) => (
+                <Link
+                  key={ticket.id}
+                  href={`/tickets/${ticket.id}`}
+                  className='flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-(--app-surface-raised)'
                   style={{
-                    background: `color-mix(in srgb, var(--app-priority-${ticket.priority}) 15%, transparent)`,
-                    color: `var(--app-priority-${ticket.priority})`,
+                    borderBottom:
+                      i < filtered.length - 1
+                        ? '1px solid var(--app-border)'
+                        : 'none',
+                    background: bulk.isSelected(ticket.id)
+                      ? 'var(--app-nav-active-bg)'
+                      : undefined,
+                  }}
+                  onClick={(e) => {
+                    if (
+                      (e.target as HTMLElement).closest('[data-assign-cell]') ||
+                      (e.target as HTMLElement).closest('[data-bulk-cell]')
+                    ) {
+                      e.preventDefault();
+                    }
                   }}
                 >
-                  {ticket.priority}
-                </span>
-                <span
-                  className='flex shrink-0 items-center gap-1.5'
-                  data-assign-cell
-                >
-                  {userRole === 'admin' && agents.length > 0 ? (
-                    <>
-                      <select
-                        value={ticket.assigned_to ?? ''}
-                        onChange={(e) => {
-                          handleAssignChange(ticket.id, e.target.value || null);
-                        }}
-                        disabled={assigningId === ticket.id}
-                        className='min-w-[100px] max-w-[140px] rounded-lg px-2 py-1 text-[11px] outline-none disabled:opacity-60'
-                        style={{
-                          background: 'var(--app-surface)',
-                          border: '1px solid var(--app-border)',
-                          color: 'var(--app-text-primary)',
-                        }}
-                      >
-                        <option value=''>Unassigned</option>
-                        {agents.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.full_name?.trim() || a.email || a.id.slice(0, 8)}
-                          </option>
-                        ))}
-                      </select>
-                      {savedTicketId === ticket.id && (
-                        <span
-                          className='shrink-0 text-xs font-bold'
-                          style={{ color: 'var(--app-health-healthy)' }}
-                        >
-                          <Check size={12} />
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span
-                      className='text-xs'
-                      style={{ color: 'var(--app-text-muted)' }}
-                    >
-                      {assigneeDisplay(ticket)}
+                  {/* Bulk Checkbox */}
+                  {userRole === 'admin' && (
+                    <span data-bulk-cell>
+                      <BulkCheckbox
+                        checked={bulk.isSelected(ticket.id)}
+                        onChange={() => bulk.toggle(ticket.id)}
+                      />
                     </span>
                   )}
-                </span>
-                <span
-                  className='hidden shrink-0 text-xs sm:block'
-                  style={{ color: 'var(--app-text-faint)' }}
-                >
-                  {formatDate(ticket.created_at)}
-                </span>
-              </Link>
-            ))}
-        </Panel>
+                  <span
+                    className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[ticket.priority]}`}
+                  />
+                  <span
+                    className='shrink-0 font-mono text-[11px] font-bold'
+                    style={{ color: 'var(--app-text-faint)' }}
+                  >
+                    {ticket.id.slice(0, 8).toUpperCase()}
+                  </span>
+                  <span
+                    className='flex-1 truncate text-sm font-medium'
+                    style={{ color: 'var(--app-text-primary)' }}
+                  >
+                    {ticket.title}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold ${STATUS_BADGE[ticket.status]}`}
+                  >
+                    {STATUS_LABELS[ticket.status]}
+                  </span>
+                  <span
+                    className='shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold capitalize'
+                    style={{
+                      background: `color-mix(in srgb, var(--app-priority-${ticket.priority}) 15%, transparent)`,
+                      color: `var(--app-priority-${ticket.priority})`,
+                    }}
+                  >
+                    {ticket.priority}
+                  </span>
+                  <span
+                    className='flex shrink-0 items-center gap-1.5'
+                    data-assign-cell
+                  >
+                    {userRole === 'admin' && agents.length > 0 ? (
+                      <>
+                        <select
+                          value={ticket.assigned_to ?? ''}
+                          onChange={(e) => {
+                            handleAssignChange(
+                              ticket.id,
+                              e.target.value || null,
+                            );
+                          }}
+                          disabled={assigningId === ticket.id}
+                          className='min-w-[100px] max-w-[140px] rounded-lg px-2 py-1 text-[11px] outline-none disabled:opacity-60'
+                          style={{
+                            background: 'var(--app-surface)',
+                            border: '1px solid var(--app-border)',
+                            color: 'var(--app-text-primary)',
+                          }}
+                        >
+                          <option value=''>Unassigned</option>
+                          {agents.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.full_name?.trim() ||
+                                a.email ||
+                                a.id.slice(0, 8)}
+                            </option>
+                          ))}
+                        </select>
+                        {savedTicketId === ticket.id && (
+                          <span
+                            className='shrink-0 text-xs font-bold'
+                            style={{ color: 'var(--app-health-healthy)' }}
+                          >
+                            <Check size={12} />
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span
+                        className='text-xs'
+                        style={{ color: 'var(--app-text-muted)' }}
+                      >
+                        {assigneeDisplay(ticket)}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className='hidden shrink-0 text-xs sm:block'
+                    style={{ color: 'var(--app-text-faint)' }}
+                  >
+                    {formatDate(ticket.created_at)}
+                  </span>
+                </Link>
+              ))}
+          </Panel>
+        )}
       </div>
     </div>
   );

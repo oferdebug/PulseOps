@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -164,15 +165,10 @@ export default function KnowledgeBasePage() {
 
   return (
     <div
-      className='relative min-h-screen space-y-6 p-8'
+      className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div
-        className='app-mesh pointer-events-none fixed inset-0 overflow-hidden'
-        style={{ zIndex: 0 }}
-      />
-
-      <div className='relative' style={{ zIndex: 1 }}>
+      <div className='relative' >
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6 flex items-end justify-between'
@@ -185,7 +181,7 @@ export default function KnowledgeBasePage() {
             >
               Documentation
             </p>
-            <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+            <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
               Knowledge Base
             </h1>
             <p
@@ -199,11 +195,10 @@ export default function KnowledgeBasePage() {
           </div>
           <Link
             href='/knowledge-base/new'
-            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
+            className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
             style={{
               background: 'var(--app-accent)',
               color: 'var(--primary-foreground)',
-              boxShadow: '0 4px 20px var(--app-accent-dim)',
             }}
           >
             <Plus size={14} /> Write Article
@@ -216,7 +211,7 @@ export default function KnowledgeBasePage() {
           style={{ animationDelay: '80ms', animationFillMode: 'forwards' }}
         >
           <div className='flex flex-wrap items-center gap-3 p-4'>
-            <div className='relative min-w-[200px] flex-1'>
+            <div className='min-w-[200px] flex-1'>
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'
@@ -224,7 +219,7 @@ export default function KnowledgeBasePage() {
               />
               <input
                 placeholder='Search articles…'
-                className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none'
+                className='h-9 w-full rounded-md pl-9 pr-4 text-sm outline-none'
                 style={{
                   background: 'var(--app-surface)',
                   border: '1px solid var(--app-border)',
@@ -268,6 +263,38 @@ export default function KnowledgeBasePage() {
           </div>
         </Panel>
 
+        {/* Loading Skeletons */}
+        {loading && (
+          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className='overflow-hidden rounded-lg p-5'
+                style={{
+                  background: 'var(--app-surface)',
+                  border: '1px solid var(--app-border)',
+                }}
+              >
+                <div className='mb-3 flex items-center justify-between'>
+                  <Skeleton className='h-5 w-20 rounded-lg' />
+                  <Skeleton className='h-4 w-14 rounded-lg' />
+                </div>
+                <div className='flex items-start gap-3'>
+                  <Skeleton className='h-8 w-8 shrink-0 rounded-lg' />
+                  <div className='flex-1 space-y-1.5'>
+                    <Skeleton className='h-4 w-full' />
+                    <Skeleton className='h-4 w-3/4' />
+                  </div>
+                </div>
+                <div className='mt-4 flex items-center gap-1.5'>
+                  <Skeleton className='h-3 w-3 rounded-full' />
+                  <Skeleton className='h-3 w-16' />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Empty */}
         {!loading && !error && filtered.length === 0 && (
           <Panel>
@@ -282,7 +309,7 @@ export default function KnowledgeBasePage() {
         )}
 
         {/* Articles grid */}
-        {!error && filtered.length > 0 && (
+        {!loading && !error && filtered.length > 0 && (
           <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
             {filtered.map((article: ArticleRow, i: number) => {
               const catColor = CATEGORY_COLOR[article.category];
@@ -297,7 +324,7 @@ export default function KnowledgeBasePage() {
                   }}
                 >
                   <div
-                    className='relative overflow-hidden rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1'
+                    className='overflow-hidden rounded-lg p-5 transition-all duration-200 hover:-translate-y-1'
                     style={{
                       background: 'var(--app-surface)',
                       border: '1px solid var(--app-border)',
@@ -306,18 +333,9 @@ export default function KnowledgeBasePage() {
                     {/* Top accent */}
                     <div
                       className='absolute inset-x-0 top-0 h-px'
-                      style={{
-                        background: `linear-gradient(90deg, transparent, ${catColor}80, transparent)`,
-                      }}
+                      style={{ background: catColor, opacity: 0.4 }}
                     />
 
-                    {/* Corner glow */}
-                    <div
-                      className='pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-15 blur-xl transition-opacity group-hover:opacity-30'
-                      style={{ background: catColor }}
-                    />
-
-                    {/* Category badge */}
                     <div className='mb-3 flex items-center justify-between'>
                       <span
                         className='rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize'

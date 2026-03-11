@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useCurrentUser } from './useCurrentUser';
 
 export type NotificationType = 'created' | 'updated' | 'closed' | 'assigned';
 
@@ -10,7 +9,7 @@ export interface Notification {
   type: NotificationType;
   ticketId: string;
   title: string;
-  description: string;
+  message: string;
   createdAt: string;
   readAt: string | null;
   link: string;
@@ -28,24 +27,50 @@ export interface Notification {
 const STORAGE_KEY = 'pulseops_notifications';
 const MAX_NOTAFICTIONS = 20;
 
-function loadFromStorage(): Notification[] {
+type StoredNotification = Notification & { description?: string };
+
+interface TicketRealtimeRow {
+  id: string;
+  title: string;
+  status: string;
+  assigned_to: string | null;
+}
+
+function getStorageKey(userId: string) {
+  return `${STORAGE_KEY}:${userId}`;
+}
+
+function loadFromStorage(storageKey: string): Notification[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
-    return JSON.parse(raw) as Notification[];
+    const parsed = JSON.parse(raw) as StoredNotification[];
+    return parsed
+      .map((notification) => ({
+        ...notification,
+        message: notification.message ?? notification.description ?? '',
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, MAX_NOTAFICTIONS);
   } catch {
     return [];
   }
 }
 
-function saveToStorage(notifications: Notification[]): Notification[] {
+function saveToStorage(
+  storageKey: string,
+  notifications: Notification[],
+): Notification[] {
   try {
     const sorted = [...notifications].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
     const limited = sorted.slice(0, MAX_NOTAFICTIONS);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
+    localStorage.setItem(storageKey, JSON.stringify(limited));
     return limited;
   } catch {
     console.error('Failed to save notifications to storage');
@@ -80,7 +105,7 @@ const DEFAULT_STYLES: Pick<
 
 type AddNotificationInput = Pick<
   Notification,
-  'type' | 'ticketId' | 'ticketTitle' | 'title' | 'description' | 'link'
+  'type' | 'ticketId' | 'ticketTitle' | 'title' | 'message' | 'link'
 >;
 
 function buildNotification(n: AddNotificationInput): Notification {
@@ -93,47 +118,62 @@ function buildNotification(n: AddNotificationInput): Notification {
   };
 }
 
-export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(() =>
-    loadFromStorage(),
-  );
-  const { user } = useCurrentUser();
-  const userId = user?.id;
+export function useNotifications(userId?: string) {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const prevDataRef = useRef<
     Record<string, { status: string; assigned_to: string | null }>
   >({});
+  const storageKey = userId ? getStorageKey(userId) : null;
 
-  const addNotification = useCallback((n: AddNotificationInput) => {
-    setNotifications((prev) => {
-      const next = [buildNotification(n), ...prev].slice(0, MAX_NOTAFICTIONS);
-      return saveToStorage(next);
-    });
-  }, []);
+  useEffect(() => {
+    prevDataRef.current = {};
+    if (!storageKey) {
+      setNotifications([]);
+      return;
+    }
+    setNotifications(loadFromStorage(storageKey));
+  }, [storageKey]);
 
-  const markRead = useCallback((id: string) => {
-    setNotifications((prev) => {
-      const next = prev.map((n) =>
-        n.id === id ? { ...n, readAt: new Date().toISOString() } : n,
-      );
-      return saveToStorage(next);
-    });
-  }, []);
+  const addNotification = useCallback(
+    (n: AddNotificationInput) => {
+      if (!storageKey) return;
+      setNotifications((prev) => {
+        const next = [buildNotification(n), ...prev].slice(0, MAX_NOTAFICTIONS);
+        return saveToStorage(storageKey, next);
+      });
+    },
+    [storageKey],
+  );
+
+  const markRead = useCallback(
+    (id: string) => {
+      if (!storageKey) return;
+      setNotifications((prev) => {
+        const next = prev.map((n) =>
+          n.id === id ? { ...n, readAt: new Date().toISOString() } : n,
+        );
+        return saveToStorage(storageKey, next);
+      });
+    },
+    [storageKey],
+  );
 
   const markAllRead = useCallback(() => {
+    if (!storageKey) return;
     setNotifications((prev) => {
       const next = prev.map((n) => ({
         ...n,
         readAt: new Date().toISOString(),
       }));
-      return saveToStorage(next);
+      return saveToStorage(storageKey, next);
     });
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!userId) return;
     const supabase = createClient();
     const channel = supabase
-      .channel('tickets-realtime')
+      .channel(`tickets-realtime:${userId}`)
       .on(
         'postgres_changes',
         {
@@ -143,39 +183,50 @@ export function useNotifications() {
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const ticket = payload.new as { id: string; title: string };
+            const ticket = payload.new as TicketRealtimeRow;
+            prevDataRef.current[ticket.id] = {
+              status: ticket.status,
+              assigned_to: ticket.assigned_to,
+            };
             addNotification({
               ticketId: ticket.id,
               ticketTitle: ticket.title,
               title: 'New ticket',
-              description: `New Ticket Created: ${ticket.title}`,
+              message: `New Ticket Created: ${ticket.title}`,
               link: `/tickets/${ticket.id}`,
               type: 'created',
             });
           }
+
           if (payload.eventType === 'UPDATE') {
-            const next = payload.new as {
-              id: string;
-              title: string;
-              status: string;
-              assigned_to: string | null;
+            const next = payload.new as TicketRealtimeRow;
+            const prevFromPayload = payload.old as Partial<TicketRealtimeRow>;
+            const prev = {
+              status:
+                prevFromPayload.status ??
+                prevDataRef.current[next.id]?.status ??
+                next.status,
+              assigned_to:
+                prevFromPayload.assigned_to ??
+                prevDataRef.current[next.id]?.assigned_to ??
+                next.assigned_to,
             };
-            const prev = prevDataRef.current[next.id];
-            if (next.status === 'closed' && prev?.status !== 'closed') {
+
+            if (next.status === 'closed' && prev.status !== 'closed') {
               addNotification({
                 ticketId: next.id,
                 ticketTitle: next.title,
                 title: 'Ticket closed',
-                description: `Ticket closed: ${next.title}`,
+                message: `Ticket closed: ${next.title}`,
                 link: `/tickets/${next.id}`,
                 type: 'closed',
               });
-            } else if (next.assigned_to !== prev?.assigned_to) {
+            } else if (next.assigned_to !== prev.assigned_to) {
               addNotification({
                 ticketId: next.id,
                 ticketTitle: next.title,
                 title: 'Ticket assigned',
-                description: `Ticket assigned: ${next.title}`,
+                message: `Ticket assigned: ${next.title}`,
                 link: `/tickets/${next.id}`,
                 type: 'assigned',
               });
@@ -184,11 +235,12 @@ export function useNotifications() {
                 ticketId: next.id,
                 ticketTitle: next.title,
                 title: 'Ticket updated',
-                description: `Ticket updated: ${next.title}`,
+                message: `Ticket updated: ${next.title}`,
                 link: `/tickets/${next.id}`,
                 type: 'updated',
               });
             }
+
             prevDataRef.current[next.id] = {
               status: next.status,
               assigned_to: next.assigned_to,
@@ -197,6 +249,7 @@ export function useNotifications() {
         },
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };

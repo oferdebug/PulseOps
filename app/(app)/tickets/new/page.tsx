@@ -16,6 +16,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { TemplateSelector } from '@/components/features/templates/TemplateSelector';
+import { AiTicketAssist } from '@/components/features/ai/AiTicketAssist';
+import type { TicketTemplate } from '@/hooks/useTemplates';
+import { toast } from 'sonner';
 
 type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
 
@@ -67,6 +72,14 @@ export default function NewTicketPage() {
   const [userRole, setUserRole] = useState<'admin' | 'agent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templateApplied, setTemplateApplied] = useState(false);
+
+  function applyTemplate(template: TicketTemplate) {
+    setTitle(template.title_template);
+    setDescription(template.body_template);
+    setPriority(template.default_priority as TicketPriority);
+    setTemplateApplied(true);
+  }
 
   useEffect(() => {
     if (!user?.id) return;
@@ -111,7 +124,7 @@ export default function NewTicketPage() {
       .select('id')
       .single();
     if (err) {
-      setError(err.message);
+      toast.error(err.message);
       setSubmitting(false);
       return;
     }
@@ -122,31 +135,21 @@ export default function NewTicketPage() {
       description: `Created ticket: ${title.trim()}`,
       metadata: { priority },
     });
+    toast.success('Ticket created');
     router.push(`/tickets/${data.id}`);
   }
 
   return (
     <div
-      className='relative min-h-screen p-8'
+      className='min-h-screen p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
-
       <div
-        className='relative mx-auto max-w-2xl space-y-6'
-        style={{ zIndex: 1 }}
+        className='mx-auto max-w-2xl space-y-6'
+        
       >
-        {/* Back */}
-        <Link
-          href='/tickets'
-          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
-          style={{
-            border: '1px solid var(--app-border)',
-            color: 'var(--app-nav-idle-text)',
-          }}
-        >
-          <ArrowLeft size={13} /> Back to Tickets
-        </Link>
+        {/* Breadcrumb */}
+        <AppBreadcrumb current='New Ticket' />
 
         {/* Header */}
         <div
@@ -159,7 +162,7 @@ export default function NewTicketPage() {
           >
             Helpdesk
           </p>
-          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
             New Ticket
           </h1>
           <p
@@ -170,13 +173,27 @@ export default function NewTicketPage() {
           </p>
         </div>
 
+        {/* Template Selector */}
+        {!templateApplied && (
+          <Panel>
+            <div className='p-6'>
+              <TemplateSelector onSelect={applyTemplate} />
+            </div>
+          </Panel>
+        )}
+
         {/* Form */}
         <Panel>
           <div
             className='px-6 py-5'
             style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>Ticket Details</p>
+            <p
+              className='text-sm font-bold'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              Ticket Details
+            </p>
             <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Fields marked * are required
             </p>
@@ -212,6 +229,16 @@ export default function NewTicketPage() {
               />
             </div>
 
+            {/* AI Assist */}
+            {title.trim().length > 5 && (
+              <AiTicketAssist
+                title={title}
+                description={description}
+                onApplyPriority={(p) => setPriority(p as TicketPriority)}
+                onApplyTags={() => {}}
+              />
+            )}
+
             <div>
               <label style={labelStyle}>Priority *</label>
               <Select
@@ -220,7 +247,7 @@ export default function NewTicketPage() {
                 disabled={submitting}
               >
                 <SelectTrigger
-                  className='h-10 w-48 rounded-xl text-sm'
+                  className='h-10 w-48 rounded-md text-sm'
                   style={{
                     background: 'var(--app-surface)',
                     border: '1px solid var(--app-border)',
@@ -245,7 +272,7 @@ export default function NewTicketPage() {
                   value={assignedTo ?? ''}
                   onChange={(e) => setAssignedTo(e.target.value || null)}
                   disabled={submitting}
-                  className='w-full rounded-xl px-3 py-2 text-sm outline-none transition-[border-color] disabled:opacity-60'
+                  className='w-full rounded-md px-3 py-2 text-sm outline-none transition-[border-color] disabled:opacity-60'
                   style={{
                     background: 'var(--app-surface)',
                     border: '1px solid var(--app-border)',
@@ -265,10 +292,12 @@ export default function NewTicketPage() {
 
             {error && (
               <div
-                className='rounded-xl px-4 py-3 text-sm'
+                className='rounded-md px-4 py-3 text-sm'
                 style={{
-                  background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                  background:
+                    'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
                   color: 'var(--destructive)',
                 }}
               >
@@ -280,11 +309,10 @@ export default function NewTicketPage() {
               <button
                 type='submit'
                 disabled={submitting || !title.trim()}
-                className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
                   background: 'var(--app-accent)',
                   color: 'var(--primary-foreground)',
-                  boxShadow: '0 4px 20px var(--app-accent-dim)',
                 }}
               >
                 {submitting && <Loader2 size={14} className='animate-spin' />}
@@ -292,7 +320,7 @@ export default function NewTicketPage() {
               </button>
               <Link
                 href='/tickets'
-                className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-(--app-surface-raised)'
+                className='flex items-center rounded-md px-4 py-2.5 text-sm font-medium transition-all hover:bg-(--app-surface-raised)'
                 style={{
                   border: '1px solid var(--app-border)',
                   color: 'var(--app-nav-idle-text)',

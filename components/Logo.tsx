@@ -5,26 +5,19 @@ export default function Logo() {
   return (
     <Link href='/dashboard' className='group flex items-center gap-3'>
       <div
-        className='flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105'
+        className='flex h-9 w-9 items-center justify-center rounded-lg'
         style={{
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          boxShadow:
-            '0 4px 16px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+          background: 'linear-gradient(135deg, #10b981, #059669)',
+          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
         }}
       >
         <Zap size={16} color='#fff' />
       </div>
-      <span className='text-base font-black tracking-tight'>
-        <span style={{ color: 'rgba(255,255,255,0.9)' }}>Pulse</span>
-        <span
-          style={{
-            background: 'linear-gradient(135deg, #a5b4fc, #6366f1)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          Ops
-        </span>
+      <span
+        className='text-base font-bold tracking-tight'
+        style={{ color: 'var(--app-text-primary)' }}
+      >
+        PulseOps
       </span>
     </Link>
   );

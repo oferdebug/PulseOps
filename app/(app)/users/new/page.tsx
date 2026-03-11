@@ -2,8 +2,10 @@
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -73,34 +75,24 @@ export default function NewUserPage() {
       .select('id')
       .single();
     if (err) {
-      setError(err.message);
+      toast.error(err.message);
       setSubmitting(false);
       return;
     }
+    toast.success('User created');
     router.push(`/users/${data.id}`);
   }
 
   return (
     <div
-      className='relative min-h-screen p-8'
+      className='min-h-screen p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='app-mesh pointer-events-none fixed inset-0' style={{ zIndex: 0 }} />
-
       <div
-        className='relative mx-auto max-w-2xl space-y-6'
-        style={{ zIndex: 1 }}
+        className='mx-auto max-w-2xl space-y-6'
+        
       >
-        <Link
-          href='/users'
-          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
-          style={{
-            border: '1px solid var(--app-border)',
-            color: 'var(--app-nav-idle-text)',
-          }}
-        >
-          <ArrowLeft size={13} /> Back to Users
-        </Link>
+        <AppBreadcrumb current='New User' />
 
         <div
           className='animate-fade-in-up opacity-0'
@@ -112,7 +104,7 @@ export default function NewUserPage() {
           >
             Team
           </p>
-          <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
             Add User
           </h1>
           <p
@@ -128,7 +120,12 @@ export default function NewUserPage() {
             className='px-6 py-5'
             style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>User Details</p>
+            <p
+              className='text-sm font-bold'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              User Details
+            </p>
             <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Fields marked * are required
             </p>
@@ -177,12 +174,12 @@ export default function NewUserPage() {
                 >
                   <SelectTrigger
                     id='role-select'
-                    className='h-10 rounded-xl text-sm'
-style={{
-                    background: 'var(--app-surface)',
-                    border: '1px solid var(--app-border)',
-                    color: 'var(--app-text-primary)',
-                  }}
+                    className='h-10 rounded-md text-sm'
+                    style={{
+                      background: 'var(--app-surface)',
+                      border: '1px solid var(--app-border)',
+                      color: 'var(--app-text-primary)',
+                    }}
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -225,10 +222,12 @@ style={{
 
             {error && (
               <div
-                className='rounded-xl px-4 py-3 text-sm'
+                className='rounded-md px-4 py-3 text-sm'
                 style={{
-                  background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                  background:
+                    'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
                   color: 'var(--destructive)',
                 }}
               >
@@ -240,11 +239,10 @@ style={{
               <button
                 type='submit'
                 disabled={submitting || !fullName.trim() || !email.trim()}
-                className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40'
                 style={{
                   background: 'var(--app-accent)',
                   color: 'var(--primary-foreground)',
-                  boxShadow: '0 4px 20px var(--app-accent-dim)',
                 }}
               >
                 {submitting && <Loader2 size={14} className='animate-spin' />}
@@ -252,7 +250,7 @@ style={{
               </button>
               <Link
                 href='/users'
-                className='flex items-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-(--app-surface-raised)'
+                className='flex items-center rounded-md px-4 py-2.5 text-sm font-medium transition-all hover:bg-(--app-surface-raised)'
                 style={{
                   border: '1px solid var(--app-border)',
                   color: 'var(--app-nav-idle-text)',

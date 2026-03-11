@@ -137,15 +137,10 @@ export default function UsersPage() {
 
   return (
     <div
-      className='relative min-h-screen space-y-6 p-8'
+      className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div
-        className='app-mesh pointer-events-none fixed inset-0 overflow-hidden'
-        style={{ zIndex: 0 }}
-      />
-
-      <div className='relative' style={{ zIndex: 1 }}>
+      <div className='relative' >
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6 flex items-end justify-between'
@@ -158,7 +153,7 @@ export default function UsersPage() {
             >
               Team
             </p>
-            <h1 className='text-4xl font-black tracking-tight text-gradient-primary'>
+            <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
               Users
             </h1>
             <p
@@ -172,11 +167,10 @@ export default function UsersPage() {
           </div>
           <Link
             href='/users/new'
-            className='flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
+            className='flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90'
             style={{
               background: 'var(--app-accent)',
               color: 'var(--primary-foreground)',
-              boxShadow: '0 4px 20px var(--app-accent-dim)',
             }}
           >
             <Plus size={14} /> Add User
@@ -194,7 +188,7 @@ export default function UsersPage() {
           }
         >
           <div className='flex flex-wrap items-center gap-3 p-4'>
-            <div className='relative min-w-[200px] flex-1'>
+            <div className='min-w-[200px] flex-1'>
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'
@@ -202,7 +196,7 @@ export default function UsersPage() {
               />
               <input
                 placeholder='Search by name or email…'
-                className='h-9 w-full rounded-xl pl-9 pr-4 text-sm outline-none'
+                className='h-9 w-full rounded-md pl-9 pr-4 text-sm outline-none'
                 style={{
                   background: 'var(--app-surface)',
                   border: '1px solid var(--app-border)',
@@ -248,7 +242,12 @@ export default function UsersPage() {
             className='px-5 py-4'
             style={{ borderBottom: '1px solid var(--app-border)' }}
           >
-            <p className='text-sm font-bold' style={{ color: 'var(--app-text-primary)' }}>All Users</p>
+            <p
+              className='text-sm font-bold'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              All Users
+            </p>
             <p className='text-xs' style={{ color: 'var(--app-text-muted)' }}>
               Click a user to view or edit
             </p>
@@ -256,10 +255,12 @@ export default function UsersPage() {
 
           {error && (
             <div
-              className='mx-5 my-3 rounded-xl px-4 py-3 text-sm'
+              className='mx-5 my-3 rounded-md px-4 py-3 text-sm'
               style={{
-                background: 'color-mix(in srgb, var(--destructive) 12%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+                background:
+                  'color-mix(in srgb, var(--destructive) 12%, transparent)',
+                border:
+                  '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
                 color: 'var(--destructive)',
               }}
             >
@@ -310,7 +311,7 @@ export default function UsersPage() {
                   }}
                 >
                   <div
-                    className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black'
+                    className='flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sm font-bold'
                     style={{
                       background: `color-mix(in srgb, ${roleVar} 18%, transparent)`,
                       border: `1px solid color-mix(in srgb, ${roleVar} 40%, transparent)`,

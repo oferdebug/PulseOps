@@ -14,8 +14,17 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import FileUpload from '@/components/features/attachments/FileUpload';
+import { CommentSection } from '@/components/features/comments/CommentSection';
+import { SLAIndicator } from '@/components/features/sla/SLAIndicator';
+import { TagInput } from '@/components/features/tags/TagInput';
+import { TicketTimeline } from '@/components/features/timeline/TicketTimeline';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTicketSLA } from '@/hooks/useSLA';
 import { createClient } from '@/lib/supabase/client';
 
 interface AgentOption {
@@ -107,7 +116,7 @@ export default function TicketDetailPage({
   const [isAdmin, setIsAdmin] = useState(false);
   const [profileAgentsLoading, setProfileAgentsLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
-  const [assignmentSuccess, setAssignmentSuccess] = useState(false);
+  const { sla } = useTicketSLA(id);
 
   useEffect(() => {
     const supabase = createClient();
@@ -160,8 +169,9 @@ export default function TicketDetailPage({
       .eq('id', id);
     if (err) {
       setTicket((t) => (t ? { ...t, status: prev } : t));
-      setError(err.message);
-    } else
+      toast.error(err.message);
+    } else {
+      toast.success(`Status changed to ${STATUS_LABELS[newStatus]}`);
       await log({
         action: 'updated',
         entity: 'ticket',
@@ -169,6 +179,7 @@ export default function TicketDetailPage({
         description: `Changed status: ${STATUS_LABELS[prev]} → ${STATUS_LABELS[newStatus]}`,
         metadata: { from: prev, to: newStatus },
       });
+    }
     setUpdating(false);
   }
 
@@ -182,7 +193,7 @@ export default function TicketDetailPage({
       .update({ assigned_to: newAssignedTo })
       .eq('id', id);
     if (err) {
-      setError(err.message);
+      toast.error(err.message);
       setAssigning(false);
       return;
     }
@@ -192,8 +203,7 @@ export default function TicketDetailPage({
       .eq('id', id)
       .single();
     if (data) setTicket(data);
-    setAssignmentSuccess(true);
-    setTimeout(() => setAssignmentSuccess(false), 3000);
+    toast.success('Assignment updated');
     setAssigning(false);
   }
 
@@ -203,7 +213,7 @@ export default function TicketDetailPage({
     const supabase = createClient();
     const { error: err } = await supabase.from('tickets').delete().eq('id', id);
     if (err) {
-      setError(err.message);
+      toast.error(err.message);
       setDeleting(false);
       return;
     }
@@ -213,20 +223,26 @@ export default function TicketDetailPage({
       entity_id: id,
       description: `Deleted ticket: ${ticket?.title}`,
     });
+    toast.success('Ticket deleted');
     router.push('/tickets');
   }
 
   if (loading)
     return (
-      <div
-        className='flex min-h-screen items-center justify-center'
-        style={{ background: 'var(--app-bg)' }}
-      >
-        <Loader2
-          size={28}
-          className='animate-spin'
-          style={{ color: 'var(--app-accent)' }}
-        />
+      <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+        <div className='mx-auto max-w-2xl space-y-6'>
+          <Skeleton className='h-8 w-32 rounded-md' />
+          <div className='glass-card p-6 space-y-4'>
+            <Skeleton className='h-4 w-20' />
+            <Skeleton className='h-8 w-3/4' />
+            <div className='flex gap-3'>
+              <Skeleton className='h-7 w-24 rounded-md' />
+              <Skeleton className='h-7 w-20 rounded-md' />
+            </div>
+            <Skeleton className='h-4 w-48' />
+            <Skeleton className='h-20 w-full' />
+          </div>
+        </div>
       </div>
     );
 
@@ -234,7 +250,7 @@ export default function TicketDetailPage({
     return (
       <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
         <div
-          className='rounded-xl px-4 py-3 text-sm'
+          className='rounded-md px-4 py-3 text-sm'
           style={{
             background:
               'color-mix(in srgb, var(--destructive) 12%, transparent)',
@@ -254,28 +270,15 @@ export default function TicketDetailPage({
 
   return (
     <div
-      className='relative min-h-screen p-8'
+      className='min-h-screen p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div
-        className='app-mesh pointer-events-none fixed inset-0'
-        style={{ zIndex: 0 }}
-      />
 
       <div
-        className='relative mx-auto max-w-2xl space-y-6'
-        style={{ zIndex: 1 }}
+        className='mx-auto max-w-2xl space-y-6'
+       
       >
-        <Link
-          href='/tickets'
-          className='inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
-          style={{
-            border: '1px solid var(--app-border)',
-            color: 'var(--app-nav-idle-text)',
-          }}
-        >
-          <ArrowLeft size={13} /> Back to Tickets
-        </Link>
+        <AppBreadcrumb current={ticket.title} />
 
         <Panel>
           <div className='space-y-4 p-6'>
@@ -288,7 +291,7 @@ export default function TicketDetailPage({
                 {ticket.id.slice(0, 8).toUpperCase()}
               </p>
               <h1
-                className='text-2xl font-black tracking-tight'
+                className='text-2xl font-bold tracking-tight'
                 style={{ color: 'var(--app-text-primary)' }}
               >
                 {ticket.title}
@@ -298,7 +301,7 @@ export default function TicketDetailPage({
             {/* Status + Priority row */}
             <div className='flex flex-wrap items-center gap-3'>
               <div
-                className={`flex items-center gap-2 rounded-xl px-3 py-1.5 ${statusBadgeClass}`}
+                className={`flex items-center gap-2 rounded-md px-3 py-1.5 ${statusBadgeClass}`}
               >
                 <StatusIcon size={13} />
                 <span className='text-xs font-bold'>
@@ -306,7 +309,7 @@ export default function TicketDetailPage({
                 </span>
               </div>
               <div
-                className='rounded-xl px-3 py-1.5'
+                className='rounded-md px-3 py-1.5'
                 style={{
                   background: `color-mix(in srgb, var(--app-priority-${ticket.priority}) 15%, transparent)`,
                   border: `1px solid color-mix(in srgb, var(--app-priority-${ticket.priority}) 30%, transparent)`,
@@ -345,7 +348,7 @@ export default function TicketDetailPage({
               }}
             >
               <p
-                className='mb-2 text-[11px] font-bold uppercase tracking-widest'
+                className='mb-2 text-xs font-medium'
                 style={{ color: 'var(--app-text-muted)' }}
               >
                 Assigned To
@@ -365,7 +368,7 @@ export default function TicketDetailPage({
                       handleAssignmentChange(e.target.value || null)
                     }
                     disabled={assigning}
-                    className='rounded-xl px-3 py-2 text-sm outline-none transition-[border-color] disabled:opacity-60'
+                    className='rounded-md px-3 py-2 text-sm outline-none transition-[border-color] disabled:opacity-60'
                     style={{
                       background: 'var(--app-surface)',
                       border: '1px solid var(--app-border)',
@@ -386,14 +389,6 @@ export default function TicketDetailPage({
                       className='animate-spin'
                       style={{ color: 'var(--app-accent)' }}
                     />
-                  )}
-                  {assignmentSuccess && (
-                    <span
-                      className='text-xs font-semibold'
-                      style={{ color: 'var(--app-health-healthy)' }}
-                    >
-                      Saved
-                    </span>
                   )}
                 </div>
               ) : (
@@ -436,6 +431,38 @@ export default function TicketDetailPage({
               )}
             </div>
 
+            {/* Tags */}
+            <div
+              style={{
+                borderTop: '1px solid var(--app-border)',
+                paddingTop: '16px',
+              }}
+            >
+              <p
+                className='mb-2 text-xs font-medium'
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                Tags
+              </p>
+              <TagInput entityType='ticket' entityId={id} />
+            </div>
+
+            {/* Attachments */}
+            <div
+              style={{
+                borderTop: '1px solid var(--app-border)',
+                paddingTop: '16px',
+              }}
+            >
+              <p
+                className='mb-2 text-xs font-medium'
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                Attachments
+              </p>
+              <FileUpload entityType='ticket' entityId={id} />
+            </div>
+
             {/* Status transitions */}
             <div
               style={{
@@ -444,7 +471,7 @@ export default function TicketDetailPage({
               }}
             >
               <p
-                className='mb-3 text-[11px] font-bold uppercase tracking-widest'
+                className='mb-3 text-xs font-medium'
                 style={{ color: 'var(--app-text-muted)' }}
               >
                 Change Status
@@ -456,7 +483,7 @@ export default function TicketDetailPage({
                     type='button'
                     onClick={() => handleStatusChange(s)}
                     disabled={updating || deleting}
-                    className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
+                    className='flex items-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40'
                     style={
                       s === 'closed'
                         ? {
@@ -467,7 +494,6 @@ export default function TicketDetailPage({
                         : {
                             background: 'var(--app-accent)',
                             color: 'var(--primary-foreground)',
-                            boxShadow: '0 4px 15px var(--app-accent-dim)',
                           }
                     }
                   >
@@ -490,7 +516,7 @@ export default function TicketDetailPage({
                 type='button'
                 onClick={handleDelete}
                 disabled={deleting}
-                className='flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
+                className='flex items-center gap-2 rounded-md px-4 py-2 text-xs font-semibold transition-all hover:bg-(--app-logout-hover)'
                 style={{ color: 'var(--destructive)' }}
               >
                 {deleting ? (
@@ -501,6 +527,41 @@ export default function TicketDetailPage({
                 Delete Ticket
               </button>
             </div>
+          </div>
+        </Panel>
+
+        {/* SLA */}
+        {sla && (
+          <Panel>
+            <div className='p-6'>
+              <p
+                className='mb-3 text-xs font-medium'
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                Service Level Agreement
+              </p>
+              <SLAIndicator sla={sla} />
+            </div>
+          </Panel>
+        )}
+
+        {/* Comments */}
+        <Panel>
+          <div className='p-6'>
+            <CommentSection ticketId={id} canAddInternal={isAdmin} />
+          </div>
+        </Panel>
+
+        {/* History Timeline */}
+        <Panel>
+          <div className='p-6'>
+            <p
+              className='mb-3 text-xs font-medium'
+              style={{ color: 'var(--app-text-muted)' }}
+            >
+              Activity History
+            </p>
+            <TicketTimeline ticketId={id} />
           </div>
         </Panel>
       </div>
