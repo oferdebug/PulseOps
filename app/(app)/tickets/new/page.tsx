@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import { TemplateSelector } from '@/components/features/templates/TemplateSelector';
 import { AiTicketAssist } from '@/components/features/ai/AiTicketAssist';

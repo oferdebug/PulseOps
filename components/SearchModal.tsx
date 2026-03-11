@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/a11y/noNoninteractiveElementToInteractiveRole: roles needed for combobox pattern */
 'use client';
 
 import {
@@ -10,7 +11,6 @@ import {
   Settings,
   Ticket,
   Users,
-  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -187,12 +187,13 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
       aria-modal='true'
       aria-label='Command palette'
     >
-      <div
-        className='glass-card w-full max-w-[600px] overflow-hidden'
-      >
+      <div className='glass-card w-full max-w-[600px] overflow-hidden'>
         <div className='card-accent-line' />
 
-        <div className='p-4' style={{ borderBottom: '1px solid var(--app-border)' }}>
+        <div
+          className='p-4'
+          style={{ borderBottom: '1px solid var(--app-border)' }}
+        >
           <div
             className='flex items-center gap-3 rounded-md px-4 py-2.5'
             style={{
@@ -297,8 +298,12 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                 >
                   Quick Actions
                 </span>
-                <ul className='space-y-0.5 list-none p-0 m-0' role='listbox' id='search-results-listbox'>
-                  {matchedActions.map((action, idx) => {
+                <ul
+                  className='space-y-0.5 list-none p-0 m-0'
+                  role='listbox'
+                  id='search-results-listbox'
+                >
+                  {matchedActions.map((action) => {
                     const Icon = action.icon;
                     const flatIdx = flatItems.findIndex(
                       (it) => it.type === 'action' && it.route === action.route,
@@ -307,7 +312,9 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                     return (
                       <li key={action.route}>
                         <button
-                          id={isHighlight ? `search-result-${flatIdx}` : undefined}
+                          id={
+                            isHighlight ? `search-result-${flatIdx}` : undefined
+                          }
                           type='button'
                           role='option'
                           tabIndex={isHighlight ? 0 : -1}
@@ -322,25 +329,34 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                               : '1px solid transparent',
                           }}
                           onClick={() =>
-                            goTo({ type: 'action', route: action.route, label: action.label, icon: Icon })
+                            goTo({
+                              type: 'action',
+                              route: action.route,
+                              label: action.label,
+                              icon: Icon,
+                            })
                           }
                           onMouseEnter={() => setHighlightIndex(flatIdx)}
                         >
                           <div
                             className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'
                             style={{
-                              background: action.label.startsWith('Create') || action.label.startsWith('Write')
-                                ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)'
-                                : 'var(--app-surface-raised)',
+                              background:
+                                action.label.startsWith('Create') ||
+                                action.label.startsWith('Write')
+                                  ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)'
+                                  : 'var(--app-surface-raised)',
                               border: '1px solid var(--app-border)',
                             }}
                           >
                             <Icon
                               size={14}
                               style={{
-                                color: action.label.startsWith('Create') || action.label.startsWith('Write')
-                                  ? 'var(--app-accent-text)'
-                                  : 'var(--app-text-muted)',
+                                color:
+                                  action.label.startsWith('Create') ||
+                                  action.label.startsWith('Write')
+                                    ? 'var(--app-accent-text)'
+                                    : 'var(--app-text-muted)',
                               }}
                             />
                           </div>
@@ -362,7 +378,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                 className='px-1 text-[11px]'
                 style={{ color: 'var(--app-text-faint)' }}
               >
-                Type to search tickets &amp; articles, or select a quick action ↑↓
+                Type to search tickets &amp; articles, or select a quick action
+                ↑↓
               </p>
             </div>
           )}
@@ -388,7 +405,12 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
           )}
 
           {!showingDefaultView && hasResults && (
-            <div className='space-y-4' role='listbox' id='search-results-listbox' aria-label='Search results'>
+            <div
+              className='space-y-4'
+              role='listbox'
+              id='search-results-listbox'
+              aria-label='Search results'
+            >
               {results.tickets.length > 0 && (
                 <fieldset className='border-0 p-0 m-0 min-w-0'>
                   <legend
@@ -400,14 +422,20 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                   <ul className='space-y-0.5 list-none p-0 m-0'>
                     {results.tickets.map((ticket) => {
                       const flatIdx = flatItems.findIndex(
-                        (it) => it.type === 'ticket' && it.data.id === ticket.id,
+                        (it) =>
+                          it.type === 'ticket' && it.data.id === ticket.id,
                       );
                       const isHighlight = flatIdx === highlightIndex;
-                      const badgeClass = STATUS_BADGE[ticket.status] ?? 'badge-pending';
+                      const badgeClass =
+                        STATUS_BADGE[ticket.status] ?? 'badge-pending';
                       return (
                         <li key={ticket.id}>
                           <button
-                            id={flatIdx === highlightIndex ? `search-result-${flatIdx}` : undefined}
+                            id={
+                              flatIdx === highlightIndex
+                                ? `search-result-${flatIdx}`
+                                : undefined
+                            }
                             type='button'
                             role='option'
                             tabIndex={isHighlight ? 0 : -1}
@@ -417,10 +445,9 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                               background: isHighlight
                                 ? 'var(--app-surface-raised)'
                                 : 'transparent',
-                              border:
-                                isHighlight
-                                  ? '1px solid var(--app-border)'
-                                  : '1px solid transparent',
+                              border: isHighlight
+                                ? '1px solid var(--app-border)'
+                                : '1px solid transparent',
                             }}
                             onClick={() =>
                               goTo({
@@ -482,7 +509,11 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                       return (
                         <li key={article.id}>
                           <button
-                            id={flatIdx === highlightIndex ? `search-result-${flatIdx}` : undefined}
+                            id={
+                              flatIdx === highlightIndex
+                                ? `search-result-${flatIdx}`
+                                : undefined
+                            }
                             type='button'
                             role='option'
                             tabIndex={isHighlight ? 0 : -1}
@@ -492,10 +523,9 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                               background: isHighlight
                                 ? 'var(--app-surface-raised)'
                                 : 'transparent',
-                              border:
-                                isHighlight
-                                  ? '1px solid var(--app-border)'
-                                  : '1px solid transparent',
+                              border: isHighlight
+                                ? '1px solid var(--app-border)'
+                                : '1px solid transparent',
                             }}
                             onClick={() =>
                               goTo({
@@ -552,13 +582,18 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                     {matchedActions.map((action) => {
                       const Icon = action.icon;
                       const flatIdx = flatItems.findIndex(
-                        (it) => it.type === 'action' && it.route === action.route,
+                        (it) =>
+                          it.type === 'action' && it.route === action.route,
                       );
                       const isHighlight = flatIdx === highlightIndex;
                       return (
                         <li key={action.route}>
                           <button
-                            id={isHighlight ? `search-result-${flatIdx}` : undefined}
+                            id={
+                              isHighlight
+                                ? `search-result-${flatIdx}`
+                                : undefined
+                            }
                             type='button'
                             role='option'
                             tabIndex={isHighlight ? 0 : -1}
@@ -573,7 +608,12 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                 : '1px solid transparent',
                             }}
                             onClick={() =>
-                              goTo({ type: 'action', route: action.route, label: action.label, icon: Icon })
+                              goTo({
+                                type: 'action',
+                                route: action.route,
+                                label: action.label,
+                                icon: Icon,
+                              })
                             }
                             onMouseEnter={() => setHighlightIndex(flatIdx)}
                           >
@@ -584,7 +624,10 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                 border: '1px solid var(--app-border)',
                               }}
                             >
-                              <Icon size={14} style={{ color: 'var(--app-text-muted)' }} />
+                              <Icon
+                                size={14}
+                                style={{ color: 'var(--app-text-muted)' }}
+                              />
                             </div>
                             <span
                               className='text-sm font-medium'

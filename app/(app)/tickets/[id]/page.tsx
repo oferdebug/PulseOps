@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   CircleDot,
   Clock,
@@ -11,16 +10,15 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import FileUpload from '@/components/features/attachments/FileUpload';
 import { CommentSection } from '@/components/features/comments/CommentSection';
 import { SLAIndicator } from '@/components/features/sla/SLAIndicator';
 import { TagInput } from '@/components/features/tags/TagInput';
 import { TicketTimeline } from '@/components/features/timeline/TicketTimeline';
-import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useCurrentUser } from '@/hooks/useCurrentUser';

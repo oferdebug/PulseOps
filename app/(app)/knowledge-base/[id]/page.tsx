@@ -1,14 +1,13 @@
 ﻿'use client';
 
-import { ArrowLeft, Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
-import Link from 'next/link';
-import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
+import { AppBreadcrumb } from '@/components/AppBreadcrumb';
 import FileUpload from '@/components/features/attachments/FileUpload';
 import { ArticleStats } from '@/components/features/kb/ArticleStats';
 import { RelatedArticles } from '@/components/features/kb/RelatedArticles';
