@@ -7,6 +7,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { Panel } from '@/components/ui/panel';
 import {
   Select,
   SelectContent,
@@ -25,15 +26,6 @@ type ArticleCategory =
   | 'active-directory'
   | 'email'
   | 'general';
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className='glass-card'>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',

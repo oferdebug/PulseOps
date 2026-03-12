@@ -39,8 +39,6 @@ export default function OnboardingPage() {
       org_slug: slug.trim(),
     });
 
-    console.log('data:', data, 'fnErr:', fnErr);
-
     if (fnErr) {
       setError(fnErr.message);
       setLoading(false);
@@ -59,6 +57,7 @@ export default function OnboardingPage() {
     }
 
     router.push('/dashboard');
+    setLoading(false);
   }
 
   return (

@@ -21,15 +21,20 @@ export function useSavedFilters(entityType: string, userId?: string) {
   const fetchFilters = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('saved_filters')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('entity_type', entityType)
-      .order('created_at', { ascending: false });
-    setFilters((data ?? []) as SavedFilter[]);
-    setLoading(false);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('saved_filters')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('entity_type', entityType)
+        .order('created_at', { ascending: false });
+      setFilters((data ?? []) as SavedFilter[]);
+    } catch (err) {
+      console.error('Failed to fetch filters:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [entityType, userId]);
 
   const saveFilter = useCallback(

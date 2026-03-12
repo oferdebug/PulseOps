@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Panel } from '@/components/ui/panel';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -93,23 +94,6 @@ function formatDate(iso: string) {
     dateStyle: 'short',
     timeStyle: 'short',
   });
-}
-
-function Panel({
-  children,
-  className = '',
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className={`glass-card ${className}`} style={style}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
 }
 
 function Pill({

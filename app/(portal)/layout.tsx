@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -136,11 +136,8 @@ function PortalNavLink({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isActive, setIsActive] = useState(false);
-
-  useEffect(() => {
-    setIsActive(window.location.pathname === href);
-  }, [href]);
+  const pathname = usePathname();
+  const isActive = pathname === href;
 
   return (
     <button

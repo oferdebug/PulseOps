@@ -31,6 +31,7 @@ export function useAiAssist() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description }),
       });
+      if (!res.ok) throw new Error('Classification request failed');
       const data = await res.json();
       if (data.priority) setClassification(data);
     } finally {

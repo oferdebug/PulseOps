@@ -118,6 +118,7 @@ export function useOrganization() {
   }
 
   async function removeMember(memberId: string) {
+    if (memberId === user?.id) return { message: 'Cannot remove yourself' };
     // Unlink from org by nulling organization_id
     const { error } = await supabase
       .from('profiles')

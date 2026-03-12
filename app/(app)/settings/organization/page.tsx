@@ -12,24 +12,10 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RequireRole } from '@/components/RequireRole';
+import { Panel } from '@/components/ui/panel';
 import { useOrganization } from '@/hooks/useOrganization';
-
-function Panel({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`glass-card ${className}`}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',
@@ -91,27 +77,42 @@ function OrgContent() {
   const [inviting, setInviting] = useState(false);
 
   // Populate on load
-  if (org && !orgName && !saving) {
-    setOrgName(org.name);
-    setWebsite(org.website ?? '');
-  }
+  useEffect(() => {
+    if (org) {
+      setOrgName(org.name);
+      setWebsite(org.website ?? '');
+    }
+  }, [org]);
 
   async function handleSaveOrg(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await updateOrg({ name: orgName.trim(), website: website.trim() || null });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-    setSaving(false);
+    try {
+      await updateOrg({
+        name: orgName.trim(),
+        website: website.trim() || null,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save org:', err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
     setInviting(true);
-    await inviteMember(inviteEmail, inviteRole);
-    setInviteEmail('');
-    setInviting(false);
+    try {
+      await inviteMember(inviteEmail, inviteRole);
+      setInviteEmail('');
+    } catch (err) {
+      console.error('Failed to invite:', err);
+    } finally {
+      setInviting(false);
+    }
   }
 
   if (loading) {

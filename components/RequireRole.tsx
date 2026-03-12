@@ -17,7 +17,19 @@ export function RequireRole({
   const { user } = useCurrentUser();
   const { role, loading } = useRole(user?.id);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className='flex items-center justify-center py-24'>
+        <div
+          className='h-8 w-8 animate-spin rounded-full border-2 border-t-transparent'
+          style={{
+            borderColor: 'var(--app-border)',
+            borderTopColor: 'transparent',
+          }}
+        />
+      </div>
+    );
+  }
 
   if (!allowed.includes(role)) {
     return (

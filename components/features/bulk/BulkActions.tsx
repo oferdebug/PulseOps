@@ -235,6 +235,7 @@ export function BulkCheckbox({
         onChange();
       }}
       className='flex h-5 w-5 shrink-0 items-center justify-center rounded transition-all'
+      aria-label={checked ? 'Deselect ticket' : 'Select ticket'}
       style={{
         border: checked ? 'none' : '1.5px solid var(--app-border)',
         background: checked ? 'var(--app-accent)' : 'transparent',

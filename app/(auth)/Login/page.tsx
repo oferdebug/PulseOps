@@ -41,6 +41,7 @@ export default function LoginPage() {
       return;
     }
     toast.success('Welcome back!');
+    setSubmitting(false);
     router.push('/dashboard');
   }
 

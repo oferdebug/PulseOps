@@ -4,15 +4,18 @@
 -- ============================================================
 
 -- Attachment types: what can have attachments
-create type attachment_entity_type as enum (
-  'ticket',
-  'ticket_comment',
-  'article',
-  'user_profile'
-);
+DO $$ BEGIN
+  CREATE TYPE attachment_entity_type AS ENUM (
+    'ticket',
+    'ticket_comment',
+    'article',
+    'user_profile'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Main attachments table
-create table attachments (
+create table if not exists attachments (
   id              uuid primary key default gen_random_uuid(),
   
   -- What this attachment belongs to
@@ -37,14 +40,15 @@ create table attachments (
 );
 
 -- Index for queries
-create index attachments_entity_idx on attachments (entity_type, entity_id) where deleted_at is null;
-create index attachments_uploaded_by_idx on attachments (uploaded_by);
-create index attachments_uploaded_at_idx on attachments (uploaded_at desc);
+create index if not exists attachments_entity_idx on attachments (entity_type, entity_id) where deleted_at is null;
+create index if not exists attachments_uploaded_by_idx on attachments (uploaded_by);
+create index if not exists attachments_uploaded_at_idx on attachments (uploaded_at desc);
 
 -- RLS: Users can view attachments for entities they have access to
 alter table attachments enable row level security;
 
 -- View policy: can view if you have access to the parent entity
+drop policy if exists "Users can view attachments for accessible entities" on attachments;
 create policy "Users can view attachments for accessible entities"
   on attachments for select
   using (
@@ -70,11 +74,13 @@ create policy "Users can view attachments for accessible entities"
   );
 
 -- Insert policy: can upload if you have permission
+drop policy if exists "Users can upload attachments" on attachments;
 create policy "Users can upload attachments"
   on attachments for insert
   with check (uploaded_by = auth.uid());
 
 -- Delete policy: can delete own uploads or if admin
+drop policy if exists "Users can delete own attachments" on attachments;
 create policy "Users can delete own attachments"
   on attachments for delete
   using (uploaded_by = auth.uid());

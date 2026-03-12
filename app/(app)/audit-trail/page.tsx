@@ -43,7 +43,9 @@ export default function AuditTrailPage() {
   const [dateTo, setDateTo] = useState('');
 
   const pageSize = 50;
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const displayedPages = filterEmail
+    ? Math.max(1, Math.ceil(filteredByEmail.length / pageSize))
+    : totalPages;
 
   const filters = useMemo(
     () => ({
@@ -78,11 +80,8 @@ export default function AuditTrailPage() {
   };
 
   return (
-    <div
-      className='min-h-screen'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div className='space-y-6 p-8' >
+    <div className='min-h-screen' style={{ background: 'var(--app-bg)' }}>
+      <div className='space-y-6 p-8'>
         {/* Header */}
         <div className='flex items-end justify-between'>
           <div className='flex items-center gap-3'>
@@ -299,7 +298,7 @@ export default function AuditTrailPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {displayedPages > 1 && (
           <div className='flex items-center justify-center gap-3'>
             <button
               type='button'
@@ -317,12 +316,12 @@ export default function AuditTrailPage() {
               className='text-xs font-semibold'
               style={{ color: 'var(--app-text-muted)' }}
             >
-              Page {page + 1} of {totalPages}
+              Page {page + 1} of {displayedPages}
             </span>
             <button
               type='button'
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
+              onClick={() => setPage(Math.min(displayedPages - 1, page + 1))}
+              disabled={page >= displayedPages - 1}
               className='flex h-8 w-8 items-center justify-center rounded-lg disabled:opacity-30'
               style={{
                 border: '1px solid var(--app-border)',

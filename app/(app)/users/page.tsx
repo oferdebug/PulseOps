@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { Panel } from '@/components/ui/panel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -50,23 +51,6 @@ const ALL_ROLES: Array<UserRole | 'all'> = [
   'technician',
   'user',
 ];
-
-function Panel({
-  children,
-  className = '',
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className={`glass-card ${className}`} style={style}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 function Pill({
   label,

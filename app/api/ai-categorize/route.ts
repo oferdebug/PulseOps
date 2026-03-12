@@ -42,6 +42,9 @@ Return ONLY valid JSON, no other text.`,
       }),
     });
 
+    if (!response.ok) {
+      return NextResponse.json(fallbackCategorize(title, description));
+    }
     const data = await response.json();
     const text = data.content?.[0]?.text ?? '{}';
 

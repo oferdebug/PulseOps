@@ -1,6 +1,14 @@
 ﻿'use client';
 
-import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  Link,
+  Loader2,
+  Pencil,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -88,7 +96,7 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
 
   useEffect(() => {
     if (article && user?.id) analytics.recordView();
-  }, [article, user?.id, analytics.recordView]);
+  }, [article, user?.id, analytics]);
 
   function enterEditMode() {
     if (!article) return;
@@ -132,12 +140,13 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
       .from('articles')
       .delete()
       .eq('id', id);
-    if (err) toast.error(err.message);
-    else {
+    if (err) {
+      toast.error(err.message);
+      setDeleting(false);
+    } else {
       toast.success('Article deleted');
-      router.push('/knowledge-base');
+      await router.push('/knowledge-base');
     }
-    setDeleting(false);
   }
 
   const isAuthor = article?.created_by === user?.id;

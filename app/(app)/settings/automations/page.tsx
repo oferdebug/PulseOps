@@ -64,20 +64,25 @@ export default function AutomationsPage() {
     } catch {
       /* keep empty */
     }
-    await createRule({
-      name: name.trim(),
-      description: description.trim() || null,
-      trigger,
-      conditions,
-      action,
-      action_params,
-    });
-    setShowForm(false);
-    setName('');
-    setDescription('');
-    setConditionsJson('{}');
-    setActionParamsJson('{}');
-    setSaving(false);
+    try {
+      await createRule({
+        name: name.trim(),
+        description: description.trim() || null,
+        trigger,
+        conditions,
+        action,
+        action_params,
+      });
+      setShowForm(false);
+      setName('');
+      setDescription('');
+      setConditionsJson('{}');
+      setActionParamsJson('{}');
+    } catch (err) {
+      console.error('Failed to create rule:', err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const selectStyle: React.CSSProperties = {
@@ -93,11 +98,8 @@ export default function AutomationsPage() {
   };
 
   return (
-    <div
-      className='min-h-screen'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div className='space-y-6 p-8' >
+    <div className='min-h-screen' style={{ background: 'var(--app-bg)' }}>
+      <div className='space-y-6 p-8'>
         {/* Header */}
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-4'>
@@ -357,6 +359,11 @@ export default function AutomationsPage() {
                     className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--app-surface-raised)]'
                     style={{ color: 'var(--app-text-muted)' }}
                     title={rule.is_active ? 'Disable' : 'Enable'}
+                    aria-label={
+                      rule.is_active
+                        ? `Disable rule ${rule.name}`
+                        : `Enable rule ${rule.name}`
+                    }
                   >
                     {rule.is_active ? (
                       <Power size={14} />
@@ -373,6 +380,7 @@ export default function AutomationsPage() {
                     className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--app-surface-raised)]'
                     style={{ color: 'var(--app-priority-critical)' }}
                     title='Delete'
+                    aria-label={`Delete rule ${rule.name}`}
                   >
                     <Trash2 size={14} />
                   </button>

@@ -21,40 +21,45 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const [viewsRes, ratingsRes, userRatingRes] = await Promise.all([
-      supabase
-        .from('article_views')
-        .select('id', { count: 'exact', head: true })
-        .eq('article_id', articleId),
-      supabase
-        .from('article_ratings')
-        .select('rating')
-        .eq('article_id', articleId),
-      userId
-        ? supabase
-            .from('article_ratings')
-            .select('rating')
-            .eq('article_id', articleId)
-            .eq('user_id', userId)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+      const [viewsRes, ratingsRes, userRatingRes] = await Promise.all([
+        supabase
+          .from('article_views')
+          .select('id', { count: 'exact', head: true })
+          .eq('article_id', articleId),
+        supabase
+          .from('article_ratings')
+          .select('rating')
+          .eq('article_id', articleId),
+        userId
+          ? supabase
+              .from('article_ratings')
+              .select('rating')
+              .eq('article_id', articleId)
+              .eq('user_id', userId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
 
-    const ratings = ratingsRes.data ?? [];
-    const avg =
-      ratings.length > 0
-        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-        : 0;
+      const ratings = ratingsRes.data ?? [];
+      const avg =
+        ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+          : 0;
 
-    setStats({
-      viewCount: viewsRes.count ?? 0,
-      avgRating: Math.round(avg * 10) / 10,
-      ratingCount: ratings.length,
-      userRating: userRatingRes.data?.rating ?? null,
-    });
-    setLoading(false);
+      setStats({
+        viewCount: viewsRes.count ?? 0,
+        avgRating: Math.round(avg * 10) / 10,
+        ratingCount: ratings.length,
+        userRating: userRatingRes.data?.rating ?? null,
+      });
+    } catch (err) {
+      console.error('Failed to fetch article stats:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [articleId, userId]);
 
   const recordView = useCallback(async () => {

@@ -21,7 +21,7 @@ export function RelatedArticles({ articleId, category }: RelatedArticlesProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchRelated() {
       const supabase = createClient();
 
       // Strategy 1: same tags via article_tags junction
@@ -74,7 +74,7 @@ export function RelatedArticles({ articleId, category }: RelatedArticlesProps) {
       setLoading(false);
     }
 
-    fetch();
+    fetchRelated();
   }, [articleId, category]);
 
   if (loading) {

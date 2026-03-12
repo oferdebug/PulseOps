@@ -4,22 +4,8 @@
 import { ArrowLeft, Clock, Loader2, Save, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Panel } from '@/components/ui/panel';
 import { type SLARule, useSLARules } from '@/hooks/useSLA';
-
-function Panel({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`glass-card ${className}`}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 function RuleRow({
   rule,
@@ -44,13 +30,18 @@ function RuleRow({
 
   async function handleSave() {
     setSaving(true);
-    await onSave(rule.id, {
-      first_response_hours: Number(response),
-      resolution_hours: Number(resolution),
-      escalation_hours: escalation ? Number(escalation) : null,
-      is_active: active,
-    });
-    setSaving(false);
+    try {
+      await onSave(rule.id, {
+        first_response_hours: Number(response),
+        resolution_hours: Number(resolution),
+        escalation_hours: escalation ? Number(escalation) : null,
+        is_active: active,
+      });
+    } catch (err) {
+      console.error('Failed to save SLA rule:', err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const priorityColors: Record<string, string> = {
@@ -155,12 +146,11 @@ function RuleRow({
             type='button'
             aria-label={`Toggle active: ${active ? 'on' : 'off'}`}
             onClick={() => setActive(!active)}
-            className='h-6 w-11 shrink-0 rounded-full transition-all duration-200'
+            className='relative h-6 w-11 shrink-0 rounded-full transition-all duration-200'
             style={{
               background: active
                 ? 'var(--app-accent)'
                 : 'var(--app-surface-raised)',
-              
             }}
           >
             <span
@@ -199,14 +189,8 @@ export default function SLASettingsPage() {
   const { rules, loading, error, updateRule } = useSLARules();
 
   return (
-    <div
-      className='min-h-screen p-8'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div
-        className='mx-auto max-w-3xl space-y-6'
-        
-      >
+    <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+      <div className='mx-auto max-w-3xl space-y-6'>
         <Link
           href='/settings'
           className='inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
@@ -228,7 +212,10 @@ export default function SLASettingsPage() {
           >
             Settings
           </p>
-          <h1 className='flex items-center gap-3 text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+          <h1
+            className='flex items-center gap-3 text-xl font-bold tracking-tight'
+            style={{ color: 'var(--app-text-primary)' }}
+          >
             <Shield size={32} />
             SLA Management
           </h1>

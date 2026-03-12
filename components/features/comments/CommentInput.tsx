@@ -32,13 +32,16 @@ export function CommentInput({
     if (!trimmed) return;
 
     setSubmitting(true);
-    await onSubmit({
-      content: trimmed,
-      comment_type: isInternal ? 'internal' : 'public',
-      parent_id: parentId,
-    });
-    setContent('');
-    setSubmitting(false);
+    try {
+      await onSubmit({
+        content: trimmed,
+        comment_type: isInternal ? 'internal' : 'public',
+        parent_id: parentId,
+      });
+      setContent('');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

@@ -47,24 +47,28 @@ function InviteContent() {
 
     const supabase = createClient();
     supabase
-      .from('invations')
-      .select('emaIl,role,status,expires_at, organizations(name,slug)')
+      .from('invitations')
+      .select('email,role,status,expires_at, organizations(name,slug)')
       .eq('token', token)
       .single()
       .then(({ data, error: err }) => {
         if (err || !data) {
           setError('Invitation not found');
+          setLoading(false);
         } else if (data.status !== 'pending') {
           setError('This invitation has already been used');
+          setLoading(false);
         } else if (new Date(data.expires_at) < new Date()) {
           setError('This invitation has expired');
+          setLoading(false);
         } else {
+          const org = data.organizations?.[0];
           setInvitation({
-            email: data.emaIl,
+            email: data.email,
             role: data.role,
             organization: {
-              name: data.organizations[0].name,
-              slug: data.organizations[0].slug,
+              name: org?.name ?? '',
+              slug: org?.slug ?? '',
             },
           });
           setLoading(false);
@@ -84,7 +88,7 @@ function InviteContent() {
 
     if (!user) {
       localStorage.setItem('pending_invite_token', token);
-      router.push(`Register?invite=${token}`);
+      router.push(`/Register?invite=${token}`);
       return;
     }
 

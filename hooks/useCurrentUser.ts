@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {createClient} from "@/lib/supabase/client";
 
-interface UseCurrentUser {
+export interface CurrentUser {
   id: string;
   email: string;
   fullName: string;
@@ -10,7 +10,7 @@ interface UseCurrentUser {
 
 
 export function useCurrentUser() {
-    const [user,setUser]=useState<UseCurrentUser|null>(null);
+    const [user, setUser] = useState<CurrentUser | null>(null);
     const [loading,setLoading]=useState(true);
 
 

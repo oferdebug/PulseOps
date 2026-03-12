@@ -54,8 +54,9 @@ function useCountUp(target: number, duration = 1600) {
 
 // ── Live clock ──────────────────────────────────────────────────────────────
 function useLiveClock() {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -410,9 +411,15 @@ function useDashboardData() {
     const openTickets = allTickets.filter((t) => t.status !== 'closed').length;
     const closedTickets = allTickets.filter((t) => t.status === 'closed');
 
-    const ticketsLastWeek = allTickets.filter(
-      (t) => new Date(t.created_at).getTime() < Date.now() - 7 * 86400000,
-    );
+    const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
+
+    const ticketsLastWeek = allTickets.filter((t) => {
+      const created = new Date(t.created_at).getTime();
+      return (
+        created >= Date.now() - 14 * 86400000 &&
+        created < Date.now() - 7 * 86400000
+      );
+    });
     const openLastWeek = ticketsLastWeek.filter(
       (t) => t.status !== 'closed',
     ).length;

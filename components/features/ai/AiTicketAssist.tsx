@@ -177,6 +177,7 @@ export function AiTicketAssist({
               key={article.id}
               href={`/knowledge-base/${article.id}`}
               target='_blank'
+              rel='noopener noreferrer'
               className='flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-[var(--app-surface-raised)]'
             >
               <span

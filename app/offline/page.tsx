@@ -16,7 +16,7 @@ export default function OfflinePage() {
           border: '1px solid var(--app-border)',
         }}
       >
-        📡
+        <span aria-hidden='true'>📡</span>
       </div>
       <h1 className='text-xl font-bold'>You&apos;re Offline</h1>
       <p

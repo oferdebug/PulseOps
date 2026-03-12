@@ -18,7 +18,7 @@ export interface TicketTemplate {
 
 export function useTemplates() {
   const [templates, setTemplates] = useState<TicketTemplate[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTemplates = useCallback(async () => {

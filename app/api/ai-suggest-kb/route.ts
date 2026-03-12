@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         if (articleText.includes(word)) score += 2;
       }
       // Category match bonus
-      if (query.includes(article.category.replace(/-/g, ' '))) score += 3;
+        score += 3;
       return { ...article, score };
     });
 

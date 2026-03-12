@@ -32,7 +32,7 @@ export function ArticleStats({ articleId, userId }: ArticleStatsProps) {
         <Star size={13} style={{ color: '#fbbf24' }} />
         <span className='text-xs font-semibold'>
           {stats.ratingCount > 0
-            ? `${stats.avgRating} (${stats.ratingCount})`
+            ? `${stats.avgRating.toFixed(1)} (${stats.ratingCount})`
             : 'No ratings'}
         </span>
       </div>
