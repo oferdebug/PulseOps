@@ -49,26 +49,18 @@ export default function AuditTrailPage() {
       action: filterAction || undefined,
       entity: filterEntity || undefined,
       userId: undefined,
+      email: filterEmail || undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
     }),
-    [filterAction, filterEntity, dateFrom, dateTo],
+    [filterAction, filterEntity, filterEmail, dateFrom, dateTo],
   );
 
   useEffect(() => {
     fetchEntries(filters, page, pageSize);
   }, [fetchEntries, filters, page]);
 
-  const filteredByEmail = filterEmail
-    ? entries.filter((e) =>
-        e.user_email.toLowerCase().includes(filterEmail.toLowerCase()),
-      )
-    : entries;
-
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const displayedPages = filterEmail
-    ? Math.max(1, Math.ceil(filteredByEmail.length / pageSize))
-    : totalPages;
 
   const inputStyle: React.CSSProperties = {
     background: 'var(--app-surface)',
@@ -161,10 +153,13 @@ export default function AuditTrailPage() {
               />
               <input
                 value={filterEmail}
-                onChange={(e) => setFilterEmail(e.target.value)}
+                onChange={(e) => {
+                  setFilterEmail(e.target.value);
+                  setPage(0);
+                }}
                 placeholder='Filter by email...'
-                className='pl-8 w-48'
-                style={inputStyle}
+                className='w-48'
+                style={{ ...inputStyle, paddingLeft: '32px' }}
               />
             </div>
             <input
@@ -224,7 +219,7 @@ export default function AuditTrailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredByEmail.map((entry) => (
+                  {entries.map((entry) => (
                     <tr
                       key={entry.id}
                       style={{ borderBottom: '1px solid var(--app-border)' }}
@@ -276,7 +271,7 @@ export default function AuditTrailPage() {
                       </td>
                     </tr>
                   ))}
-                  {filteredByEmail.length === 0 && (
+                  {entries.length === 0 && (
                     <tr>
                       <td colSpan={5} className='py-12 text-center'>
                         <FileText
@@ -300,7 +295,7 @@ export default function AuditTrailPage() {
         )}
 
         {/* Pagination */}
-        {displayedPages > 1 && (
+        {totalPages > 1 && (
           <div className='flex items-center justify-center gap-3'>
             <button
               type='button'
@@ -318,12 +313,12 @@ export default function AuditTrailPage() {
               className='text-xs font-semibold'
               style={{ color: 'var(--app-text-muted)' }}
             >
-              Page {page + 1} of {displayedPages}
+              Page {page + 1} of {totalPages}
             </span>
             <button
               type='button'
-              onClick={() => setPage(Math.min(displayedPages - 1, page + 1))}
-              disabled={page >= displayedPages - 1}
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
               className='flex h-8 w-8 items-center justify-center rounded-lg disabled:opacity-30'
               style={{
                 border: '1px solid var(--app-border)',

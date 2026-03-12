@@ -14,8 +14,8 @@ Build the core infrastructure that other features depend on.
 - **Files to create**:
   - `lib/supabase/attachments-migration.sql`
   - `hooks/useFileUpload.ts`
-  - `components/FileUpload.tsx`
-  - `components/FilePreview.tsx`
+  - `components/features/attachments/FileUpload.tsx`
+  - `components/features/attachments/FilePreview.tsx`
 
 #### 1.2 Tags System
 
@@ -39,8 +39,8 @@ Improve core ticket functionality.
 - **Features**: Add comments, internal notes, mentions
 - **Files to create**:
   - `lib/supabase/comments-migration.sql`
-  - `components/CommentSection.tsx`
-  - `components/CommentInput.tsx`
+  - `components/features/comments/CommentSection.tsx`
+  - `components/features/comments/CommentInput.tsx`
   - `hooks/useComments.ts`
 
 #### 2.2 Ticket History/Audit Log
@@ -49,7 +49,7 @@ Improve core ticket functionality.
 - **Features**: Track all changes, show timeline
 - **Files to create**:
   - `lib/supabase/history-migration.sql`
-  - `components/TicketTimeline.tsx`
+  - `components/features/timeline/TicketTimeline.tsx`
   - `hooks/useTicketHistory.ts`
 
 #### 2.3 Bulk Operations
@@ -57,7 +57,9 @@ Improve core ticket functionality.
 - **No database changes** (UI only)
 - **Features**: Multi-select, bulk update
 - **Files to create**:
-  - `components/BulkActions.tsx`
+  - `components/features/bulk-actions/BulkActionBar.tsx`
+  - `components/features/bulk-actions/BulkSelector.tsx`
+  - `components/features/bulk-actions/BulkUpdateDialog.tsx`
   - `hooks/useBulkSelection.ts`
 
 ---
@@ -81,7 +83,7 @@ Improve core ticket functionality.
 - **Files to create**:
   - `lib/supabase/automation-migration.sql`
   - `app/(app)/settings/automation/page.tsx`
-  - `lib/automation/ruleEngine.ts`
+  - `lib/utils/automation.ts`
   - `components/RuleBuilder.tsx`
 
 #### 3.3 Ticket Templates
@@ -169,7 +171,7 @@ Improve core ticket functionality.
 
 #### 6.3 Export Functionality
 
-- **Libraries**: jsPDF, csv-export
+- **Libraries**: jsPDF, react-csv
 - **Features**: Export to PDF/CSV
 - **Files to create**:
   - `lib/export/pdf.ts`

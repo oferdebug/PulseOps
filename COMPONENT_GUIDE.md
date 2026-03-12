@@ -88,7 +88,8 @@ interface FileUploadProps {
   entityType: AttachmentEntityType;
   entityId: string;
   onSuccess?: (attachmentId: string) => void;
-  maxSize?: number; // MB
+  /** Maximum file size in megabytes */
+  maxSizeMB?: number;
   acceptedTypes?: string[];
 }
 
@@ -96,7 +97,7 @@ export function FileUpload({
   entityType, 
   entityId, 
   onSuccess,
-  maxSize = 10,
+  maxSizeMB = 10,
   acceptedTypes = ['image/*', 'application/pdf', '.doc', '.docx']
 }: FileUploadProps) {
   const { upload, progress, error } = useFileUpload();
@@ -130,7 +131,9 @@ interface CommentSectionProps {
 export function CommentSection({ ticketId, canAddInternal }: CommentSectionProps) {
   const { comments, loading, addComment, updateComment, deleteComment } = useComments(ticketId);
 
-  // Your implementation here...
+  if (loading) {
+    return <div>Loading comments...</div>;
+  }
   
   return (
     <div className="space-y-4">
@@ -147,8 +150,7 @@ export function CommentSection({ ticketId, canAddInternal }: CommentSectionProps
       </div>
     </div>
   );
-}
-```
+}```
 
 ### Example 3: Custom Hook Pattern
 

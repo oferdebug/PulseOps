@@ -386,32 +386,24 @@ function useDashboardData() {
     const supabase = createClient();
     const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
-    const [ticketsRes, usersRes, usersLastWeekRes, activityRes] =
-      await Promise.all([
-        supabase
-          .from('tickets')
-          .select(
-            'id, title, status, priority, created_at, updated_at, assigned_to',
-          ),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .lt('created_at', oneWeekAgo),
-        supabase
-          .from('activity_logs')
-          .select('id, action, entity, description, user_email, created_at')
-          .order('created_at', { ascending: false })
-          .limit(8),
-      ]);
+    const [ticketsRes, usersRes, usersLastWeekRes] = await Promise.all([
+      supabase
+        .from('tickets')
+        .select(
+          'id, title, status, priority, created_at, updated_at, assigned_to',
+        ),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .lt('created_at', oneWeekAgo),
+    ]);
 
     const allTickets = ticketsRes.data ?? [];
 
     // ── Core stats ──
     const openTickets = allTickets.filter((t) => t.status !== 'closed').length;
     const closedTickets = allTickets.filter((t) => t.status === 'closed');
-
-    const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
 
     const ticketsLastWeek = allTickets.filter((t) => {
       const created = new Date(t.created_at).getTime();
@@ -603,7 +595,12 @@ function useDashboardData() {
     setTickets(recent ?? []);
 
     // Activity
-    setActivities((activityRes.data ?? []) as ActivityItem[]);
+    const { data: activityData } = await supabase
+      .from('activity_logs')
+      .select('id, action, entity, description, user_email, created_at')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    setActivities((activityData ?? []) as ActivityItem[]);
     setLoading(false);
   }, []);
 
@@ -648,17 +645,19 @@ export default function DashboardPage() {
     );
   }, []);
 
-  const formattedDate = clock.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  const formattedTime = clock.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  const formattedDate =
+    clock?.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }) ?? '';
+  const formattedTime =
+    clock?.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }) ?? '';
 
   return (
     <div

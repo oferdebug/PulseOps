@@ -18,7 +18,8 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 interface FileUploadProps {
   entityType: AttachmentEntityType;
   entityId: string;
-  maxSize?: number; // MB
+  /** Maximum file size in megabytes */
+  maxSizeMB?: number;
   maxFiles?: number;
   accept?: string;
   disabled?: boolean;
@@ -28,7 +29,7 @@ interface FileUploadProps {
 export default function FileUpload({
   entityType,
   entityId,
-  maxSize = 10,
+  maxSizeMB = 10,
   maxFiles: _maxFiles = 5,
   accept,
   disabled = false,
@@ -43,8 +44,8 @@ export default function FileUpload({
     async (files: FileList | File[]) => {
       const fileArray = Array.from(files);
       for (const file of fileArray) {
-        if (file.size > maxSize * 1024 * 1024) {
-          alert(`${file.name} exceeds the ${maxSize}MB limit.`);
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          alert(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
           continue;
         }
         const result = await uploadFile(file);
@@ -53,7 +54,7 @@ export default function FileUpload({
         }
       }
     },
-    [maxSize, uploadFile, onUploadComplete],
+    [maxSizeMB, uploadFile, onUploadComplete],
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -116,7 +117,7 @@ export default function FileUpload({
             : 'Drag & drop files, or click to browse'}
         </p>
         <p className='mt-1 text-xs text-muted-foreground/60'>
-          Max {maxSize}MB per file
+          Max {maxSizeMB}MB per file
         </p>
         <input
           ref={inputRef}

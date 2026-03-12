@@ -19,6 +19,7 @@ interface AuditFilters {
   action?: string;
   entity?: string;
   userId?: string;
+  email?: string;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -42,6 +43,7 @@ export function useAuditTrail() {
       if (filters.action) query = query.eq('action', filters.action);
       if (filters.entity) query = query.eq('entity', filters.entity);
       if (filters.userId) query = query.eq('user_id', filters.userId);
+      if (filters.email) query = query.ilike('user_email', `%${filters.email}%`);
       if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
       if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
@@ -64,6 +66,7 @@ export function useAuditTrail() {
     if (filters.action) query = query.eq('action', filters.action);
     if (filters.entity) query = query.eq('entity', filters.entity);
     if (filters.userId) query = query.eq('user_id', filters.userId);
+    if (filters.email) query = query.ilike('user_email', `%${filters.email}%`);
     if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
     if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 

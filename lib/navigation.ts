@@ -1,4 +1,3 @@
-import type React from 'react';
 import {
   Activity,
   BarChart3,
@@ -10,6 +9,7 @@ import {
   Ticket,
   Users,
 } from 'lucide-react';
+import type React from 'react';
 
 export type NavItem = {
   href: string;
