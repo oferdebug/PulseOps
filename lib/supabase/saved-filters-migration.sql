@@ -16,6 +16,12 @@ CREATE TABLE IF NOT EXISTS saved_filters (
 CREATE INDEX IF NOT EXISTS idx_saved_filters_user_id ON saved_filters(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_filters_entity ON saved_filters(entity_type);
 
+-- Auto-update updated_at
+DROP TRIGGER IF EXISTS saved_filters_updated_at ON saved_filters;
+CREATE TRIGGER saved_filters_updated_at
+  BEFORE UPDATE ON saved_filters
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- Enable RLS
 ALTER TABLE saved_filters ENABLE ROW LEVEL SECURITY;
 

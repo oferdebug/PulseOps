@@ -13,23 +13,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Panel } from '@/components/ui/panel';
 import type { TicketTemplate } from '@/hooks/useTemplates';
 import { useTemplates } from '@/hooks/useTemplates';
-
-function Panel({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`glass-card ${className}`}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',

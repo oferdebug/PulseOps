@@ -18,24 +18,8 @@ import {
   StatusPieChart,
   TicketTrendChart,
 } from '@/components/features/charts/DashboardCharts';
+import { Panel } from '@/components/ui/panel';
 import { useReports } from '@/hooks/useReports';
-
-function Panel({
-  children,
-  className = '',
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className={`glass-card ${className}`} style={style}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const PERIOD_OPTIONS = [
   { value: 7, label: '7 Days' },

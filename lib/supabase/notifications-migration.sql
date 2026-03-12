@@ -4,9 +4,12 @@
 -- ============================================================
 
 -- Notification types
-CREATE TYPE notification_type AS ENUM ('created', 'updated', 'closed', 'assigned', 'comment', 'sla_breach', 'mention');
+DO $$ BEGIN
+  CREATE TYPE notification_type AS ENUM ('created', 'updated', 'closed', 'assigned', 'comment', 'sla_breach', 'mention');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   type          notification_type NOT NULL,
@@ -20,26 +23,29 @@ CREATE TABLE notifications (
 );
 
 -- Indexes
-CREATE INDEX notifications_user_id_idx ON notifications (user_id, created_at DESC);
-CREATE INDEX notifications_unread_idx ON notifications (user_id) WHERE read_at IS NULL;
+CREATE INDEX IF NOT EXISTS notifications_user_id_idx ON notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notifications_unread_idx ON notifications (user_id) WHERE read_at IS NULL;
 
 -- RLS
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
 CREATE POLICY "Users can view own notifications"
   ON notifications FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
 CREATE POLICY "Users can update own notifications"
   ON notifications FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
 CREATE POLICY "System can insert notifications"
   ON notifications FOR INSERT
   WITH CHECK (true);
 
 -- Notification preferences
-CREATE TABLE notification_preferences (
+CREATE TABLE IF NOT EXISTS notification_preferences (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
   ticket_created    BOOLEAN NOT NULL DEFAULT true,
@@ -55,19 +61,23 @@ CREATE TABLE notification_preferences (
 
 ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own preferences" ON notification_preferences;
 CREATE POLICY "Users can view own preferences"
   ON notification_preferences FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own preferences" ON notification_preferences;
 CREATE POLICY "Users can insert own preferences"
   ON notification_preferences FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own preferences" ON notification_preferences;
 CREATE POLICY "Users can update own preferences"
   ON notification_preferences FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Auto-update updated_at
+DROP TRIGGER IF EXISTS notification_prefs_updated_at ON notification_preferences;
 CREATE TRIGGER notification_prefs_updated_at
   BEFORE UPDATE ON notification_preferences
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -130,6 +140,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS ticket_notify_trigger ON tickets;
 CREATE TRIGGER ticket_notify_trigger
   AFTER INSERT OR UPDATE ON tickets
   FOR EACH ROW EXECUTE FUNCTION notify_ticket_change();

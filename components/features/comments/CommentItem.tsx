@@ -131,7 +131,10 @@ export function CommentItem({
             </DropdownMenuItem>
             <DropdownMenuItem
               className='text-destructive'
-              onClick={() => onDelete(comment.id)}
+              onClick={() => {
+                if (window.confirm('Delete this comment?'))
+                  onDelete(comment.id);
+              }}
             >
               <Trash2 className='mr-2 h-3.5 w-3.5' />
               Delete

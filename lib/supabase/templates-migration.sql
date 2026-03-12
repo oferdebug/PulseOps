@@ -19,18 +19,28 @@ CREATE TABLE IF NOT EXISTS ticket_templates (
 CREATE INDEX IF NOT EXISTS idx_ticket_templates_category ON ticket_templates(category);
 CREATE INDEX IF NOT EXISTS idx_ticket_templates_active ON ticket_templates(is_active);
 
+-- Auto-update updated_at
+DROP TRIGGER IF EXISTS ticket_templates_updated_at ON ticket_templates;
+CREATE TRIGGER ticket_templates_updated_at
+  BEFORE UPDATE ON ticket_templates
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- Enable RLS
 ALTER TABLE ticket_templates ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can view templates" ON ticket_templates;
 CREATE POLICY "Authenticated users can view templates"
   ON ticket_templates FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can insert templates" ON ticket_templates;
 CREATE POLICY "Authenticated users can insert templates"
   ON ticket_templates FOR INSERT TO authenticated WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated users can update templates" ON ticket_templates;
 CREATE POLICY "Authenticated users can update templates"
   ON ticket_templates FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated users can delete templates" ON ticket_templates;
 CREATE POLICY "Authenticated users can delete templates"
   ON ticket_templates FOR DELETE TO authenticated USING (true);
 

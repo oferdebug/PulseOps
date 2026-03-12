@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -72,23 +73,6 @@ function timeAgo(iso: string) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
-}
-
-function Panel({
-  children,
-  className = '',
-  style = {},
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className={`glass-card ${className}`} style={style}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
 }
 
 function Pill({

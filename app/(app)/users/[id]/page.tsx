@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { Panel } from '@/components/ui/panel';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { use, useEffect, useState } from 'react';
@@ -55,15 +56,6 @@ const ROLE_VAR: Record<UserRole, string> = {
   technician: 'var(--app-stat-resolution)',
   user: 'var(--app-stat-users)',
 };
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className='glass-card'>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',

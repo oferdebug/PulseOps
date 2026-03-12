@@ -17,7 +17,7 @@ export interface TicketHistoryEntry {
 
 export function useTicketHistory(ticketId: string) {
   const [history, setHistory] = useState<TicketHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {

@@ -53,13 +53,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && !isAuthPage && !isOnboarding && !isInvite && !isPortal) {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('organization_id')
       .eq('id', user.id)
       .single();
 
-    if (!profile?.organization_id) {
+    if (profileError || !profile?.organization_id) {
       return NextResponse.redirect(new URL('/onboarding', request.url));
     }
   }

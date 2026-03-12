@@ -36,27 +36,39 @@ CREATE INDEX IF NOT EXISTS idx_ticket_sla_ticket_id ON ticket_sla(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_ticket_sla_resolution_due ON ticket_sla(resolution_due);
 CREATE INDEX IF NOT EXISTS idx_sla_rules_priority ON sla_rules(priority);
 
+-- Auto-update updated_at
+DROP TRIGGER IF EXISTS sla_rules_updated_at ON sla_rules;
+CREATE TRIGGER sla_rules_updated_at
+  BEFORE UPDATE ON sla_rules
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- Enable RLS
 ALTER TABLE sla_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_sla ENABLE ROW LEVEL SECURITY;
 
 -- SLA Rules: everyone can read, only admins can modify (via service role or check)
+DROP POLICY IF EXISTS "Authenticated users can view SLA rules" ON sla_rules;
 CREATE POLICY "Authenticated users can view SLA rules"
   ON sla_rules FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can insert SLA rules" ON sla_rules;
 CREATE POLICY "Authenticated users can insert SLA rules"
   ON sla_rules FOR INSERT TO authenticated WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated users can update SLA rules" ON sla_rules;
 CREATE POLICY "Authenticated users can update SLA rules"
   ON sla_rules FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
 -- Ticket SLA: everyone can read, system can insert/update
+DROP POLICY IF EXISTS "Authenticated users can view ticket SLA" ON ticket_sla;
 CREATE POLICY "Authenticated users can view ticket SLA"
   ON ticket_sla FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can insert ticket SLA" ON ticket_sla;
 CREATE POLICY "Authenticated users can insert ticket SLA"
   ON ticket_sla FOR INSERT TO authenticated WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated users can update ticket SLA" ON ticket_sla;
 CREATE POLICY "Authenticated users can update ticket SLA"
   ON ticket_sla FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 

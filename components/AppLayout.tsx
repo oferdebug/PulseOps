@@ -437,7 +437,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       </SidebarProvider>
 
-      <div className='fixed bottom-6 right-6' style={{ zIndex: 9999 }}>
+      <div className='fixed bottom-6 right-6' style={{ zIndex: 50 }}>
         <NotificationBell
           open={isNotifOpen}
           onToggle={() => setIsNotifOpen((o) => !o)}

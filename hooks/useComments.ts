@@ -27,11 +27,7 @@ export function useComments(ticketId: string) {
 
       setComments((data ?? []) as TicketComment[]);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to Fetch Comments,Please Try Again Later',
-      );
+      setError(err instanceof Error ? err.message : 'Failed to fetch comments');
     } finally {
       setLoading(false);
     }

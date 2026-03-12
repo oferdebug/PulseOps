@@ -19,6 +19,7 @@ import { CommentSection } from '@/components/features/comments/CommentSection';
 import { SLAIndicator } from '@/components/features/sla/SLAIndicator';
 import { TagInput } from '@/components/features/tags/TagInput';
 import { TicketTimeline } from '@/components/features/timeline/TicketTimeline';
+import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -85,15 +86,6 @@ function formatDate(iso: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className='glass-card'>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
 }
 
 export default function TicketDetailPage({

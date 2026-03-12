@@ -130,7 +130,7 @@ export default function PortalKnowledgeBasePage() {
                 <Link
                   key={article.id}
                   href={`/knowledge-base/${article.id}`}
-                  className='flex items-center justify-between px-6 py-3.5 transition-all hover:bg-(--app-surface-raised)'
+                  className='flex items-center justify-between px-6 py-3.5 transition-all hover:bg-[var(--app-surface-raised)]'
                   style={{
                     borderBottom:
                       i < arr.length - 1

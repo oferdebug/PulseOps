@@ -1,3 +1,4 @@
+import type React from 'react';
 import {
   Activity,
   BarChart3,
@@ -9,6 +10,13 @@ import {
   Ticket,
   Users,
 } from 'lucide-react';
+
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  matchPrefix: boolean;
+};
 
 export const NAV_ITEMS = [
   {

@@ -16,24 +16,10 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Panel } from '@/components/ui/panel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDbNotifications } from '@/hooks/useDbNotifications';
 import { createClient } from '@/lib/supabase/client';
-
-function Panel({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`glass-card ${className}`}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',
@@ -79,7 +65,7 @@ function Toggle({
       type='button'
       aria-label={`Toggle: ${checked ? 'on' : 'off'}`}
       onClick={() => onChange(!checked)}
-      className='h-6 w-11 shrink-0 rounded-full transition-all duration-200'
+      className='relative h-6 w-11 shrink-0 rounded-full transition-all duration-200'
       style={{
         background: checked ? 'var(--app-accent)' : 'var(--app-surface-raised)',
         
@@ -511,10 +497,22 @@ function SecurityTab() {
 
 // ─── Appearance Tab ───────────────────────────────────────────────────────────
 function AppearanceTab() {
-  const [accent, setAccent] = useState('#10b981');
-  const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(
-    'normal',
-  );
+  const [accent, setAccent] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('pulseops_accent') ?? '#10b981';
+    return '#10b981';
+  });
+  const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(() => {
+    if (typeof window !== 'undefined') return (localStorage.getItem('pulseops_density') as 'compact' | 'normal' | 'comfortable') ?? 'normal';
+    return 'normal';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pulseops_accent', accent);
+  }, [accent]);
+
+  useEffect(() => {
+    localStorage.setItem('pulseops_density', density);
+  }, [density]);
 
   const accents = [
     { color: '#10b981', label: 'Emerald' },

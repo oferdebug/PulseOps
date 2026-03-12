@@ -137,6 +137,8 @@ export function StatusPieChart({ data }: { data: Record<string, number> }) {
 export function PriorityBarChart({ data }: { data: Record<string, number> }) {
   const items = Object.entries(data).map(([name, value]) => ({ name, value }));
 
+  if (items.length === 0) return null;
+
   return (
     <ResponsiveContainer width='100%' height={220}>
       <BarChart data={items} barCategoryGap='25%'>

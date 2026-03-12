@@ -64,7 +64,7 @@ export default function MyTicketsPage() {
   const filtered = tickets.filter(
     (t) =>
       t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.status.includes(search.toLowerCase()),
+      t.status.toLowerCase().includes(search.toLowerCase()),
   );
 
   // New ticket form
@@ -76,29 +76,36 @@ export default function MyTicketsPage() {
   const handleSubmit = async () => {
     if (!title.trim() || !user?.id) return;
     setSubmitting(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // Get user's org_id
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('organization_id')
-      .eq('id', user.id)
-      .single();
+      // Get user's org_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
 
-    await supabase.from('tickets').insert({
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      created_by: user.id,
-      organization_id: profile?.organization_id,
-    });
+      const { error } = await supabase.from('tickets').insert({
+        title: title.trim(),
+        description: description.trim(),
+        priority,
+        created_by: user.id,
+        organization_id: profile?.organization_id,
+      });
 
-    setTitle('');
-    setDescription('');
-    setPriority('medium');
-    setShowNew(false);
-    setSubmitting(false);
-    fetchTickets();
+      if (error) throw error;
+
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+      setShowNew(false);
+      fetchTickets();
+    } catch (err) {
+      console.error('Failed to submit ticket:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {

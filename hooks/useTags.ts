@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from '@/lib/supabase/client';
 
 export interface Tag {
   id: string;
@@ -14,7 +14,7 @@ export interface Tag {
 }
 
 interface UseTagsOptions {
-  entityType: "ticket" | "article";
+  entityType: 'ticket' | 'article';
   entityId: string;
 }
 
@@ -22,43 +22,45 @@ export function useTags({ entityType, entityId }: UseTagsOptions) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
-  const junctionTable = entityType === "ticket" ? "ticket_tags" : "article_tags";
-  const fkColumn = entityType === "ticket" ? "ticket_id" : "article_id";
+  const junctionTable =
+    entityType === 'ticket' ? 'ticket_tags' : 'article_tags';
+  const fkColumn = entityType === 'ticket' ? 'ticket_id' : 'article_id';
 
   const fetchTags = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const supabase = createClient();
       const { data, error: fetchError } = await supabase
         .from(junctionTable)
-        .select("tag_id, tags(*)")
+        .select('tag_id, tags(*)')
         .eq(fkColumn, entityId);
 
       if (fetchError) throw fetchError;
 
       const fetched = (data ?? []).map(
-        (row: Record<string, unknown>) => row.tags as Tag
+        (row: Record<string, unknown>) => row.tags as Tag,
       );
       setTags(fetched);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch tags");
+      setError(err instanceof Error ? err.message : 'Failed to fetch tags');
     } finally {
       setLoading(false);
     }
-  }, [supabase, junctionTable, fkColumn, entityId]);
+  }, [junctionTable, fkColumn, entityId]);
 
   const addTag = useCallback(
     async (name: string, color?: string, description?: string) => {
       setError(null);
       try {
+        const supabase = createClient();
         // Upsert the tag (reuse if name already exists)
         const { data: tag, error: tagError } = await supabase
-          .from("tags")
+          .from('tags')
           .upsert(
             { name, color: color ?? null, description: description ?? null },
-            { onConflict: "name" }
+            { onConflict: 'name' },
           )
           .select()
           .single();
@@ -74,30 +76,31 @@ export function useTags({ entityType, entityId }: UseTagsOptions) {
 
         setTags((prev) => [...prev.filter((t) => t.id !== tag.id), tag as Tag]);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to add tag");
+        setError(err instanceof Error ? err.message : 'Failed to add tag');
       }
     },
-    [supabase, junctionTable, fkColumn, entityId],
+    [junctionTable, fkColumn, entityId],
   );
 
   const removeTag = useCallback(
     async (tagId: string) => {
       setError(null);
       try {
+        const supabase = createClient();
         const { error: removeError } = await supabase
           .from(junctionTable)
           .delete()
-          .eq("tag_id", tagId)
+          .eq('tag_id', tagId)
           .eq(fkColumn, entityId);
 
         if (removeError) throw removeError;
 
         setTags((prev) => prev.filter((t) => t.id !== tagId));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to remove tag");
+        setError(err instanceof Error ? err.message : 'Failed to remove tag');
       }
     },
-    [supabase, junctionTable, fkColumn, entityId],
+    [junctionTable, fkColumn, entityId],
   );
 
   useEffect(() => {

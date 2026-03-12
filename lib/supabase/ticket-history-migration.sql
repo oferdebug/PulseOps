@@ -21,23 +21,25 @@ CREATE INDEX IF NOT EXISTS idx_ticket_history_created_at ON ticket_history(creat
 ALTER TABLE ticket_history ENABLE ROW LEVEL SECURITY;
 
 -- Everyone authenticated can read history
+DROP POLICY IF EXISTS "Authenticated users can view ticket history" ON ticket_history;
 CREATE POLICY "Authenticated users can view ticket history"
   ON ticket_history FOR SELECT
   TO authenticated
   USING (true);
 
 -- Authenticated users can insert history entries
+DROP POLICY IF EXISTS "Authenticated users can insert ticket history" ON ticket_history;
 CREATE POLICY "Authenticated users can insert ticket history"
   ON ticket_history FOR INSERT
   TO authenticated
   WITH CHECK (true);
 
 -- Only the user who created the entry (or admins) can delete
+DROP POLICY IF EXISTS "Users can delete own history entries" ON ticket_history;
 CREATE POLICY "Users can delete own history entries"
   ON ticket_history FOR DELETE
   TO authenticated
   USING (changed_by = auth.uid());
-
 -- ============================================================
 -- Trigger: auto-log status changes
 -- ============================================================

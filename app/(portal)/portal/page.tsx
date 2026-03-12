@@ -18,20 +18,28 @@ export default function PortalHomePage() {
   const [loading, setLoading] = useState(true);
 
   const fetchSummary = useCallback(async () => {
-    if (!user?.id) return;
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('tickets')
-      .select('id, status')
-      .eq('created_by', user.id);
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('tickets')
+        .select('id, status')
+        .eq('created_by', user.id);
 
-    const tickets = data ?? [];
-    setSummary({
-      total: tickets.length,
-      open: tickets.filter((t) => t.status !== 'closed').length,
-      closed: tickets.filter((t) => t.status === 'closed').length,
-    });
-    setLoading(false);
+      const tickets = data ?? [];
+      setSummary({
+        total: tickets.length,
+        open: tickets.filter((t) => t.status !== 'closed').length,
+        closed: tickets.filter((t) => t.status === 'closed').length,
+      });
+    } catch (err) {
+      console.error('Failed to fetch summary:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   useEffect(() => {

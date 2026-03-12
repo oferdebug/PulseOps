@@ -19,6 +19,7 @@ import {
 import { ExportButton } from '@/components/features/export/ExportButton';
 import { SavedFilters } from '@/components/features/filters/SavedFilters';
 import { KanbanBoard } from '@/components/features/kanban/KanbanBoard';
+import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -105,24 +106,6 @@ function Pill({
     >
       {label}
     </button>
-  );
-}
-
-// ─── Glass Panel ──────────────────────────────────────────────────────────────
-function Panel({
-  children,
-  className = '',
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className={`glass-card ${className}`} style={style}>
-      <div className='card-accent-line' />
-      {children}
-    </div>
   );
 }
 

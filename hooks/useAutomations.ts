@@ -84,16 +84,18 @@ export function useAutomations() {
   const updateRule = useCallback(
     async (id: string, updates: Partial<AutomationRule>) => {
       const supabase = createClient();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('automation_rules')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       if (!error) {
         setRules((prev) =>
           prev.map((r) => (r.id === id ? { ...r, ...updates } : r)),
         );
       }
-      return error;
+      return { data, error };
     },
     [],
   );

@@ -44,6 +44,7 @@ export function TagInput({ entityType, entityId }: TagInputProps) {
     if (!trimmed) return;
     await addTag(trimmed, color);
     setName('');
+    setColor(PRESET_COLORS[0]);
     setOpen(false);
   }
 

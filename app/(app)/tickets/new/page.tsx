@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { Panel } from '@/components/ui/panel';
 import { TemplateSelector } from '@/components/features/templates/TemplateSelector';
 import { AiTicketAssist } from '@/components/features/ai/AiTicketAssist';
 import type { TicketTemplate } from '@/hooks/useTemplates';
@@ -28,15 +29,6 @@ interface AgentOption {
   id: string;
   full_name: string | null;
   email: string | null;
-}
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className='glass-card'>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
 }
 
 const inputStyle: React.CSSProperties = {
@@ -124,6 +116,7 @@ export default function NewTicketPage() {
       .select('id')
       .single();
     if (err) {
+      setError(err.message);
       toast.error(err.message);
       setSubmitting(false);
       return;
@@ -140,14 +133,8 @@ export default function NewTicketPage() {
   }
 
   return (
-    <div
-      className='min-h-screen p-8'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div
-        className='mx-auto max-w-2xl space-y-6'
-        
-      >
+    <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+      <div className='mx-auto max-w-2xl space-y-6'>
         {/* Breadcrumb */}
         <AppBreadcrumb current='New Ticket' />
 
@@ -162,7 +149,10 @@ export default function NewTicketPage() {
           >
             Helpdesk
           </p>
-          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+          <h1
+            className='text-xl font-bold tracking-tight'
+            style={{ color: 'var(--app-text-primary)' }}
+          >
             New Ticket
           </h1>
           <p
@@ -235,7 +225,6 @@ export default function NewTicketPage() {
                 title={title}
                 description={description}
                 onApplyPriority={(p) => setPriority(p as TicketPriority)}
-                onApplyTags={() => {}}
               />
             )}
 

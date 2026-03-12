@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppBreadcrumb } from '@/components/AppBreadcrumb';
+import { Panel } from '@/components/ui/panel';
 import {
   Select,
   SelectContent,
@@ -16,15 +17,6 @@ import {
 import { createClient } from '@/lib/supabase/client';
 
 type UserRole = 'admin' | 'technician' | 'user';
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className='glass-card'>
-      <div className='card-accent-line' />
-      {children}
-    </div>
-  );
-}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',
@@ -75,6 +67,7 @@ export default function NewUserPage() {
       .select('id')
       .single();
     if (err) {
+      setError(err.message);
       toast.error(err.message);
       setSubmitting(false);
       return;

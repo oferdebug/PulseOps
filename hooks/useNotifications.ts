@@ -25,7 +25,7 @@ export interface Notification {
 }
 
 const STORAGE_KEY = 'pulseops_notifications';
-const MAX_NOTAFICTIONS = 20;
+const MAX_NOTIFICATIONS = 20;
 
 type StoredNotification = Notification & { description?: string };
 
@@ -54,7 +54,7 @@ function loadFromStorage(storageKey: string): Notification[] {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
-      .slice(0, MAX_NOTAFICTIONS);
+      .slice(0, MAX_NOTIFICATIONS);
   } catch {
     return [];
   }
@@ -69,7 +69,7 @@ function saveToStorage(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-    const limited = sorted.slice(0, MAX_NOTAFICTIONS);
+    const limited = sorted.slice(0, MAX_NOTIFICATIONS);
     localStorage.setItem(storageKey, JSON.stringify(limited));
     return limited;
   } catch {
@@ -138,7 +138,7 @@ export function useNotifications(userId?: string) {
     (n: AddNotificationInput) => {
       if (!storageKey) return;
       setNotifications((prev) => {
-        const next = [buildNotification(n), ...prev].slice(0, MAX_NOTAFICTIONS);
+        const next = [buildNotification(n), ...prev].slice(0, MAX_NOTIFICATIONS);
         return saveToStorage(storageKey, next);
       });
     },

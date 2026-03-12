@@ -1,6 +1,6 @@
 /**
  * PulseOps TypeScript Type Definitions
- * 
+ *
  * Centralized type definitions for new features.
  * Import these in your components as needed.
  */
@@ -10,10 +10,10 @@
 // ATTACHMENTS
 // ============================================================
 
-export type AttachmentEntityType = 
-  | 'ticket' 
-  | 'ticket_comment' 
-  | 'article' 
+export type AttachmentEntityType =
+  | 'ticket'
+  | 'ticket_comment'
+  | 'article'
   | 'user_profile';
 
 export interface Attachment {
@@ -66,7 +66,7 @@ export interface ArticleTag {
 }
 
 export interface PopularTag extends Tag {
-  usage_count: number;
+  usage_count: number | string;
 }
 
 // ============================================================
@@ -87,7 +87,7 @@ export interface TicketComment {
   edited_at?: string | null;
   mentions: string[]; // Array of user IDs
   parent_id?: string | null; // For nested comments
-  
+
   // Joined data (when fetching with relations)
   author?: {
     id: string;
@@ -116,7 +116,7 @@ export interface SLARule {
   id: string;
   name: string;
   priority: SLAPriority;
-  response_time_hours: number;  // Hours to first response
+  response_time_hours: number; // Hours to first response
   resolution_time_hours: number; // Hours to resolution
   active: boolean;
   created_at: string;
@@ -133,7 +133,7 @@ export interface TicketSLA {
   resolution_met_at?: string | null;
   is_breached: boolean;
   created_at: string;
-  
+
   // Joined data
   sla_rule?: SLARule;
 }
@@ -148,7 +148,7 @@ export interface SLAStatus {
 // AUTOMATION RULES
 // ============================================================
 
-export type RuleTrigger = 
+export type RuleTrigger =
   | 'ticket_created'
   | 'ticket_updated'
   | 'status_changed'
@@ -156,7 +156,7 @@ export type RuleTrigger =
   | 'assigned'
   | 'sla_breach';
 
-export type RuleAction = 
+export type RuleAction =
   | 'assign_to'
   | 'change_status'
   | 'change_priority'
@@ -299,7 +299,7 @@ export interface PortalSettings {
 // NOTIFICATION TYPES
 // ============================================================
 
-export type NotificationType = 
+export type NotificationType =
   | 'ticket_assigned'
   | 'ticket_updated'
   | 'comment_added'
@@ -318,7 +318,7 @@ export interface Notification {
   read: boolean;
   read_at?: string | null;
   created_at: string;
-  
+
   // Metadata for rich notifications
   metadata?: Record<string, any>;
 }
@@ -327,7 +327,7 @@ export interface Notification {
 // TICKET HISTORY / AUDIT LOG
 // ============================================================
 
-export type HistoryAction = 
+export type HistoryAction =
   | 'created'
   | 'updated'
   | 'status_changed'
@@ -345,7 +345,7 @@ export interface TicketHistory {
   new_value?: string | null;
   changed_by: string | null;
   changed_at: string;
-  
+
   // Joined data
   user?: {
     id: string;

@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   title: 'PulseOps',
   description: 'IT Command Center',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icons/icon.svg',
+    apple: '/icons/icon-192.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -37,15 +41,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en' suppressHydrationWarning>
-      <head>
-        <link rel='icon' href='/icons/icon.svg' type='image/svg+xml' />
-        <link rel='apple-touch-icon' href='/icons/icon-192.png' />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
-        <Toaster richColors position='bottom-right' />
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position='bottom-right' />
+        </ThemeProvider>
         <ServiceWorkerRegistration />
       </body>
     </html>

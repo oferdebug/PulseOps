@@ -250,11 +250,8 @@ export default function NotificationsPage() {
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div
-      className='min-h-screen'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div className='space-y-6 p-8' >
+    <div className='min-h-screen' style={{ background: 'var(--app-bg)' }}>
+      <div className='space-y-6 p-8'>
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 flex items-center justify-between'
@@ -316,7 +313,14 @@ export default function NotificationsPage() {
             {notifications.length > 0 && (
               <button
                 type='button'
-                onClick={clearAll}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      'Clear all notifications? This cannot be undone.',
+                    )
+                  )
+                    clearAll();
+                }}
                 className='flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold transition-all hover:-translate-y-0.5'
                 style={{
                   background: 'var(--app-surface)',

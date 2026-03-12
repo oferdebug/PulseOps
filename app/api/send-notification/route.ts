@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const { userId, type, title, message, ticketId, ticketTitle } =
       await req.json();
 
-    if (!userId || !type || !title) {
+    if (!userId || !type || !title || !message) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 },
@@ -124,5 +124,6 @@ function escapeHtml(s: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

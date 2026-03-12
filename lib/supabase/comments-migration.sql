@@ -3,9 +3,12 @@
 -- Phase 2.1: Threaded discussions and internal notes
 -- ============================================================
 
-create type comment_type as enum ('public', 'internal');
+DO $$ BEGIN
+  CREATE TYPE comment_type AS ENUM ('public', 'internal');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-create table ticket_comments (
+create table if not exists ticket_comments (
   id              uuid primary key default gen_random_uuid(),
   ticket_id       uuid not null references tickets(id) on delete cascade,
   
@@ -30,12 +33,13 @@ create table ticket_comments (
 );
 
 -- Indexes
-create index ticket_comments_ticket_id_idx on ticket_comments (ticket_id);
-create index ticket_comments_created_by_idx on ticket_comments (created_by);
-create index ticket_comments_created_at_idx on ticket_comments (created_at desc);
-create index ticket_comments_parent_id_idx on ticket_comments (parent_id) where parent_id is not null;
+create index if not exists ticket_comments_ticket_id_idx on ticket_comments (ticket_id);
+create index if not exists ticket_comments_created_by_idx on ticket_comments (created_by);
+create index if not exists ticket_comments_created_at_idx on ticket_comments (created_at desc);
+create index if not exists ticket_comments_parent_id_idx on ticket_comments (parent_id) where parent_id is not null;
 
 -- Auto-update updated_at trigger
+drop trigger if exists ticket_comments_updated_at on ticket_comments;
 create trigger ticket_comments_updated_at
   before update on ticket_comments
   for each row execute function update_updated_at();
@@ -43,6 +47,7 @@ create trigger ticket_comments_updated_at
 -- RLS: Only users with ticket access can see comments
 alter table ticket_comments enable row level security;
 
+drop policy if exists "Users can view comments on accessible tickets" on ticket_comments;
 create policy "Users can view comments on accessible tickets"
   on ticket_comments for select
   using (
@@ -62,6 +67,7 @@ create policy "Users can view comments on accessible tickets"
     )
   );
 
+drop policy if exists "Users can create comments on accessible tickets" on ticket_comments;
 create policy "Users can create comments on accessible tickets"
   on ticket_comments for insert
   with check (
@@ -73,10 +79,12 @@ create policy "Users can create comments on accessible tickets"
     )
   );
 
+drop policy if exists "Users can update own comments" on ticket_comments;
 create policy "Users can update own comments"
   on ticket_comments for update
   using (created_by = auth.uid());
 
+drop policy if exists "Users can delete own comments" on ticket_comments;
 create policy "Users can delete own comments"
   on ticket_comments for delete
   using (created_by = auth.uid());
@@ -114,6 +122,7 @@ end;
 $$ language plpgsql;
 
 -- Trigger to notify on mentions
+drop trigger if exists notify_on_comment_mention on ticket_comments;
 create trigger notify_on_comment_mention
   after insert on ticket_comments
   for each row

@@ -81,8 +81,6 @@ CREATE POLICY "Org members can view automation rules"
       AND profiles.organization_id = automation_rules.organization_id
     )
   );
-
--- Admins/agents can manage rules
 DROP POLICY IF EXISTS "Staff can manage automation rules" ON automation_rules;
 CREATE POLICY "Staff can manage automation rules"
   ON automation_rules FOR ALL TO authenticated
@@ -91,6 +89,10 @@ CREATE POLICY "Staff can manage automation rules"
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
       AND profiles.role IN ('admin', 'agent')
+      AND (
+        automation_rules.organization_id IS NULL
+        OR profiles.organization_id = automation_rules.organization_id
+      )
     )
   );
 
