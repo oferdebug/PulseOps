@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth';
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -8,6 +9,9 @@ const resend = process.env.RESEND_API_KEY
 
 export async function POST(req: Request) {
   try {
+    const { user: authedUser, error: authError } = await getAuthenticatedUser();
+    if (authError) return authError;
+
     const { userId, type, title, message, ticketId, ticketTitle } =
       await req.json();
 
@@ -18,11 +22,22 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate ticketId format to prevent URL injection
+    if (ticketId && !/^[a-f0-9-]{36}$/i.test(ticketId)) {
+      return NextResponse.json(
+        { error: 'Invalid ticket ID format' },
+        { status: 400 },
+      );
+    }
+
     // Get user email from profile
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     const { data: profile } = await supabase
       .from('profiles')

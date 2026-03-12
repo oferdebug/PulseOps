@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 export type UserRole = 'admin' | 'agent' | 'customer';
 
 interface RoleInfo {
-  role: UserRole;
+  role: UserRole | null;
   loading: boolean;
   isAdmin: boolean;
   isAgent: boolean;
@@ -15,11 +15,14 @@ interface RoleInfo {
 }
 
 export function useRole(userId?: string): RoleInfo {
-  const [role, setRole] = useState<UserRole>('agent');
+  const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
     supabase
       .from('profiles')

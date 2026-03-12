@@ -1,18 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth';
 
 export async function POST(req: NextRequest) {
   try {
+    const { user, error: authError } = await getAuthenticatedUser();
+    if (authError) return authError;
+
     const { title, description } = await req.json();
 
-    if (!title) {
+    if (!title || typeof title !== 'string') {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     // Fetch published articles
     const { data: articles } = await supabase
@@ -36,7 +43,7 @@ export async function POST(req: NextRequest) {
         if (articleText.includes(word)) score += 2;
       }
       // Category match bonus
-      if (query.includes(article.category.replace(/-/g, ' '))) score += 3;
+      if (article.category && query.includes(article.category.replace(/-/g, ' '))) score += 3;
       return { ...article, score };
     });
 

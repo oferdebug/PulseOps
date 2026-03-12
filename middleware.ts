@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  const isApiRoute = pathname.startsWith('/api/');
   const isAuthPage =
     pathname.startsWith('/Login') || pathname.startsWith('/Register');
   const isOnboarding = pathname.startsWith('/onboarding');
@@ -43,8 +44,11 @@ export async function middleware(request: NextRequest) {
   const isPortal = pathname.startsWith('/portal');
   const isOffline = pathname === '/offline';
 
-  // Not logged in → allow auth pages, offline, and portal; redirect others to Login
+  // Not logged in → return JSON 401 for API routes, redirect others to Login
   if (!user && !isAuthPage && !isOffline && !isPortal) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.redirect(new URL('/Login', request.url));
   }
   

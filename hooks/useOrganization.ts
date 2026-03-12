@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
 
@@ -41,7 +41,7 @@ export function useOrganization() {
   const [invites, setInvites] = useState<OrgInvite[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchOrg = useCallback(async () => {
     if (!user?.organizationId) return;

@@ -342,6 +342,10 @@ function SecurityTab() {
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (!current) {
+      toast.error('Please enter your current password.');
+      return;
+    }
     if (newPw !== confirm) {
       toast.error('Passwords do not match.');
       return;
@@ -352,6 +356,25 @@ function SecurityTab() {
     }
     setLoading(true);
     const supabase = createClient();
+
+    // Verify current password by re-authenticating
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      toast.error('Unable to verify identity. Please log in again.');
+      setLoading(false);
+      return;
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: current,
+    });
+    if (signInError) {
+      toast.error('Current password is incorrect.');
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password: newPw });
     if (error) toast.error(error.message);
     else {

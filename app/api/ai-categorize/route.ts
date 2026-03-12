@@ -1,17 +1,29 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUser } from '@/lib/supabase/api-auth';
+
+const MAX_TITLE_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 5000;
 
 export async function POST(req: NextRequest) {
   try {
+    const { user, error: authError } = await getAuthenticatedUser();
+    if (authError) return authError;
+
     const { title, description } = await req.json();
 
-    if (!title) {
+    if (!title || typeof title !== 'string') {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
+
+    const sanitizedTitle = title.slice(0, MAX_TITLE_LENGTH);
+    const sanitizedDescription = typeof description === 'string'
+      ? description.slice(0, MAX_DESCRIPTION_LENGTH)
+      : '';
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       // Fallback: simple keyword-based categorization
-      return NextResponse.json(fallbackCategorize(title, description));
+      return NextResponse.json(fallbackCategorize(sanitizedTitle, sanitizedDescription));
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -33,8 +45,8 @@ export async function POST(req: NextRequest) {
 - "suggested_response": a brief 1-2 sentence initial response to the user
 - "tags": array of 1-3 relevant tags
 
-Ticket Title: ${title}
-${description ? `Description: ${description}` : ''}
+Ticket Title: ${sanitizedTitle}
+${sanitizedDescription ? `Description: ${sanitizedDescription}` : ''}
 
 Return ONLY valid JSON, no other text.`,
           },
@@ -49,7 +61,7 @@ Return ONLY valid JSON, no other text.`,
       const parsed = JSON.parse(text);
       return NextResponse.json(parsed);
     } catch {
-      return NextResponse.json(fallbackCategorize(title, description));
+      return NextResponse.json(fallbackCategorize(sanitizedTitle, sanitizedDescription));
     }
   } catch (error) {
     console.error('AI categorize error:', error);

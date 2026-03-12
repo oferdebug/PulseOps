@@ -211,7 +211,7 @@ export default function KnowledgeBasePage() {
           style={{ animationDelay: '80ms', animationFillMode: 'forwards' }}
         >
           <div className='flex flex-wrap items-center gap-3 p-4'>
-            <div className='min-w-[200px] flex-1'>
+            <div className='relative min-w-[200px] flex-1'>
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'

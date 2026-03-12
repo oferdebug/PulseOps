@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { CommentFormData, TicketComment } from '@/lib/types/features';
 
@@ -10,7 +10,7 @@ export function useComments(ticketId: string) {
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
@@ -30,7 +30,7 @@ export function useComments(ticketId: string) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to Fetch Comments,Please Try Again Later',
+          : 'Failed to fetch comments. Please try again later.',
       );
     } finally {
       setLoading(false);

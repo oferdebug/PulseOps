@@ -82,7 +82,7 @@ export function KanbanBoard({ tickets, onStatusChange }: KanbanBoardProps) {
   }, []);
 
   return (
-    <div className='grid grid-cols-4 gap-4'>
+    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
       {COLUMNS.map((col) => {
         const colTickets = tickets.filter((t) => t.status === col.key);
         const isOver = dragOverCol === col.key;
@@ -132,53 +132,81 @@ export function KanbanBoard({ tickets, onStatusChange }: KanbanBoardProps) {
             {/* Cards */}
             <div className='flex-1 space-y-2 p-3 overflow-y-auto'>
               {colTickets.map((ticket) => (
-                <Link
+                <div
                   key={ticket.id}
-                  href={`/tickets/${ticket.id}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, ticket.id)}
-                  onDragEnd={handleDragEnd}
-                  className='group block rounded-md p-3 transition-all duration-150 hover:-translate-y-0.5'
+                  className='group rounded-md transition-all duration-150 hover:-translate-y-0.5'
                   style={{
                     background: 'var(--app-surface-raised)',
                     border: '1px solid var(--app-border)',
                     opacity: draggedId === ticket.id ? 0.5 : 1,
-                    cursor: 'grab',
                   }}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, ticket.id)}
+                  onDragEnd={handleDragEnd}
                 >
-                  <div className='flex items-start gap-2'>
-                    <Grip
-                      size={12}
-                      className='mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-50'
-                      style={{ color: 'var(--app-text-faint)' }}
-                    />
-                    <div className='min-w-0 flex-1'>
-                      <p
-                        className='truncate text-sm font-medium'
-                        style={{ color: 'var(--app-text-primary)' }}
-                      >
-                        {ticket.title}
-                      </p>
-                      <div className='mt-2 flex items-center gap-2'>
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${PRIORITY_DOT[ticket.priority]}`}
-                        />
-                        <span
-                          className='text-[10px] font-bold capitalize'
-                          style={{ color: 'var(--app-text-muted)' }}
+                  <Link
+                    href={`/tickets/${ticket.id}`}
+                    className='block p-3'
+                    style={{ cursor: 'grab' }}
+                  >
+                    <div className='flex items-start gap-2'>
+                      <Grip
+                        size={12}
+                        aria-hidden='true'
+                        className='mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-50'
+                        style={{ color: 'var(--app-text-faint)' }}
+                      />
+                      <div className='min-w-0 flex-1'>
+                        <p
+                          className='truncate text-sm font-medium'
+                          style={{ color: 'var(--app-text-primary)' }}
                         >
-                          {ticket.priority}
-                        </span>
-                        <span
-                          className='ml-auto font-mono text-[10px]'
-                          style={{ color: 'var(--app-text-faint)' }}
-                        >
-                          {ticket.id.slice(0, 6).toUpperCase()}
-                        </span>
+                          {ticket.title}
+                        </p>
+                        <div className='mt-2 flex items-center gap-2'>
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${PRIORITY_DOT[ticket.priority]}`}
+                          />
+                          <span
+                            className='text-[10px] font-bold capitalize'
+                            style={{ color: 'var(--app-text-muted)' }}
+                          >
+                            {ticket.priority}
+                          </span>
+                          <span
+                            className='ml-auto font-mono text-[10px]'
+                            style={{ color: 'var(--app-text-faint)' }}
+                          >
+                            {ticket.id.slice(0, 6).toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  {/* Keyboard-accessible status change */}
+                  <select
+                    aria-label={`Move "${ticket.title}" to another column`}
+                    className='mx-3 mb-2 w-[calc(100%-1.5rem)] rounded border px-1 py-0.5 text-[10px] opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-70'
+                    style={{
+                      background: 'var(--app-surface)',
+                      borderColor: 'var(--app-border)',
+                      color: 'var(--app-text-muted)',
+                    }}
+                    value={ticket.status}
+                    onChange={(e) => {
+                      const newStatus = e.target.value as TicketStatus;
+                      if (newStatus !== ticket.status) {
+                        onStatusChange(ticket.id, newStatus);
+                      }
+                    }}
+                  >
+                    {COLUMNS.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ))}
               {colTickets.length === 0 && (
                 <div

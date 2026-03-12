@@ -160,7 +160,6 @@ export default function TicketsPage() {
   }, [fetchTickets]);
 
   useEffect(() => {
-    console.log('user?.id:', user?.id);
     if (!user?.id) return;
     const supabase = createClient();
     Promise.all([
