@@ -43,9 +43,6 @@ export default function AuditTrailPage() {
   const [dateTo, setDateTo] = useState('');
 
   const pageSize = 50;
-  const displayedPages = filterEmail
-    ? Math.max(1, Math.ceil(filteredByEmail.length / pageSize))
-    : totalPages;
 
   const filters = useMemo(
     () => ({
@@ -67,6 +64,11 @@ export default function AuditTrailPage() {
         e.user_email.toLowerCase().includes(filterEmail.toLowerCase()),
       )
     : entries;
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const displayedPages = filterEmail
+    ? Math.max(1, Math.ceil(filteredByEmail.length / pageSize))
+    : totalPages;
 
   const inputStyle: React.CSSProperties = {
     background: 'var(--app-surface)',
