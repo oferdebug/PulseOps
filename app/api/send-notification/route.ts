@@ -8,6 +8,32 @@ const resend = process.env.RESEND_API_KEY
 
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 },
+      );
+    }
+
+    // Verify the caller is authenticated
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const token = authHeader.replace('Bearer ', '');
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { userId, type, title, message, ticketId, ticketTitle } =
       await req.json();
 
@@ -19,10 +45,6 @@ export async function POST(req: Request) {
     }
 
     // Get user email from profile
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-    );
 
     const { data: profile } = await supabase
       .from('profiles')

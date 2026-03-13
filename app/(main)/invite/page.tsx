@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface InvitationData {
   email: string;
   role: string;
@@ -39,7 +42,7 @@ function InviteContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !UUID_REGEX.test(token)) {
       setError('Invalid invitation link');
       setLoading(false);
       return;
@@ -47,22 +50,24 @@ function InviteContent() {
 
     const supabase = createClient();
     supabase
-      .from('invitations')
-      .select('email,role,status,expires_at, organizations(name,slug)')
-      .eq('token', token)
+      .from('organization_invites')
+      .select('email,role,accepted_at,expires_at,organizations(name,slug)')
+      .eq('id', token)
       .single()
       .then(({ data, error: err }) => {
         if (err || !data) {
           setError('Invitation not found');
           setLoading(false);
-        } else if (data.status !== 'pending') {
+        } else if (data.accepted_at !== null) {
           setError('This invitation has already been used');
           setLoading(false);
         } else if (new Date(data.expires_at) < new Date()) {
           setError('This invitation has expired');
           setLoading(false);
         } else {
-          const org = data.organizations?.[0];
+          const org = Array.isArray(data.organizations)
+            ? data.organizations[0]
+            : data.organizations;
           setInvitation({
             email: data.email,
             role: data.role,

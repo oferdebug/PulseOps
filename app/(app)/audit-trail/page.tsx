@@ -10,7 +10,7 @@ import {
   Search,
   Shield,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuditTrail } from '@/hooks/useAuditTrail';
 
 const ACTIONS = [
@@ -39,21 +39,35 @@ export default function AuditTrailPage() {
   const [filterAction, setFilterAction] = useState('');
   const [filterEntity, setFilterEntity] = useState('');
   const [filterEmail, setFilterEmail] = useState('');
+  const [debouncedEmail, setDebouncedEmail] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const pageSize = 50;
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedEmail(filterEmail);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filterEmail]);
 
   const filters = useMemo(
     () => ({
       action: filterAction || undefined,
       entity: filterEntity || undefined,
       userId: undefined,
-      email: filterEmail || undefined,
+      email: debouncedEmail || undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
     }),
-    [filterAction, filterEntity, filterEmail, dateFrom, dateTo],
+    [filterAction, filterEntity, debouncedEmail, dateFrom, dateTo],
   );
 
   useEffect(() => {
@@ -61,6 +75,19 @@ export default function AuditTrailPage() {
   }, [fetchEntries, filters, page]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportAudit(filters);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setExportError(message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const inputStyle: React.CSSProperties = {
     background: 'var(--app-surface)',
@@ -100,14 +127,33 @@ export default function AuditTrailPage() {
               </p>
             </div>
           </div>
-          <button
-            type='button'
-            onClick={() => exportAudit(filters)}
-            className='flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90'
-            style={{ background: 'var(--app-accent)', color: '#fff' }}
-          >
-            <Download size={14} /> Export CSV
-          </button>
+          <div>
+            <button
+              type='button'
+              onClick={handleExport}
+              disabled={isExporting}
+              className='flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-60'
+              style={{ background: 'var(--app-accent)', color: '#fff' }}
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 size={14} className='animate-spin' /> Exporting…
+                </>
+              ) : (
+                <>
+                  <Download size={14} /> Export CSV
+                </>
+              )}
+            </button>
+            {exportError && (
+              <p
+                className='mt-2 text-xs'
+                style={{ color: 'var(--app-priority-critical)' }}
+              >
+                Export failed: {exportError}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -116,6 +162,7 @@ export default function AuditTrailPage() {
           <div className='flex flex-wrap items-center gap-3 px-6 py-4'>
             <Filter size={13} style={{ color: 'var(--app-text-muted)' }} />
             <select
+              aria-label='Action filter'
               value={filterAction}
               onChange={(e) => {
                 setFilterAction(e.target.value);
@@ -131,6 +178,7 @@ export default function AuditTrailPage() {
               ))}
             </select>
             <select
+              aria-label='Entity filter'
               value={filterEntity}
               onChange={(e) => {
                 setFilterEntity(e.target.value);
@@ -170,7 +218,7 @@ export default function AuditTrailPage() {
                 setPage(0);
               }}
               style={inputStyle}
-              title='From date'
+              aria-label='From date'
             />
             <input
               type='date'
@@ -180,7 +228,7 @@ export default function AuditTrailPage() {
                 setPage(0);
               }}
               style={inputStyle}
-              title='To date'
+              aria-label='To date'
             />
           </div>
         </div>

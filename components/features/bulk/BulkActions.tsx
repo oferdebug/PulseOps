@@ -2,6 +2,7 @@
 
 import { CheckSquare, Loader2, Square, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 
 type TicketStatus = 'open' | 'in_progress' | 'pending' | 'closed';
@@ -43,7 +44,9 @@ export function BulkActions({
       .from('tickets')
       .update({ status: newStatus })
       .in('id', ids);
-    if (!error) {
+    if (error) {
+      toast.error(`Failed to update status: ${error.message}`);
+    } else {
       onClearSelection();
       onActionComplete();
     }
@@ -59,7 +62,9 @@ export function BulkActions({
       .from('tickets')
       .update({ priority: newPriority })
       .in('id', ids);
-    if (!error) {
+    if (error) {
+      toast.error(`Failed to update priority: ${error.message}`);
+    } else {
       onClearSelection();
       onActionComplete();
     }
@@ -75,7 +80,9 @@ export function BulkActions({
       .from('tickets')
       .update({ assigned_to: userId })
       .in('id', ids);
-    if (!error) {
+    if (error) {
+      toast.error(`Failed to assign tickets: ${error.message}`);
+    } else {
       onClearSelection();
       onActionComplete();
     }
@@ -94,7 +101,9 @@ export function BulkActions({
     const supabase = createClient();
     const ids = Array.from(selectedIds);
     const { error } = await supabase.from('tickets').delete().in('id', ids);
-    if (!error) {
+    if (error) {
+      toast.error(`Failed to delete tickets: ${error.message}`);
+    } else {
       onClearSelection();
       onActionComplete();
     }

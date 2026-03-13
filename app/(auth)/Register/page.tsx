@@ -3,8 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import type { FieldValues } from 'react-hook-form';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
@@ -21,8 +20,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase/client';
 
+interface RegisterFormData {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export default function RegisterPage() {
-  const form = useForm<FieldValues>({
+  const form = useForm<RegisterFormData>({
     defaultValues: {
       fullName: '',
       email: '',
@@ -33,11 +39,16 @@ export default function RegisterPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(data: FieldValues) {
-    if (data.password !== data.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
+  useEffect(() => {
+    const subscription = form.watch((_, { name }) => {
+      if (name === 'password' && form.getValues('confirmPassword')) {
+        form.trigger('confirmPassword');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  async function onSubmit(data: RegisterFormData) {
     setSubmitting(true);
     const supabase = createClient();
     const { error: err } = await supabase.auth.signUp({
@@ -181,7 +192,12 @@ export default function RegisterPage() {
               <FormField
                 control={form.control}
                 name='confirmPassword'
-                rules={{ required: 'Confirm your password' }}
+                rules={{
+                  required: 'Confirm your password',
+                  validate: (value: string) =>
+                    value === form.getValues('password') ||
+                    'Passwords do not match',
+                }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel
@@ -229,7 +245,7 @@ export default function RegisterPage() {
           >
             Already have an account?{' '}
             <Link
-              href='/Login'
+              href='/login'
               className='font-medium underline-offset-4 hover:underline'
               style={{ color: 'var(--app-accent-text)' }}
             >

@@ -147,6 +147,9 @@ export function NotificationBell({
       <button
         type='button'
         onClick={onToggle}
+        aria-label={open ? 'Close notifications' : 'Open notifications'}
+        aria-haspopup='dialog'
+        aria-expanded={open}
         className='relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 hover:-translate-y-0.5'
         style={{
           background: 'var(--app-surface)',
@@ -171,6 +174,8 @@ export function NotificationBell({
 
       {open && (
         <div
+          role='dialog'
+          aria-label='Notifications'
           className='glass-card absolute bottom-14 right-0 w-[360px] overflow-hidden'
           style={{
             maxHeight: '480px',
@@ -217,6 +222,7 @@ export function NotificationBell({
               <button
                 type='button'
                 onClick={onClose}
+                aria-label='Close notifications'
                 className='flex h-6 w-6 items-center justify-center rounded-lg transition-colors'
                 style={{ color: 'var(--app-text-muted)' }}
                 onMouseEnter={(e) => {

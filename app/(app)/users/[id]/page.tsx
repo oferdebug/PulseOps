@@ -25,10 +25,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { type UserRole, useRole } from '@/hooks/useRole';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
-type UserRole = 'admin' | 'technician' | 'user';
 interface Profile {
   id: string;
   full_name: string;
@@ -43,18 +43,18 @@ interface Profile {
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Admin',
-  technician: 'Technician',
-  user: 'User',
+  agent: 'Agent',
+  customer: 'Customer',
 };
 const ROLE_ICON: Record<UserRole, React.ElementType> = {
   admin: Shield,
-  technician: Wrench,
-  user: User,
+  agent: Wrench,
+  customer: User,
 };
 const ROLE_VAR: Record<UserRole, string> = {
   admin: 'var(--app-stat-open)',
-  technician: 'var(--app-stat-resolution)',
-  user: 'var(--app-stat-users)',
+  agent: 'var(--app-stat-resolution)',
+  customer: 'var(--app-stat-users)',
 };
 
 const inputStyle: React.CSSProperties = {
@@ -89,7 +89,8 @@ export default function UserDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { user: currentUser } = useCurrentUser();
+  const { user: currentUser, loading: userLoading } = useCurrentUser();
+  const { isAdmin: currentUserIsAdmin } = useRole(currentUser?.id);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +98,7 @@ export default function UserDetailPage({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editName, setEditName] = useState('');
-  const [editRole, setEditRole] = useState<UserRole>('user');
+  const [editRole, setEditRole] = useState<UserRole>('customer');
   const [editDept, setEditDept] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editActive, setEditActive] = useState(true);
@@ -128,17 +129,24 @@ export default function UserDetailPage({
 
   async function handleSave() {
     if (!profile) return;
+    if (!editName.trim()) {
+      toast.error('Name cannot be empty');
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
+    const updatePayload: Record<string, unknown> = {
+      full_name: editName.trim(),
+      department: editDept.trim() || null,
+      phone: editPhone.trim() || null,
+      is_active: editActive,
+    };
+    if (currentUserIsAdmin) {
+      updatePayload.role = editRole;
+    }
     const { data, error: err } = await supabase
       .from('profiles')
-      .update({
-        full_name: editName.trim(),
-        role: editRole,
-        department: editDept.trim() || null,
-        phone: editPhone.trim() || null,
-        is_active: editActive,
-      })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
@@ -152,6 +160,10 @@ export default function UserDetailPage({
   }
 
   async function handleDelete() {
+    if (!currentUserIsAdmin) {
+      toast.error('Only admins can delete users');
+      return;
+    }
     if (!window.confirm('Delete this user? This cannot be undone.')) return;
     setDeleting(true);
     const supabase = createClient();
@@ -168,7 +180,7 @@ export default function UserDetailPage({
     }
   }
 
-  const isOwnProfile = currentUser?.id === id;
+  const isOwnProfile = !userLoading && currentUser?.id === id;
   const roleVar = profile ? ROLE_VAR[profile.role] : 'var(--app-stat-users)';
   const RoleIcon = profile ? ROLE_ICON[profile.role] : User;
 
@@ -205,19 +217,14 @@ export default function UserDetailPage({
     );
 
   return (
-    <div
-      className='min-h-screen p-8'
-      style={{ background: 'var(--app-bg)' }}
-    >
-
-      <div
-        className='mx-auto max-w-2xl space-y-6'
-       
-      >
+    <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+      <div className='mx-auto max-w-2xl space-y-6'>
         {/* Nav */}
         <div className='flex items-center justify-between'>
-          <AppBreadcrumb current={profile.full_name || profile.email || 'User'} />
-          {!editing && (
+          <AppBreadcrumb
+            current={profile.full_name || profile.email || 'User'}
+          />
+          {!editing && !userLoading && (
             <div className='flex gap-2'>
               {isOwnProfile && (
                 <button
@@ -232,7 +239,7 @@ export default function UserDetailPage({
                   <Pencil size={12} /> Edit
                 </button>
               )}
-              {!isOwnProfile && (
+              {!isOwnProfile && currentUserIsAdmin && (
                 <button
                   type='button'
                   onClick={handleDelete}
@@ -348,8 +355,8 @@ export default function UserDetailPage({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='user'>User</SelectItem>
-                      <SelectItem value='technician'>Technician</SelectItem>
+                      <SelectItem value='customer'>Customer</SelectItem>
+                      <SelectItem value='agent'>Agent</SelectItem>
                       <SelectItem value='admin'>Admin</SelectItem>
                     </SelectContent>
                   </Select>
@@ -430,6 +437,7 @@ export default function UserDetailPage({
                 </label>
                 {editing ? (
                   <input
+                    id='department'
                     style={inputStyle}
                     placeholder='e.g. IT, HR'
                     value={editDept}
@@ -450,9 +458,12 @@ export default function UserDetailPage({
                 )}
               </div>
               <div>
-                <label style={labelStyle}>Phone</label>
+                <label htmlFor='phone' style={labelStyle}>
+                  Phone
+                </label>
                 {editing ? (
                   <input
+                    id='phone'
                     type='tel'
                     style={inputStyle}
                     placeholder='+972-50-000-0000'

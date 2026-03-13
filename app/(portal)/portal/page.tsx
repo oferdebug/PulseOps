@@ -24,10 +24,12 @@ export default function PortalHomePage() {
     }
     try {
       const supabase = createClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('tickets')
         .select('id, status')
         .eq('created_by', user.id);
+
+      if (error) throw error;
 
       const tickets = data ?? [];
       setSummary({

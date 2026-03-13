@@ -28,6 +28,7 @@ export function useAuditTrail() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchEntries = useCallback(
     async (filters: AuditFilters = {}, page = 0, pageSize = 50) => {
@@ -47,7 +48,13 @@ export function useAuditTrail() {
       if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
       if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
-      const { data, count } = await query;
+      const { data, count, error: queryError } = await query;
+      if (queryError) {
+        console.error('Failed to fetch audit entries:', queryError);
+        setError(queryError);
+      } else {
+        setError(null);
+      }
       setEntries((data ?? []) as AuditEntry[]);
       setTotalCount(count ?? 0);
       setLoading(false);
@@ -70,7 +77,11 @@ export function useAuditTrail() {
     if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
     if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to export audit data:', error);
+      throw new Error(error.message);
+    }
     if (!data || data.length === 0) return;
 
     const headers = [
@@ -85,12 +96,12 @@ export function useAuditTrail() {
 
     const rows = data.map((e) => [
       new Date(e.created_at).toISOString(),
-      e.user_email,
-      e.action,
-      e.entity,
-      e.entity_id ?? '',
+      (e.user_email ?? '').replace(/"/g, '""'),
+      (e.action ?? '').replace(/"/g, '""'),
+      (e.entity ?? '').replace(/"/g, '""'),
+      (e.entity_id ?? '').replace(/"/g, '""'),
       (e.description ?? '').replace(/"/g, '""'),
-      JSON.stringify(e.metadata ?? {}),
+      JSON.stringify(e.metadata ?? {}).replace(/"/g, '""'),
     ]);
 
     const csv = [
@@ -107,5 +118,5 @@ export function useAuditTrail() {
     URL.revokeObjectURL(url);
   }, []);
 
-  return { entries, loading, totalCount, fetchEntries, exportAudit };
+  return { entries, loading, error, totalCount, fetchEntries, exportAudit };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 type TicketStatus = 'open' | 'in_progress' | 'pending' | 'closed';
@@ -30,8 +30,10 @@ export function useReports(days = 30) {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   const fetchReports = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -107,6 +109,7 @@ export function useReports(days = 30) {
         agentWorkload.sort((a, b) => b.count - a.count);
       }
 
+      if (requestId !== requestIdRef.current) return;
       setData({
         totalTickets: rows.length,
         openTickets:
@@ -124,9 +127,10 @@ export function useReports(days = 30) {
         agentWorkload,
       });
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load reports');
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [days]);
 

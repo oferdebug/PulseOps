@@ -28,7 +28,11 @@ export function SavedFilters({
   const handleSave = useCallback(async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await saveFilter(name.trim(), currentFilters);
+    const saved = await saveFilter(name.trim(), currentFilters);
+    if (!saved) {
+      setSaving(false);
+      return;
+    }
     setName('');
     setShowSave(false);
     setSaving(false);

@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AgentWorkloadChart,
   PriorityBarChart,
@@ -33,12 +33,16 @@ export default function ReportsPage() {
   const [days, setDays] = useState(30);
   const { data, loading, error, refresh } = useReports(days);
 
+  useEffect(() => {
+    if (error) console.error('[Reports] Load error:', error);
+  }, [error]);
+
   return (
     <div
       className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='relative' >
+      <div className='relative'>
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6 flex items-end justify-between'
@@ -51,7 +55,10 @@ export default function ReportsPage() {
             >
               Analytics
             </p>
-            <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+            <h1
+              className='text-xl font-bold tracking-tight'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
               Reports
             </h1>
             <p
@@ -63,6 +70,7 @@ export default function ReportsPage() {
           </div>
           <div className='flex items-center gap-2'>
             <select
+              aria-label='Report period'
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
               className='rounded-md px-3 py-2 text-sm font-semibold outline-none'
@@ -110,7 +118,7 @@ export default function ReportsPage() {
               className='px-5 py-4 text-sm'
               style={{ color: 'var(--destructive)' }}
             >
-              {error}
+              An unexpected error occurred. Please try again.
             </div>
           </Panel>
         )}

@@ -2,6 +2,7 @@
 
 import { BookOpen, Brain, Loader2, Sparkles, Tag } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { useAiAssist } from '@/hooks/useAiAssist';
 
 export function AiTicketAssist({
@@ -15,9 +16,28 @@ export function AiTicketAssist({
   onApplyPriority?: (priority: string) => void;
   onApplyTags?: (tags: string[]) => void;
 }) {
-  const { classification, suggestions, loading, analyzeTicket } = useAiAssist();
+  const {
+    classification,
+    suggestions,
+    loading,
+    analyzeTicket,
+    clearClassification,
+    clearSuggestions,
+  } = useAiAssist();
 
   const canAnalyze = title.trim().length >= 5;
+
+  // Clear stale AI output when inputs change
+  const prevTitle = useRef(title);
+  const prevDesc = useRef(description);
+  useEffect(() => {
+    if (prevTitle.current !== title || prevDesc.current !== description) {
+      prevTitle.current = title;
+      prevDesc.current = description;
+      clearClassification();
+      clearSuggestions();
+    }
+  }, [title, description, clearClassification, clearSuggestions]);
 
   return (
     <div className='space-y-3'>

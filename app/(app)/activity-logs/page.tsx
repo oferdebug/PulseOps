@@ -29,13 +29,11 @@ type LogEntity = 'ticket' | 'article' | 'user' | 'profile' | 'system';
 
 interface ActivityLog {
   id: string;
-  user_id: string | null;
   user_email: string | null;
   action: LogAction;
   entity: LogEntity;
   entity_id: string | null;
   description: string;
-  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -141,18 +139,33 @@ export default function ActivityLogsPage() {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    let query = supabase
-      .from('activity_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if (dateFrom) query = query.gte('created_at', dateFrom);
-    if (dateTo) query = query.lte('created_at', `${dateTo}T23:59:59`);
-    const { data, error: err } = await query;
-    if (err) setError(err.message);
-    else setLogs(data ?? []);
-    setLoading(false);
+    try {
+      const supabase = createClient();
+      let query = supabase
+        .from('activity_logs')
+        .select(
+          'id, user_email, action, entity, entity_id, description, created_at',
+        )
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (dateFrom) {
+        query = query.gte('created_at', `${dateFrom}T00:00:00Z`);
+      }
+      if (dateTo) {
+        query = query.lte('created_at', `${dateTo}T23:59:59.999Z`);
+      }
+
+      const { data, error: err } = await query;
+      if (err) {
+        setError(err.message);
+      } else {
+        setLogs(data ?? []);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   }, [dateFrom, dateTo]);
 
   useEffect(() => {
@@ -171,7 +184,7 @@ export default function ActivityLogsPage() {
       className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='relative' >
+      <div className='relative'>
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6'
@@ -183,7 +196,10 @@ export default function ActivityLogsPage() {
           >
             Audit
           </p>
-          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+          <h1
+            className='text-xl font-bold tracking-tight'
+            style={{ color: 'var(--app-text-primary)' }}
+          >
             Activity Logs
           </h1>
           <p
@@ -206,13 +222,14 @@ export default function ActivityLogsPage() {
         >
           <div className='space-y-3 p-4'>
             <div className='flex flex-wrap items-center gap-3'>
-              <div className='min-w-[200px] flex-1'>
+              <div className='relative min-w-[200px] flex-1'>
                 <Search
                   size={13}
                   className='absolute left-3 top-1/2 -translate-y-1/2'
                   style={{ color: 'var(--app-text-muted)' }}
                 />
                 <input
+                  aria-label='Search description or user'
                   placeholder='Search description or user…'
                   className='h-9 w-full rounded-md pl-9 pr-4 text-sm outline-none'
                   style={{
@@ -228,6 +245,7 @@ export default function ActivityLogsPage() {
               <div className='flex items-center gap-2'>
                 <input
                   type='date'
+                  aria-label='Date from'
                   className='h-9 rounded-md px-3 text-xs outline-none'
                   style={{
                     background: 'var(--app-surface)',
@@ -241,6 +259,7 @@ export default function ActivityLogsPage() {
                 <span style={{ color: 'var(--app-text-faint)' }}>→</span>
                 <input
                   type='date'
+                  aria-label='Date to'
                   className='h-9 rounded-md px-3 text-xs outline-none'
                   style={{
                     background: 'var(--app-surface)',
@@ -267,6 +286,7 @@ export default function ActivityLogsPage() {
               </div>
               <button
                 type='button'
+                aria-label='Refresh logs'
                 onClick={fetchLogs}
                 disabled={loading}
                 className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-(--app-surface-raised)'
@@ -349,7 +369,8 @@ export default function ActivityLogsPage() {
                   ? `/tickets/${log.entity_id}`
                   : log.entity_id && log.entity === 'article'
                     ? `/knowledge-base/${log.entity_id}`
-                    : log.entity_id && (log.entity === 'user' || log.entity === 'profile')
+                    : log.entity_id &&
+                        (log.entity === 'user' || log.entity === 'profile')
                       ? `/users/${log.entity_id}`
                       : null;
 
@@ -431,7 +452,8 @@ export default function ActivityLogsPage() {
                 </>
               );
 
-              const sharedClassName = 'group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-(--app-surface-raised)';
+              const sharedClassName =
+                'group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-(--app-surface-raised)';
               const sharedStyle = {
                 borderBottom:
                   i < filtered.length - 1

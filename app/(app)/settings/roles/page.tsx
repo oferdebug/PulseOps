@@ -1,6 +1,7 @@
 'use client';
 
 import { Crown, Loader2, Shield, User } from 'lucide-react';
+import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { type UserRole, useRole, useRoleManagement } from '@/hooks/useRole';
 
@@ -168,9 +169,16 @@ export default function RolesPage() {
                       {!isSelf && (
                         <select
                           value={u.role}
-                          onChange={(e) =>
-                            updateRole(u.id, e.target.value as UserRole)
-                          }
+                          onChange={async (e) => {
+                            const error = await updateRole(
+                              u.id,
+                              e.target.value as UserRole,
+                            );
+                            if (error)
+                              toast.error(
+                                `Failed to update role: ${error.message}`,
+                              );
+                          }}
                           className='rounded-lg px-3 py-1.5 text-xs font-semibold'
                           style={{
                             background: 'var(--app-surface)',

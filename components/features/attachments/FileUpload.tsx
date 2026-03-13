@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: drop zone needs click */
+/** biome-ignore-all lint/a11y/useSemanticElements: drop zone requires div for drag-drop */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: upload list keys */
 'use client';
 
@@ -98,8 +99,15 @@ export default function FileUpload({
   return (
     <div className='space-y-3'>
       {/* Drop zone */}
-      {/** biome-ignore lint/a11y/noStaticElementInteractions: drop zone */}
       <div
+        role='button'
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}

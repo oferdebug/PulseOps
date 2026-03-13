@@ -24,19 +24,18 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
-        messages: [
-          {
-            role: 'user',
-            content: `You are an IT helpdesk ticket classifier. Given a ticket title and description, return a JSON object with:
+        system: `You are an IT helpdesk ticket classifier. Given a ticket title and description, return a JSON object with:
 - "priority": one of "low", "medium", "high", "critical"
 - "category": one of "networking", "hardware", "software", "security", "active-directory", "email", "general"
 - "suggested_response": a brief 1-2 sentence initial response to the user
 - "tags": array of 1-3 relevant tags
 
-Ticket Title: ${title}
-${description ? `Description: ${description}` : ''}
-
 Return ONLY valid JSON, no other text.`,
+        messages: [
+          {
+            role: 'user',
+            content: `Ticket Title: ${title.slice(0, 500)}
+${description ? `Description: ${description.slice(0, 2000)}` : ''}`,
           },
         ],
       }),

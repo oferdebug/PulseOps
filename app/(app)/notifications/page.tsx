@@ -179,13 +179,13 @@ function NotificationRow({
         >
           {notification.message}
         </p>
-        {notification.ticket_id && (
+        {(notification.ticket_id || notification.link) && (
           <Link
             href={notification.link ?? `/tickets/${notification.ticket_id}`}
             className='mt-1 inline-block text-xs font-semibold hover:underline'
             style={{ color: 'var(--app-accent-text)' }}
           >
-            View ticket →
+            {notification.ticket_id ? 'View ticket →' : 'Open notification →'}
           </Link>
         )}
       </div>
@@ -202,6 +202,7 @@ function NotificationRow({
           <button
             type='button'
             onClick={onMarkRead}
+            aria-label='Mark notification as read'
             className='flex h-7 w-7 items-center justify-center rounded-lg transition-colors'
             style={{ color: 'var(--app-text-muted)' }}
             title='Mark as read'
@@ -212,6 +213,7 @@ function NotificationRow({
         <button
           type='button'
           onClick={onDelete}
+          aria-label='Delete notification'
           className='flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:text-red-400'
           style={{ color: 'var(--app-text-muted)' }}
           title='Delete'

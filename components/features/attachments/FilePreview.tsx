@@ -86,7 +86,7 @@ export function FilePreview({
               className='h-[70vh] w-full rounded border-0'
             />
           )}
-          {!isImage && !isPdf && (
+          {((!isImage && !isPdf) || !downloadUrl) && (
             <p className='py-12 text-center text-sm text-muted-foreground'>
               Preview not available for this file type.
             </p>

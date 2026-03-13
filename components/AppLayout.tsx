@@ -383,13 +383,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+K / Cmd+K → search
+      // Skip shortcuts when focus is inside editable controls
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest('input, textarea, select') ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        // Ctrl+K / Cmd+K → search
         e.preventDefault();
         setIsSearchOpen((open) => !open);
       }
-      // Ctrl+N / Cmd+N → new ticket
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        // Ctrl+N / Cmd+N → new ticket
         e.preventDefault();
         router.push('/tickets/new');
       }

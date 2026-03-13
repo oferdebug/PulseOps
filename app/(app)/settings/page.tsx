@@ -63,12 +63,13 @@ function Toggle({
   return (
     <button
       type='button'
+      role='switch'
+      aria-checked={checked}
       aria-label={`Toggle: ${checked ? 'on' : 'off'}`}
       onClick={() => onChange(!checked)}
       className='relative h-6 w-11 shrink-0 rounded-full transition-all duration-200'
       style={{
         background: checked ? 'var(--app-accent)' : 'var(--app-surface-raised)',
-        
       }}
     >
       <span

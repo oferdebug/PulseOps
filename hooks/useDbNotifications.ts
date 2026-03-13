@@ -42,7 +42,10 @@ export function useDbNotifications(userId?: string) {
     useState<NotificationPreferences>(DEFAULT_PREFS);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
     const { data } = await supabase
       .from('notifications')
@@ -97,10 +100,14 @@ export function useDbNotifications(userId?: string) {
     async (id: string) => {
       if (!userId) return;
       const supabase = createClient();
-      await supabase
+      const { error } = await supabase
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
         .eq('id', id);
+      if (error) {
+        console.error('Failed to mark notification as read:', error);
+        return;
+      }
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
@@ -113,11 +120,15 @@ export function useDbNotifications(userId?: string) {
   const markAllRead = useCallback(async () => {
     if (!userId) return;
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
       .eq('user_id', userId)
       .is('read_at', null);
+    if (error) {
+      console.error('Failed to mark all as read:', error);
+      return;
+    }
     setNotifications((prev) =>
       prev.map((n) => ({
         ...n,
@@ -130,7 +141,14 @@ export function useDbNotifications(userId?: string) {
     async (id: string) => {
       if (!userId) return;
       const supabase = createClient();
-      await supabase.from('notifications').delete().eq('id', id);
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        console.error('Failed to delete notification:', error);
+        return;
+      }
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     },
     [userId],
@@ -139,7 +157,14 @@ export function useDbNotifications(userId?: string) {
   const clearAll = useCallback(async () => {
     if (!userId) return;
     const supabase = createClient();
-    await supabase.from('notifications').delete().eq('user_id', userId);
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+    if (error) {
+      console.error('Failed to clear all notifications:', error);
+      return;
+    }
     setNotifications([]);
   }, [userId]);
 

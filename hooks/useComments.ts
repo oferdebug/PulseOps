@@ -10,12 +10,12 @@ export function useComments(ticketId: string) {
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const supabase = createClient();
       const { data, error: fetchError } = await supabase
         .from('ticket_comments')
         .select(COMMENT_SELECT)
@@ -31,12 +31,13 @@ export function useComments(ticketId: string) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, ticketId]);
+  }, [ticketId]);
 
   const addComment = useCallback(
     async (formData: CommentFormData) => {
       setError(null);
       try {
+        const supabase = createClient();
         const { data, error: insertError } = await supabase
           .from('ticket_comments')
           .insert({
@@ -63,13 +64,14 @@ export function useComments(ticketId: string) {
         return null;
       }
     },
-    [supabase, ticketId],
+    [ticketId],
   );
 
   const updateComment = useCallback(
     async (commentId: string, content: string) => {
       setError(null);
       try {
+        const supabase = createClient();
         const { data, error: updateError } = await supabase
           .from('ticket_comments')
           .update({
@@ -92,29 +94,25 @@ export function useComments(ticketId: string) {
         );
       }
     },
-    [supabase],
+    [],
   );
 
-  const deleteComment = useCallback(
-    async (commentId: string) => {
-      setError(null);
-      try {
-        const { error: deleteError } = await supabase
-          .from('ticket_comments')
-          .delete()
-          .eq('id', commentId);
+  const deleteComment = useCallback(async (commentId: string) => {
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error: deleteError } = await supabase
+        .from('ticket_comments')
+        .delete()
+        .eq('id', commentId);
 
-        if (deleteError) throw deleteError;
+      if (deleteError) throw deleteError;
 
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to delete comment',
-        );
-      }
-    },
-    [supabase],
-  );
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete comment');
+    }
+  }, []);
 
   useEffect(() => {
     if (ticketId) {

@@ -35,10 +35,18 @@ export async function POST(req: NextRequest) {
       for (const word of words) {
         if (articleText.includes(word)) score += 2;
       }
-      // Category match bonus
-        score += 3;
+      if (article.category) {
+        const escapedCategory = article.category
+          .toLowerCase()
+          .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const categoryRegex = new RegExp(`\\b${escapedCategory}\\b`, 'i');
+        if (categoryRegex.test(query)) {
+          score += 3;
+        }
+      }
       return { ...article, score };
     });
+    
 
     const suggestions = scored
       .filter((a) => a.score > 0)

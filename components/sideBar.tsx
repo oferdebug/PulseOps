@@ -3,6 +3,7 @@
 import { LogOut, Moon, Sun, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Sidebar,
@@ -19,10 +20,15 @@ import { NAV_ITEMS } from '@/lib/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AppSidebar() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useCurrentUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -98,7 +104,7 @@ export default function AppSidebar() {
           <SidebarMenu className='gap-1'>
             {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => {
               const isActive = matchPrefix
-                ? pathname.startsWith(href)
+                ? pathname === href || pathname.startsWith(`${href}/`)
                 : pathname === href;
 
               return (
@@ -113,7 +119,6 @@ export default function AppSidebar() {
                             background: 'var(--app-nav-active-bg)',
                             border: '1px solid var(--app-nav-active-border)',
                             color: 'var(--app-nav-active-text)',
-                            
                           }
                         : {
                             background: 'transparent',
@@ -195,12 +200,25 @@ export default function AppSidebar() {
           {/* Theme toggle */}
           <button
             type='button'
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() =>
+              setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+            }
             className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200'
             style={{ color: 'var(--app-icon-btn-color)' }}
             aria-label='Toggle theme'
           >
-            {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            {mounted ? (
+              resolvedTheme === 'dark' ? (
+                <Sun size={13} />
+              ) : (
+                <Moon size={13} />
+              )
+            ) : (
+              <div
+                className='h-[13px] w-[13px] rounded-full'
+                style={{ background: 'var(--app-text-faint)', opacity: 0.3 }}
+              />
+            )}
           </button>
 
           {/* Logout */}

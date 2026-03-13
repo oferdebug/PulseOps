@@ -65,12 +65,7 @@ const STATUS_BADGE: Record<TicketStatus, string> = {
   pending: 'badge-pending',
   closed: 'badge-closed',
 };
-const _PRIORITY_DOT: Record<TicketPriority, string> = {
-  low: 'dot-low',
-  medium: 'dot-medium',
-  high: 'dot-high',
-  critical: 'dot-critical',
-};
+
 const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   open: ['in_progress', 'pending', 'closed'],
   in_progress: ['pending', 'closed'],
@@ -140,11 +135,16 @@ export default function TicketDetailPage({
         .select('id, full_name, email')
         .order('full_name')
         .then(({ data }) => data ?? []),
-    ]).then(([admin, agentList]) => {
-      setIsAdmin(!!admin);
-      setAgents(agentList as AgentOption[]);
-      setProfileAgentsLoading(false);
-    });
+    ])
+      .then(([admin, agentList]) => {
+        setIsAdmin(!!admin);
+        setAgents(agentList as AgentOption[]);
+        setProfileAgentsLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load profile/agents:', err);
+        setProfileAgentsLoading(false);
+      });
   }, [user?.id]);
 
   async function handleStatusChange(newStatus: TicketStatus) {

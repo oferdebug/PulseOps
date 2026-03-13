@@ -143,7 +143,6 @@ export default function TicketsPage() {
   }, [fetchTickets]);
 
   useEffect(() => {
-    console.log('user?.id:', user?.id);
     if (!user?.id) return;
     const supabase = createClient();
     Promise.all([
@@ -156,12 +155,18 @@ export default function TicketsPage() {
       supabase
         .from('profiles')
         .select('id, full_name, email')
+        .in('role', ['admin', 'agent'])
         .order('full_name')
         .then(({ data }) => data ?? []),
-    ]).then(([role, agentList]) => {
-      setUserRole(role === 'admin' || role === 'agent' ? role : null);
-      setAgents((agentList ?? []) as AgentOption[]);
-    });
+    ])
+      .then(([role, agentList]) => {
+        setUserRole(role === 'admin' || role === 'agent' ? role : null);
+        setAgents(agentList as AgentOption[]);
+      })
+      .catch((err) => {
+        console.error('Failed to load profile/agents:', err);
+        toast.error('Failed to load profile/agents');
+      });
   }, [user?.id]);
 
   async function handleAssignChange(
