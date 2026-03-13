@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
@@ -38,6 +38,15 @@ export default function RegisterPage() {
   });
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const subscription = form.watch((_, { name }) => {
+      if (name === 'password' && form.getValues('confirmPassword')) {
+        form.trigger('confirmPassword');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   async function onSubmit(data: RegisterFormData) {
     setSubmitting(true);

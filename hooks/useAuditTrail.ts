@@ -28,6 +28,7 @@ export function useAuditTrail() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchEntries = useCallback(
     async (filters: AuditFilters = {}, page = 0, pageSize = 50) => {
@@ -47,9 +48,12 @@ export function useAuditTrail() {
       if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
       if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
-      const { data, count, error } = await query;
-      if (error) {
-        console.error('Failed to fetch audit entries:', error);
+      const { data, count, error: queryError } = await query;
+      if (queryError) {
+        console.error('Failed to fetch audit entries:', queryError);
+        setError(queryError);
+      } else {
+        setError(null);
       }
       setEntries((data ?? []) as AuditEntry[]);
       setTotalCount(count ?? 0);
@@ -76,7 +80,7 @@ export function useAuditTrail() {
     const { data, error } = await query;
     if (error) {
       console.error('Failed to export audit data:', error);
-      return;
+      throw new Error(error.message);
     }
     if (!data || data.length === 0) return;
 
@@ -114,5 +118,5 @@ export function useAuditTrail() {
     URL.revokeObjectURL(url);
   }, []);
 
-  return { entries, loading, totalCount, fetchEntries, exportAudit };
+  return { entries, loading, error, totalCount, fetchEntries, exportAudit };
 }

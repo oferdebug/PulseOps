@@ -3,6 +3,7 @@
 import { LogOut, Moon, Sun, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Sidebar,
@@ -23,6 +24,11 @@ export default function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useCurrentUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -201,7 +207,18 @@ export default function AppSidebar() {
             style={{ color: 'var(--app-icon-btn-color)' }}
             aria-label='Toggle theme'
           >
-            {resolvedTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            {mounted ? (
+              resolvedTheme === 'dark' ? (
+                <Sun size={13} />
+              ) : (
+                <Moon size={13} />
+              )
+            ) : (
+              <div
+                className='h-[13px] w-[13px] rounded-full'
+                style={{ background: 'var(--app-text-faint)', opacity: 0.3 }}
+              />
+            )}
           </button>
 
           {/* Logout */}

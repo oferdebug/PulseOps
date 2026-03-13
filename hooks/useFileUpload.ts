@@ -160,15 +160,26 @@ export function useFileUpload(
         .remove([target.storage_path]);
       if (storageErr) {
         // Compensate: re-insert the DB row so the record isn't lost
-        await supabase.from('attachments').insert({
-          id: target.id,
-          ticket_id: target.ticket_id,
-          file_name: target.file_name,
-          file_type: target.file_type,
-          file_size: target.file_size,
-          storage_path: target.storage_path,
-          uploaded_by: target.uploaded_by,
-        });
+        const { error: reinsertErr } = await supabase
+          .from('attachments')
+          .insert({
+            id: target.id,
+            entity_type: target.entity_type,
+            entity_id: target.entity_id,
+            file_name: target.file_name,
+            mime_type: target.mime_type,
+            file_size: target.file_size,
+            storage_path: target.storage_path,
+            uploaded_by: target.uploaded_by,
+            uploaded_at: target.uploaded_at,
+            description: target.description,
+          });
+        if (reinsertErr) {
+          console.error('Compensation insert failed:', reinsertErr);
+          throw new Error(
+            `Storage delete failed: ${storageErr.message}; compensation insert also failed: ${reinsertErr.message}`,
+          );
+        }
         throw new Error(storageErr.message);
       }
 

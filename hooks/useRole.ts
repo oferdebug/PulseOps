@@ -5,21 +5,16 @@ import { createClient } from '@/lib/supabase/client';
 
 export type UserRole = 'admin' | 'agent' | 'customer';
 
-interface RoleInfo {
-  role: UserRole;
-  loading: boolean;
-  isAdmin: boolean;
-  isAgent: boolean;
-  isStaff: boolean;
-  isCustomer: boolean;
-}
-
-export function useRole(userId?: string): RoleInfo {
+export function useRole(userId?: string) {
   const [role, setRole] = useState<UserRole>('agent');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
     supabase
       .from('profiles')
@@ -28,6 +23,11 @@ export function useRole(userId?: string): RoleInfo {
       .single()
       .then(({ data }) => {
         if (data?.role) setRole(data.role as UserRole);
+        setError(null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err : new Error(String(err)));
         setLoading(false);
       });
   }, [userId]);
@@ -35,6 +35,7 @@ export function useRole(userId?: string): RoleInfo {
   return {
     role,
     loading,
+    error,
     isAdmin: role === 'admin',
     isAgent: role === 'agent',
     isStaff: role === 'admin' || role === 'agent',

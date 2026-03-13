@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 export default function OfflinePage() {
   const router = useRouter();
 
-  function handleRetry() {
-    if (navigator.onLine) {
-      router.replace('/');
-    } else {
+  async function handleRetry() {
+    try {
+      await router.replace('/');
+    } catch {
       window.location.reload();
     }
   }

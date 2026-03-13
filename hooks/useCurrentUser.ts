@@ -12,6 +12,7 @@ export interface CurrentUser {
 export function useCurrentUser() {
     const [user, setUser] = useState<CurrentUser | null>(null);
     const [loading,setLoading]=useState(true);
+    const [error, setError] = useState<Error | null>(null);
 
 
     useEffect(()=>{
@@ -22,11 +23,17 @@ export function useCurrentUser() {
           email?: string | null;
           user_metadata?: Record<string, unknown>;
         }) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileErr } = await supabase
             .from('profiles')
             .select('organization_id')
             .eq('id', authUser.id)
             .single();
+          if (profileErr) {
+            console.error('Failed to load profile:', profileErr);
+            setError(profileErr);
+          } else {
+            setError(null);
+          }
           setUser({
             id: authUser.id,
             email: authUser.email ?? '',
@@ -59,5 +66,5 @@ export function useCurrentUser() {
           subscription.unsubscribe();
         };
     },[])
-   return {user, loading};
+   return { user, loading, error };
 } 

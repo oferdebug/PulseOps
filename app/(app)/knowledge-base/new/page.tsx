@@ -74,7 +74,9 @@ export default function NewArticlePage() {
       }
       setContent(data.content ?? '');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Generation failed');
+      const msg = e instanceof Error ? e.message : 'Generation failed';
+      toast.error(msg);
+      setError(msg);
     } finally {
       setGenerating(false);
     }
@@ -91,6 +93,7 @@ export default function NewArticlePage() {
     } = await supabase.auth.getUser();
     if (!user) {
       toast.error('Your session expired. Please sign in again.');
+      setError('Your session expired. Please sign in again.');
       setSubmitting(false);
       return;
     }
@@ -107,6 +110,7 @@ export default function NewArticlePage() {
       .single();
     if (err) {
       toast.error(err.message);
+      setError(err.message);
       setSubmitting(false);
       return;
     }

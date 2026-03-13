@@ -148,8 +148,12 @@ export default function ActivityLogsPage() {
         )
         .order('created_at', { ascending: false })
         .limit(200);
-      if (dateFrom) query = query.gte('created_at', dateFrom);
-      if (dateTo) query = query.lte('created_at', `${dateTo}T23:59:59`);
+      if (dateFrom) {
+        query = query.gte('created_at', `${dateFrom}T00:00:00Z`);
+      }
+      if (dateTo) {
+        query = query.lte('created_at', `${dateTo}T23:59:59.999Z`);
+      }
 
       const { data, error: err } = await query;
       if (err) {

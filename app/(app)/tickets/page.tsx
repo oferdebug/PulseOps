@@ -161,10 +161,11 @@ export default function TicketsPage() {
     ])
       .then(([role, agentList]) => {
         setUserRole(role === 'admin' || role === 'agent' ? role : null);
-        setAgents((agentList ?? []) as AgentOption[]);
+        setAgents(agentList as AgentOption[]);
       })
       .catch((err) => {
         console.error('Failed to load profile/agents:', err);
+        toast.error('Failed to load profile/agents');
       });
   }, [user?.id]);
 

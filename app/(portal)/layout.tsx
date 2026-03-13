@@ -31,8 +31,16 @@ export default function PortalLayout({
       .single()
       .then(({ data }) => {
         if (data?.organization_id) {
-          const org = data.organizations as { name: string } | null;
-          setOrgName(org?.name ?? 'Support Portal');
+          const orgs = data.organizations;
+          const org = Array.isArray(orgs) ? orgs[0] : orgs;
+          if (
+            org &&
+            typeof org === 'object' &&
+            'name' in org &&
+            typeof org.name === 'string'
+          ) {
+            setOrgName(org.name);
+          }
         }
       });
   }, [user?.id]);

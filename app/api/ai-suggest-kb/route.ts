@@ -35,8 +35,14 @@ export async function POST(req: NextRequest) {
       for (const word of words) {
         if (articleText.includes(word)) score += 2;
       }
-      if (article.category && query.includes(article.category.toLowerCase())) {
-        score += 3;
+      if (article.category) {
+        const escapedCategory = article.category
+          .toLowerCase()
+          .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const categoryRegex = new RegExp(`\\b${escapedCategory}\\b`, 'i');
+        if (categoryRegex.test(query)) {
+          score += 3;
+        }
       }
       return { ...article, score };
     });

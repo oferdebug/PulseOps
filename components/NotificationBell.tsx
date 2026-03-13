@@ -174,6 +174,8 @@ export function NotificationBell({
 
       {open && (
         <div
+          role='dialog'
+          aria-label='Notifications'
           className='glass-card absolute bottom-14 right-0 w-[360px] overflow-hidden'
           style={{
             maxHeight: '480px',

@@ -52,7 +52,13 @@ export default function OnboardingPage() {
 
     if (profileErr) {
       // Rollback: delete the created organization
-      await supabase.from('organizations').delete().eq('id', data.org_id);
+      const { error: rollbackErr } = await supabase
+        .from('organizations')
+        .delete()
+        .eq('id', data.org_id);
+      if (rollbackErr) {
+        console.error('Failed to rollback organization:', rollbackErr);
+      }
       setError(profileErr.message);
       setLoading(false);
       return;

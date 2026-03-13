@@ -127,31 +127,33 @@ export default function AuditTrailPage() {
               </p>
             </div>
           </div>
-          <button
-            type='button'
-            onClick={handleExport}
-            disabled={isExporting}
-            className='flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-60'
-            style={{ background: 'var(--app-accent)', color: '#fff' }}
-          >
-            {isExporting ? (
-              <>
-                <Loader2 size={14} className='animate-spin' /> Exporting…
-              </>
-            ) : (
-              <>
-                <Download size={14} /> Export CSV
-              </>
-            )}
-          </button>
-          {exportError && (
-            <p
-              className='mt-2 text-xs'
-              style={{ color: 'var(--app-priority-critical)' }}
+          <div>
+            <button
+              type='button'
+              onClick={handleExport}
+              disabled={isExporting}
+              className='flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-60'
+              style={{ background: 'var(--app-accent)', color: '#fff' }}
             >
-              Export failed: {exportError}
-            </p>
-          )}
+              {isExporting ? (
+                <>
+                  <Loader2 size={14} className='animate-spin' /> Exporting…
+                </>
+              ) : (
+                <>
+                  <Download size={14} /> Export CSV
+                </>
+              )}
+            </button>
+            {exportError && (
+              <p
+                className='mt-2 text-xs'
+                style={{ color: 'var(--app-priority-critical)' }}
+              >
+                Export failed: {exportError}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Filters */}

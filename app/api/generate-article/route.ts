@@ -3,11 +3,13 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { title } = await req.json();
+    const { title: rawTitle } = await req.json();
 
-    if (!title || typeof title !== 'string' || !title.trim()) {
+    if (!rawTitle || typeof rawTitle !== 'string' || !rawTitle.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
+
+    const title = rawTitle.trim();
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -45,13 +47,20 @@ Keep it concise, professional, and actionable. No fluff.`,
       }),
     });
 
-    const data = await response.json();
     if (!response.ok) {
-      return NextResponse.json(
-        { error: data.error?.message ?? 'Generation failed' },
-        { status: response.status },
+      let upstreamBody: string;
+      try {
+        upstreamBody = await response.text();
+      } catch {
+        upstreamBody = '(unreadable)';
+      }
+      console.error(
+        `Anthropic API error: status=${response.status} body=${upstreamBody}`,
       );
+      return NextResponse.json({ error: 'Upstream service error' }, { status: 502 });
     }
+
+    const data = await response.json();
     const text = data.content?.[0]?.text ?? '';
     return NextResponse.json({ content: text });
   } catch (error) {

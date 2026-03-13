@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AgentWorkloadChart,
   PriorityBarChart,
@@ -32,6 +32,10 @@ const PERIOD_OPTIONS = [
 export default function ReportsPage() {
   const [days, setDays] = useState(30);
   const { data, loading, error, refresh } = useReports(days);
+
+  useEffect(() => {
+    if (error) console.error('[Reports] Load error:', error);
+  }, [error]);
 
   return (
     <div
@@ -114,10 +118,6 @@ export default function ReportsPage() {
               className='px-5 py-4 text-sm'
               style={{ color: 'var(--destructive)' }}
             >
-              {(() => {
-                console.error('[Reports] Load error:', error);
-                return null;
-              })()}
               An unexpected error occurred. Please try again.
             </div>
           </Panel>

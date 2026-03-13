@@ -36,6 +36,7 @@ export default function PortalKnowledgeBasePage() {
       .eq('status', 'published')
       .order('created_at', { ascending: false });
     if (fetchError) setError(fetchError.message);
+    else setError(null);
     setArticles(data ?? []);
     setLoading(false);
   }, []);

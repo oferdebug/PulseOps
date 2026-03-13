@@ -44,15 +44,21 @@ export function useAutomations() {
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [log, setLog] = useState<AutomationLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchRules = useCallback(async () => {
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('automation_rules')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) console.error('Failed to fetch automation rules:', error);
-    setRules((data ?? []) as AutomationRule[]);
+    if (fetchErr) {
+      console.error('Failed to fetch automation rules:', fetchErr);
+      setError(fetchErr);
+    } else {
+      setError(null);
+      setRules((data ?? []) as AutomationRule[]);
+    }
     setLoading(false);
   }, []);
 
@@ -130,6 +136,7 @@ export function useAutomations() {
     rules,
     log,
     loading,
+    error,
     createRule,
     updateRule,
     deleteRule,

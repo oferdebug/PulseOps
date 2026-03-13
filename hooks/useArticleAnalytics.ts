@@ -18,6 +18,7 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
     userRating: null,
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -43,12 +44,20 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
           : Promise.resolve({ data: null, error: null }),
       ]);
 
-      if (viewsRes.error)
+      const errors: string[] = [];
+      if (viewsRes.error) {
         console.error('Failed to fetch views:', viewsRes.error);
-      if (ratingsRes.error)
+        errors.push(viewsRes.error.message);
+      }
+      if (ratingsRes.error) {
         console.error('Failed to fetch ratings:', ratingsRes.error);
-      if (userRatingRes.error)
+        errors.push(ratingsRes.error.message);
+      }
+      if (userRatingRes.error) {
         console.error('Failed to fetch user rating:', userRatingRes.error);
+        errors.push(userRatingRes.error.message);
+      }
+      setError(errors.length > 0 ? new Error(errors.join('; ')) : null);
 
       const ratings = ratingsRes.data ?? [];
       const avg =
@@ -64,6 +73,7 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
       });
     } catch (err) {
       console.error('Failed to fetch article stats:', err);
+      setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
@@ -98,5 +108,5 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
     if (articleId) fetchStats();
   }, [articleId, fetchStats]);
 
-  return { stats, loading, recordView, rateArticle, refresh: fetchStats };
+  return { stats, loading, error, recordView, rateArticle, refresh: fetchStats };
 }

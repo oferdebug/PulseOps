@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface InvitationData {
   email: string;
   role: string;
@@ -39,7 +42,7 @@ function InviteContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !UUID_REGEX.test(token)) {
       setError('Invalid invitation link');
       setLoading(false);
       return;
@@ -48,7 +51,7 @@ function InviteContent() {
     const supabase = createClient();
     supabase
       .from('organization_invites')
-      .select('email,role,accepted_at,expires_at, organizations(name,slug)')
+      .select('email,role,accepted_at,expires_at,organizations(name,slug)')
       .eq('id', token)
       .single()
       .then(({ data, error: err }) => {

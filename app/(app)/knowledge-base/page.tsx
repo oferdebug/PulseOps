@@ -152,6 +152,7 @@ export default function KnowledgeBasePage() {
       className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
+      {/* Stacking context for animated children */}
       <div className='relative'>
         {/* Header */}
         <div
