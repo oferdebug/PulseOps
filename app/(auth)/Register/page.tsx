@@ -1,84 +1,117 @@
-"use client";
+'use client';
 
-import Logo from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import type { FieldValues } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import Logo from '@/components/Logo';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Form,
-  FormLabel,
   FormControl,
-  FormItem,
-  FormMessage,
   FormField,
-  FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { FieldValues, useForm } from "react-hook-form";
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { createClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const form = useForm<FieldValues>({
     defaultValues: {
-      fullName: "",
-      email: "",
-      password: "",
-      ConfirmPassword: "",
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
     },
   });
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = async (data: FieldValues) => {
-    if (data.password !== data.ConfirmPassword) {
-      setError("Passwords Do Not Match");
+  async function onSubmit(data: FieldValues) {
+    if (data.password !== data.confirmPassword) {
+      toast.error('Passwords do not match');
       return;
     }
+    setSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { error: err } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: {
-        data: {
-          full_name: data.fullName,
-        },
-      },
+      options: { data: { full_name: data.fullName } },
     });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      router.push("/dashboard");
+    if (err) {
+      toast.error(err.message);
+      setSubmitting(false);
+      return;
     }
+    toast.success('Account created — welcome to PulseOps!');
+    router.push('/dashboard');
+  }
+
+  const inputStyle = {
+    background: 'var(--app-bg)',
+    border: '1px solid var(--app-border)',
+    color: 'var(--app-text-primary)',
   };
+
   return (
-    <>
-      <Card className="w-[400px] bg-white/10 backdrop-blur-lg border-white/20">
-        <CardHeader className="space-y-2">
+    <div
+      className='animate-fade-in-up opacity-0'
+      style={{ animationFillMode: 'forwards' }}
+    >
+      <Card
+        className='w-[400px]'
+        style={{
+          background: 'var(--app-surface)',
+          border: '1px solid var(--app-border)',
+          borderRadius: '12px',
+          boxShadow: 'var(--app-shadow-lg)',
+        }}
+      >
+        <CardHeader className='space-y-3 px-6 pt-6 pb-0'>
           <Logo />
-          <CardTitle className="text-white">Register To PulseOps</CardTitle>
+          <div>
+            <h1
+              className='text-lg font-bold tracking-tight'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
+              Create your account
+            </h1>
+            <p
+              className='mt-0.5 text-sm'
+              style={{ color: 'var(--app-text-secondary)' }}
+            >
+              Register to start using PulseOps.
+            </p>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className='px-6 pb-6 pt-4'>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
               <FormField
                 control={form.control}
-                name="fullName"
+                name='fullName'
+                rules={{ required: 'Full name is required' }}
                 render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-white font-medium">
-                      Full Name
+                  <FormItem>
+                    <FormLabel
+                      className='text-xs font-medium'
+                      style={{ color: 'var(--app-text-secondary)' }}
+                    >
+                      Full name
                     </FormLabel>
-                    <FormDescription className="text-white/70">
-                      Please enter your Full Name
-                    </FormDescription>
                     <FormControl>
                       <Input
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                        type="text"
-                        placeholder="Enter your Full Name"
+                        placeholder='Jane Doe'
+                        className='h-9 rounded-md text-sm'
+                        style={inputStyle}
+                        disabled={submitting}
                         {...field}
                       />
                     </FormControl>
@@ -86,47 +119,58 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <br />
               <FormField
                 control={form.control}
-                name="email"
+                name='email'
+                rules={{ required: 'Email is required' }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white/70" htmlFor="email">
+                    <FormLabel
+                      htmlFor='reg-email'
+                      className='text-xs font-medium'
+                      style={{ color: 'var(--app-text-secondary)' }}
+                    >
                       Email
                     </FormLabel>
-                    <FormDescription className="text-white/70">
-                      Please enter your email
-                    </FormDescription>
                     <FormControl>
                       <Input
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                        type="email"
+                        id='reg-email'
+                        type='email'
+                        placeholder='you@company.com'
+                        className='h-9 rounded-md text-sm'
+                        style={inputStyle}
+                        disabled={submitting}
                         {...field}
-                        placeholder="your@email.com"
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <br />
               <FormField
                 control={form.control}
-                name="password"
+                name='password'
+                rules={{
+                  required: 'Password is required',
+                  minLength: { value: 6, message: 'At least 6 characters' },
+                }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white/70" htmlFor="password">
+                    <FormLabel
+                      htmlFor='reg-password'
+                      className='text-xs font-medium'
+                      style={{ color: 'var(--app-text-secondary)' }}
+                    >
                       Password
                     </FormLabel>
-                    <FormDescription className="text-white/70">
-                      Please enter your Password
-                    </FormDescription>
                     <FormControl>
                       <Input
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                        type="password"
-                        placeholder="Enter your Password"
+                        id='reg-password'
+                        type='password'
+                        placeholder='••••••••'
+                        className='h-9 rounded-md text-sm'
+                        style={inputStyle}
+                        disabled={submitting}
                         {...field}
                       />
                     </FormControl>
@@ -134,23 +178,27 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <br />
               <FormField
                 control={form.control}
-                name="ConfirmPassword"
+                name='confirmPassword'
+                rules={{ required: 'Confirm your password' }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white" htmlFor="ConfirmPassword">
-                      Confirm Password
+                    <FormLabel
+                      htmlFor='reg-confirm'
+                      className='text-xs font-medium'
+                      style={{ color: 'var(--app-text-secondary)' }}
+                    >
+                      Confirm password
                     </FormLabel>
-                    <FormDescription className="text-white/70">
-                      Please enter your Confirm Password
-                    </FormDescription>
                     <FormControl>
                       <Input
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                        type="password"
-                        placeholder="Enter your Confirm Password"
+                        id='reg-confirm'
+                        type='password'
+                        placeholder='••••••••'
+                        className='h-9 rounded-md text-sm'
+                        style={inputStyle}
+                        disabled={submitting}
                         {...field}
                       />
                     </FormControl>
@@ -158,23 +206,38 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <br />
               <Button
-                type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                type='submit'
+                disabled={submitting}
+                className='h-9 w-full rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50'
+                style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#fff',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                }}
               >
-                Register
+                {submitting && (
+                  <Loader2 size={14} className='mr-2 animate-spin' />
+                )}
+                {submitting ? 'Creating…' : 'Create account'}
               </Button>
             </form>
           </Form>
-          <Link
-            href="/login"
-            className="text-emerald-400 hover:text-emerald-300 text-sm mt-4 block text-center"
+          <p
+            className='mt-6 text-center text-sm'
+            style={{ color: 'var(--app-text-secondary)' }}
           >
-            Login to your account
-          </Link>
+            Already have an account?{' '}
+            <Link
+              href='/Login'
+              className='font-medium underline-offset-4 hover:underline'
+              style={{ color: 'var(--app-accent-text)' }}
+            >
+              Sign in
+            </Link>
+          </p>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

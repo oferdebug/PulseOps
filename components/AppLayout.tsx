@@ -1,155 +1,449 @@
 /**
- * AppLayout
- *
- * Root layout wrapper for all authenticated pages. Renders the sidebar,
- * user display, logout button, and the main scrollable content area.
- *
- * Architecture notes:
- * - Nav items are driven from the NAV_ITEMS config array below instead of
- *   repeating JSX per item — easier to add/reorder/remove without touching the component.
- * - `matchPrefix` controls active state: exact match for /dashboard,
- *   startsWith for all section routes (/tickets, /users, etc.).
- * - The `getUser()` call is duplicated in DashboardPage — worth extracting into
- *   a shared `useCurrentUser()` hook (hooks/useCurrentUser.ts) to stay DRY.
- *
- * TODO:
- * - `/Login` route uses a capital L — verify this matches the actual file name.
- *   Next.js routes are case-sensitive on Linux (prod) even if they work on macOS (dev).
- * - Add `aria-label="Sign out"` to the logout button for accessibility.
- * - `max-h-[calc(100vh-4rem)]` on SidebarInset assumes a 4rem top bar — document
- *   or extract this as a layout constant if the structure ever changes.
+ * @module AppLayout
+ * Root authenticated shell — collapsible sidebar + content area.
+ * Emerald accent, warm surfaces, layered depth.
+ * Ctrl+B toggles sidebar collapse. Ctrl+K opens search. Ctrl+N new ticket.
  */
-"use client";
+'use client';
 
-// biome-ignore assist/source/organizeImports: <explanation>
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LogOut,
+  Moon,
+  Search,
+  Sun,
+  Zap,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import { NotificationBell } from '@/components/NotificationBell';
+import SearchModal from '@/components/SearchModal';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarProvider,
-  SidebarFooter,
-} from "./ui/sidebar";
-import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
-import Logo from "@/components/Logo";
-import Link from "next/link";
-import {
-  LayoutDashboard,
-  BookOpen,
-  Ticket,
-  Users,
-  Activity,
-  Settings,
-  LogOut,
-  User,
-} from "lucide-react";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import {createClient} from "@/lib/supabase/client";
+  SidebarRail,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { NAV_ITEMS } from '@/lib/navigation';
+import { createClient } from '@/lib/supabase/client';
 
-// ─── Nav Config ────────────────────────────────────────────────────────────
+function SidebarCollapseToggle() {
+  const { state, toggleSidebar } = useSidebar();
+  const collapsed = state === 'collapsed';
+  return (
+    <button
+      type='button'
+      onClick={toggleSidebar}
+      className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+      style={{ color: 'var(--app-icon-btn-color)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+      }}
+      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+    >
+      {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
+    </button>
+  );
+}
 
-const NAV_ITEMS = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    matchPrefix: false,
-  },
-  {
-    href: "/knowledge-base",
-    label: "Knowledge Base",
-    icon: BookOpen,
-    matchPrefix: true,
-  },
-  { href: "/tickets", label: "Tickets", icon: Ticket, matchPrefix: true },
-  { href: "/users", label: "Users", icon: Users, matchPrefix: true },
-  {
-    href: "/activity-logs",
-    label: "Activity Logs",
-    icon: Activity,
-    matchPrefix: true,
-  },
-  { href: "/settings", label: "Settings", icon: Settings, matchPrefix: true },
-];
-
-// ─── Component ─────────────────────────────────────────────────────────────
-
-const AppLayout = ({ children }: { children: React.ReactNode }) => {
+function AppSidebarContent() {
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
-  const [userName, setUserName] = useState("");
+  const { user, loading: userLoading } = useCurrentUser();
+  const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
 
-const { user } = useCurrentUser();
-
-    async function handleLogout(
-    _event: React.MouseEvent<HTMLButtonElement>,
-  ): Promise<void> {
+  async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/Login");
+    router.push('/Login');
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <Logo />
-        </SidebarHeader>
+    <>
+      <SidebarHeader
+        className={collapsed ? 'px-2 py-4' : 'px-4 py-5'}
+        style={{ borderBottom: '1px solid var(--app-sidebar-border)' }}
+      >
+        <Link
+          href='/dashboard'
+          className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}
+        >
+          <div
+            className='flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'
+            style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <Zap size={16} color='#fff' />
+          </div>
+          {!collapsed && (
+            <span
+              className='text-[15px] font-bold tracking-tight'
+              style={{ color: 'var(--app-logo-text)' }}
+            >
+              PulseOps
+            </span>
+          )}
+        </Link>
+      </SidebarHeader>
 
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenu>
-              {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => (
+      <SidebarContent className={collapsed ? 'px-1.5 py-3' : 'px-2.5 py-3'}>
+        <SidebarGroup>
+          <SidebarMenu className='gap-1'>
+            {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => {
+              const isActive = matchPrefix
+                ? pathname.startsWith(href)
+                : pathname === href;
+              return (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={
-                      matchPrefix
-                        ? pathname.startsWith(href)
-                        : pathname === href
+                    isActive={isActive}
+                    tooltip={label}
+                    className={`${collapsed ? 'h-9 justify-center rounded-lg px-0' : 'h-9 rounded-lg px-3'} text-[13px] font-medium transition-all duration-150`}
+                    style={
+                      isActive
+                        ? {
+                            background: 'var(--app-nav-active-bg)',
+                            color: 'var(--app-nav-active-text)',
+                            borderLeft: collapsed ? 'none' : '3px solid var(--app-accent)',
+                            boxShadow: 'inset 0 0 0 1px var(--app-nav-active-border)',
+                          }
+                        : {
+                            background: 'transparent',
+                            color: 'var(--app-nav-idle-text)',
+                            borderLeft: collapsed ? 'none' : '3px solid transparent',
+                          }
                     }
                   >
-                    <Link href={href}>
-                      <Icon size={18} />
-                      <span>{label}</span>
+                    <Link
+                      href={href}
+                      className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'}`}
+                    >
+                      <Icon
+                        size={16}
+                        className='shrink-0'
+                        style={{
+                          color: isActive
+                            ? 'var(--app-nav-active-icon)'
+                            : 'var(--app-nav-idle-icon)',
+                        }}
+                      />
+                      {!collapsed && <span>{label}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
 
-        <SidebarFooter>
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <User size={16} className="text-muted-foreground" />
-              <span className="truncate text-sm text-muted-foreground">
-                {userName}
-              </span>
+      {/* Search shortcut */}
+      <div
+        className={collapsed ? 'px-1.5 py-2' : 'px-2.5 py-2'}
+        style={{ borderTop: '1px solid var(--app-sidebar-border)' }}
+      >
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SearchTriggerButton collapsed />
+            </TooltipTrigger>
+            <TooltipContent side='right'>Search (Ctrl+K)</TooltipContent>
+          </Tooltip>
+        ) : (
+          <SearchTriggerButton collapsed={false} />
+        )}
+      </div>
+
+      {/* Footer */}
+      <SidebarFooter
+        className={collapsed ? 'p-1.5' : 'p-2.5'}
+        style={{ borderTop: '1px solid var(--app-sidebar-border)' }}
+      >
+        <div
+          className={`flex items-center ${collapsed ? 'flex-col gap-2 p-2' : 'gap-2.5 rounded-lg p-2.5'}`}
+          style={{
+            background: 'var(--app-footer-bg)',
+            border: '1px solid var(--app-footer-border)',
+            borderRadius: '8px',
+          }}
+        >
+          {/* Avatar */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold'
+                style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#fff',
+                  boxShadow: '0 1px 4px rgba(16, 185, 129, 0.25)',
+                }}
+              >
+                {userLoading
+                  ? '?'
+                  : (user?.fullName?.[0]?.toUpperCase() ?? '?')}
+              </div>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side='right'>
+                {userLoading ? '…' : (user?.fullName ?? '—')}
+              </TooltipContent>
+            )}
+          </Tooltip>
+
+          {/* Name + email — hidden when collapsed */}
+          {!collapsed && (
+            <div className='min-w-0 flex-1'>
+              <p
+                className='truncate text-xs font-semibold'
+                style={{ color: 'var(--app-user-name)' }}
+              >
+                {userLoading ? '…' : (user?.fullName ?? '—')}
+              </p>
+              <p
+                className='truncate text-[10px]'
+                style={{ color: 'var(--app-user-email)' }}
+              >
+                {userLoading ? '…' : (user?.email ?? '')}
+              </p>
             </div>
-            {/** biome-ignore lint/a11y/useButtonType: <explanation> */}
-            <button
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-red-500"
-              aria-label={"Sign out"}
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
+          )}
 
-      <SidebarInset className="overflow-y-auto max-h-[calc(100vh-4rem)]">
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+          {/* Collapse toggle */}
+          <SidebarCollapseToggle />
+
+          {/* Theme toggle */}
+          {!collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type='button'
+                  onClick={() =>
+                    setTheme(theme === 'dark' ? 'light' : 'dark')
+                  }
+                  className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                  style={{ color: 'var(--app-icon-btn-color)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      'var(--app-icon-btn-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                  aria-label='Toggle theme'
+                >
+                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side='top'>Toggle theme</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Logout */}
+          {!collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type='button'
+                  onClick={handleLogout}
+                  className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                  style={{ color: 'var(--app-icon-btn-color)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      'var(--app-logout-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                  aria-label='Sign out'
+                >
+                  <LogOut size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side='top'>Sign out</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Collapsed: show theme + logout vertically */}
+          {collapsed && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type='button'
+                    onClick={() =>
+                      setTheme(theme === 'dark' ? 'light' : 'dark')
+                    }
+                    className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                    style={{ color: 'var(--app-icon-btn-color)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        'var(--app-icon-btn-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                    aria-label='Toggle theme'
+                  >
+                    {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side='right'>Toggle theme</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type='button'
+                    onClick={handleLogout}
+                    className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                    style={{ color: 'var(--app-icon-btn-color)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        'var(--app-logout-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                    aria-label='Sign out'
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side='right'>Sign out</TooltipContent>
+              </Tooltip>
+            </>
+          )}
+        </div>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </>
   );
-};
+}
 
-export default AppLayout;
+function SearchTriggerButton({ collapsed }: { collapsed: boolean }) {
+  return (
+    <button
+      type='button'
+      data-search-trigger
+      className={`flex w-full items-center ${collapsed ? 'justify-center rounded-lg p-2' : 'gap-2.5 rounded-lg px-3 py-2'} text-[13px] font-medium transition-colors`}
+      style={{ color: 'var(--app-nav-idle-text)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--app-icon-btn-hover)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+      }}
+      aria-label='Search (Ctrl+K)'
+    >
+      <Search size={15} className='shrink-0' style={{ color: 'var(--app-nav-idle-icon)' }} />
+      {!collapsed && (
+        <>
+          <span>Search</span>
+          <kbd
+            className='ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium mono'
+            style={{
+              background: 'var(--app-surface-raised)',
+              border: '1px solid var(--app-border)',
+              color: 'var(--app-text-muted)',
+            }}
+          >
+            ⌘K
+          </kbd>
+        </>
+      )}
+    </button>
+  );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K / Cmd+K → search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((open) => !open);
+      }
+      // Ctrl+N / Cmd+N → new ticket
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        router.push('/tickets/new');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    // Wire search triggers (buttons with data-search-trigger)
+  }, [router]);
+
+  // Listen for clicks on search trigger buttons inside sidebar
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('[data-search-trigger]');
+      if (target) setIsSearchOpen(true);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
+  return (
+    <>
+      <SidebarProvider>
+        <Sidebar
+          collapsible='icon'
+          style={{
+            background: 'var(--app-sidebar-bg)',
+            borderRight: '1px solid var(--app-sidebar-border)',
+            boxShadow: '1px 0 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <AppSidebarContent />
+        </Sidebar>
+
+        <SidebarInset
+          className='flex flex-col overflow-hidden'
+          style={{ background: 'var(--app-inset-bg)' }}
+        >
+          <main className='flex-1 overflow-y-auto'>{children}</main>
+        </SidebarInset>
+
+        <SearchModal
+          open={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
+      </SidebarProvider>
+
+      <div className='fixed bottom-6 right-6' style={{ zIndex: 50 }}>
+        <NotificationBell
+          open={isNotifOpen}
+          onToggle={() => setIsNotifOpen((o) => !o)}
+          onClose={() => setIsNotifOpen(false)}
+        />
+      </div>
+    </>
+  );
+}
