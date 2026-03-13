@@ -19,7 +19,7 @@ import { NAV_ITEMS } from '@/lib/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AppSidebar() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useCurrentUser();
@@ -98,7 +98,7 @@ export default function AppSidebar() {
           <SidebarMenu className='gap-1'>
             {NAV_ITEMS.map(({ href, label, icon: Icon, matchPrefix }) => {
               const isActive = matchPrefix
-                ? pathname.startsWith(href)
+                ? pathname === href || pathname.startsWith(`${href}/`)
                 : pathname === href;
 
               return (
@@ -113,7 +113,6 @@ export default function AppSidebar() {
                             background: 'var(--app-nav-active-bg)',
                             border: '1px solid var(--app-nav-active-border)',
                             color: 'var(--app-nav-active-text)',
-                            
                           }
                         : {
                             background: 'transparent',
@@ -195,12 +194,14 @@ export default function AppSidebar() {
           {/* Theme toggle */}
           <button
             type='button'
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() =>
+              setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+            }
             className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200'
             style={{ color: 'var(--app-icon-btn-color)' }}
             aria-label='Toggle theme'
           >
-            {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            {resolvedTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
           </button>
 
           {/* Logout */}

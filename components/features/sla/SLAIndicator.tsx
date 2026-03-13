@@ -1,12 +1,13 @@
 'use client';
 
+import type { ElementType } from 'react';
 import { AlertTriangle, CheckCircle2, Clock, Shield } from 'lucide-react';
 import type { SLAStatus, TicketSLA } from '@/hooks/useSLA';
 import { getSLAStatus, getTimeRemaining } from '@/hooks/useSLA';
 
 const STATUS_CONFIG: Record<
   SLAStatus,
-  { color: string; bg: string; icon: React.ElementType; label: string }
+  { color: string; bg: string; icon: ElementType; label: string }
 > = {
   ok: {
     color: 'var(--app-health-healthy)',

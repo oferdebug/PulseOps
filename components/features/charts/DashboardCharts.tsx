@@ -174,7 +174,7 @@ export function AgentWorkloadChart({
 }: {
   data: { name: string; count: number }[];
 }) {
-  const top = data.slice(0, 8);
+  const top = [...data].sort((a, b) => b.count - a.count).slice(0, 8);
 
   return (
     <ResponsiveContainer width='100%' height={220}>

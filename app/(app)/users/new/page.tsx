@@ -15,8 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
-
-type UserRole = 'admin' | 'technician' | 'user';
+import type { UserRole } from '@/hooks/useRole';
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',
@@ -43,7 +42,7 @@ export default function NewUserPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('user');
+  const [role, setRole] = useState<UserRole>('customer');
   const [department, setDepartment] = useState('');
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -51,7 +50,10 @@ export default function NewUserPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim()) return;
+    if (!fullName.trim() || !email.trim()) {
+      setError('Name and email are required');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     const supabase = createClient();
@@ -77,14 +79,8 @@ export default function NewUserPage() {
   }
 
   return (
-    <div
-      className='min-h-screen p-8'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div
-        className='mx-auto max-w-2xl space-y-6'
-        
-      >
+    <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+      <div className='mx-auto max-w-2xl space-y-6'>
         <AppBreadcrumb current='New User' />
 
         <div
@@ -97,7 +93,10 @@ export default function NewUserPage() {
           >
             Team
           </p>
-          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+          <h1
+            className='text-xl font-bold tracking-tight'
+            style={{ color: 'var(--app-text-primary)' }}
+          >
             Add User
           </h1>
           <p
@@ -167,18 +166,19 @@ export default function NewUserPage() {
                 >
                   <SelectTrigger
                     id='role-select'
-                    className='h-10 rounded-md text-sm'
+                    className='h-10 text-sm'
                     style={{
                       background: 'var(--app-surface)',
                       border: '1px solid var(--app-border)',
                       color: 'var(--app-text-primary)',
+                      borderRadius: '12px',
                     }}
                   >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='user'>User</SelectItem>
-                    <SelectItem value='technician'>Technician</SelectItem>
+                    <SelectItem value='customer'>Customer</SelectItem>
+                    <SelectItem value='agent'>Agent</SelectItem>
                     <SelectItem value='admin'>Admin</SelectItem>
                   </SelectContent>
                 </Select>

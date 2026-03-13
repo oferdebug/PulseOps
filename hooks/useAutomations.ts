@@ -47,21 +47,23 @@ export function useAutomations() {
 
   const fetchRules = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('automation_rules')
       .select('*')
       .order('created_at', { ascending: false });
+    if (error) console.error('Failed to fetch automation rules:', error);
     setRules((data ?? []) as AutomationRule[]);
     setLoading(false);
   }, []);
 
   const fetchLog = useCallback(async (limit = 50) => {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('automation_log')
       .select('*')
       .order('executed_at', { ascending: false })
       .limit(limit);
+    if (error) console.error('Failed to fetch automation log:', error);
     setLog((data ?? []) as AutomationLogEntry[]);
   }, []);
 

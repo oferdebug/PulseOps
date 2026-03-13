@@ -103,7 +103,11 @@ export function useFileUpload(
         .select()
         .single();
 
-      if (insertErr) throw new Error(insertErr.message);
+      if (insertErr) {
+        // Roll back storage upload to avoid orphaned files
+        await supabase.storage.from('attachments').remove([storagePath]);
+        throw new Error(insertErr.message);
+      }
 
       const attachment = row as Attachment;
 
@@ -143,19 +147,30 @@ export function useFileUpload(
     try {
       const supabase = createClient();
 
+      // Remove DB row first (prevents dangling reference if storage fails)
+      const { error: dbErr } = await supabase
+        .from('attachments')
+        .delete()
+        .eq('id', attachmentId);
+      if (dbErr) throw new Error(dbErr.message);
+
       // Remove from storage
       const { error: storageErr } = await supabase.storage
         .from('attachments')
         .remove([target.storage_path]);
-      if (storageErr) throw new Error(storageErr.message);
-
-      // Remove DB row
-      const { error: err } = await supabase
-        .from('attachments')
-        .delete()
-        .eq('id', attachmentId);
-
-      if (err) throw new Error(err.message);
+      if (storageErr) {
+        // Compensate: re-insert the DB row so the record isn't lost
+        await supabase.from('attachments').insert({
+          id: target.id,
+          ticket_id: target.ticket_id,
+          file_name: target.file_name,
+          file_type: target.file_type,
+          file_size: target.file_size,
+          storage_path: target.storage_path,
+          uploaded_by: target.uploaded_by,
+        });
+        throw new Error(storageErr.message);
+      }
 
       setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
       return true;

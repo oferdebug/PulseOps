@@ -2,6 +2,7 @@
 
 import { Loader2, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { createClient } from '@/lib/supabase/client';
 
@@ -102,7 +103,8 @@ export default function MyTicketsPage() {
       setShowNew(false);
       fetchTickets();
     } catch (err) {
-      console.error('Failed to submit ticket:', err);
+      const message = err instanceof Error ? err.message : 'Failed to submit ticket';
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

@@ -5,11 +5,23 @@ export async function POST(req: NextRequest) {
   try {
     const { title } = await req.json();
 
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'AI generation not configured' },
+        { status: 503 },
+      );
+    }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -34,7 +46,12 @@ Keep it concise, professional, and actionable. No fluff.`,
     });
 
     const data = await response.json();
-    console.log('Anthropic response:', JSON.stringify(data, null, 2));
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.error?.message ?? 'Generation failed' },
+        { status: response.status },
+      );
+    }
     const text = data.content?.[0]?.text ?? '';
     return NextResponse.json({ content: text });
   } catch (error) {

@@ -64,6 +64,7 @@ function Pill({
   return (
     <button
       type='button'
+      aria-pressed={active}
       onClick={onClick}
       className='rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all duration-200 hover:-translate-y-0.5'
       style={
@@ -114,8 +115,8 @@ export default function UsersPage() {
 
   const filtered = profiles.filter(
     (p) =>
-      (p.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        p.email.toLowerCase().includes(search.toLowerCase())) &&
+      ((p.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (p.email ?? '').toLowerCase().includes(search.toLowerCase())) &&
       (roleFilter === 'all' || p.role === roleFilter),
   );
 
@@ -124,7 +125,7 @@ export default function UsersPage() {
       className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='relative' >
+      <div className='relative'>
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6 flex items-end justify-between'
@@ -137,7 +138,10 @@ export default function UsersPage() {
             >
               Team
             </p>
-            <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+            <h1
+              className='text-xl font-bold tracking-tight'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
               Users
             </h1>
             <p
@@ -202,6 +206,7 @@ export default function UsersPage() {
             </div>
             <button
               type='button'
+              aria-label='Refresh profiles'
               onClick={fetchProfiles}
               disabled={loading}
               className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-(--app-surface-raised)'

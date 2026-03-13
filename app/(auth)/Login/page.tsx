@@ -4,7 +4,6 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import type { FieldValues } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
@@ -21,14 +20,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase/client';
 
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
 export default function LoginPage() {
-  const form = useForm<FieldValues>({
+  const form = useForm<LoginFormValues>({
     defaultValues: { email: '', password: '' },
   });
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(data: FieldValues) {
+  const inputStyle = {
+    background: 'var(--app-bg)',
+    border: '1px solid var(--app-border)',
+    color: 'var(--app-text-primary)',
+  };
+
+  async function onSubmit(data: LoginFormValues) {
     setSubmitting(true);
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithPassword({
@@ -98,11 +108,7 @@ export default function LoginPage() {
                         type='email'
                         placeholder='you@company.com'
                         className='h-9 rounded-md text-sm'
-                        style={{
-                          background: 'var(--app-bg)',
-                          border: '1px solid var(--app-border)',
-                          color: 'var(--app-text-primary)',
-                        }}
+                        style={inputStyle}
                         disabled={submitting}
                         {...field}
                       />
@@ -130,11 +136,7 @@ export default function LoginPage() {
                         type='password'
                         placeholder='••••••••'
                         className='h-9 rounded-md text-sm'
-                        style={{
-                          background: 'var(--app-bg)',
-                          border: '1px solid var(--app-border)',
-                          color: 'var(--app-text-primary)',
-                        }}
+                        style={inputStyle}
                         disabled={submitting}
                         {...field}
                       />
@@ -166,7 +168,7 @@ export default function LoginPage() {
           >
             Don&apos;t have an account?{' '}
             <Link
-              href='/Register'
+              href='/register'
               className='font-medium underline-offset-4 hover:underline'
               style={{ color: 'var(--app-accent-text)' }}
             >

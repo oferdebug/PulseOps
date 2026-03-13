@@ -103,6 +103,12 @@ export default function NewTicketPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    if (!user) {
+      setError('Your session expired. Please sign in again.');
+      toast.error('Your session expired. Please sign in again.');
+      setSubmitting(false);
+      return;
+    }
     const { data, error: err } = await supabase
       .from('tickets')
       .insert({
@@ -110,7 +116,7 @@ export default function NewTicketPage() {
         description: description.trim() || null,
         priority,
         status: 'open',
-        created_by: user?.id ?? null,
+        created_by: user.id,
         assigned_to: assignedTo || null,
       })
       .select('id')

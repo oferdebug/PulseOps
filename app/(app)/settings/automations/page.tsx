@@ -65,7 +65,7 @@ export default function AutomationsPage() {
       /* keep empty */
     }
     try {
-      await createRule({
+      const { error } = await createRule({
         name: name.trim(),
         description: description.trim() || null,
         trigger,
@@ -73,6 +73,10 @@ export default function AutomationsPage() {
         action,
         action_params,
       });
+      if (error) {
+        console.error('Failed to create rule:', error);
+        return;
+      }
       setShowForm(false);
       setName('');
       setDescription('');

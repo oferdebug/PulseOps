@@ -69,6 +69,9 @@ export default function NewArticlePage() {
         body: JSON.stringify({ title }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Generation failed');
+      }
       setContent(data.content ?? '');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Generation failed');
@@ -86,6 +89,11 @@ export default function NewArticlePage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('Your session expired. Please sign in again.');
+      setSubmitting(false);
+      return;
+    }
     const { data, error: err } = await supabase
       .from('articles')
       .insert({
@@ -93,7 +101,7 @@ export default function NewArticlePage() {
         content: content.trim(),
         category,
         status,
-        created_by: user?.id ?? null,
+        created_by: user.id,
       })
       .select('id')
       .single();

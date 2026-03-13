@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 import {
@@ -51,7 +52,9 @@ export function AppBreadcrumb({ current }: AppBreadcrumbProps) {
           <React.Fragment key={crumb.href}>
             {i > 0 && <BreadcrumbSeparator />}
             <BreadcrumbItem>
-              <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href={crumb.href}>{crumb.label}</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
           </React.Fragment>
         ))}

@@ -25,15 +25,17 @@ const CATEGORY_COLOR: Record<string, string> = {
 export default function PortalKnowledgeBasePage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const fetchArticles = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('articles')
       .select('id, title, category, created_at')
       .eq('status', 'published')
       .order('created_at', { ascending: false });
+    if (fetchError) setError(fetchError.message);
     setArticles(data ?? []);
     setLoading(false);
   }, []);
@@ -77,6 +79,7 @@ export default function PortalKnowledgeBasePage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder='Search articles...'
+          aria-label='Search articles'
           className='h-10 w-full rounded-md pl-9 pr-4 text-sm'
           style={{
             background: 'var(--app-surface)',
@@ -94,6 +97,19 @@ export default function PortalKnowledgeBasePage() {
             className='animate-spin'
             style={{ color: 'var(--app-text-faint)' }}
           />
+        </div>
+      ) : error ? (
+        <div
+          className='rounded-md px-4 py-3 text-sm'
+          style={{
+            background:
+              'color-mix(in srgb, var(--destructive) 12%, transparent)',
+            border:
+              '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+            color: 'var(--destructive)',
+          }}
+        >
+          {error}
         </div>
       ) : categories.length === 0 ? (
         <div
@@ -129,7 +145,7 @@ export default function PortalKnowledgeBasePage() {
               .map((article, i, arr) => (
                 <Link
                   key={article.id}
-                  href={`/knowledge-base/${article.id}`}
+                  href={`/portal/knowledge-base/${article.id}`}
                   className='flex items-center justify-between px-6 py-3.5 transition-all hover:bg-[var(--app-surface-raised)]'
                   style={{
                     borderBottom:

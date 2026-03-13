@@ -35,10 +35,12 @@ export async function POST(req: NextRequest) {
       for (const word of words) {
         if (articleText.includes(word)) score += 2;
       }
-      // Category match bonus
+      if (article.category && query.includes(article.category.toLowerCase())) {
         score += 3;
+      }
       return { ...article, score };
     });
+    
 
     const suggestions = scored
       .filter((a) => a.score > 0)

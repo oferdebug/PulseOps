@@ -14,10 +14,10 @@ export function RequireRole({
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }) {
-  const { user } = useCurrentUser();
-  const { role, loading } = useRole(user?.id);
+  const { user, loading: userLoading } = useCurrentUser();
+  const { role, loading: roleLoading } = useRole(user?.id);
 
-  if (loading) {
+  if (userLoading || roleLoading) {
     return (
       <div className='flex items-center justify-center py-24'>
         <div
@@ -31,7 +31,7 @@ export function RequireRole({
     );
   }
 
-  if (!allowed.includes(role)) {
+  if (!user || !allowed.includes(role)) {
     return (
       fallback ?? (
         <div

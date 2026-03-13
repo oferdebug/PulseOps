@@ -8,6 +8,12 @@ const resend = process.env.RESEND_API_KEY
 
 export async function POST(req: Request) {
   try {
+    // Verify the caller is authenticated
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { userId, type, title, message, ticketId, ticketTitle } =
       await req.json();
 

@@ -209,14 +209,8 @@ export default function TemplatesSettingsPage() {
     : undefined;
 
   return (
-    <div
-      className='min-h-screen p-8'
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <div
-        className='mx-auto max-w-3xl space-y-6'
-        
-      >
+    <div className='min-h-screen p-8' style={{ background: 'var(--app-bg)' }}>
+      <div className='mx-auto max-w-3xl space-y-6'>
         <Link
           href='/settings'
           className='inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-all hover:bg-(--app-surface-raised)'
@@ -239,7 +233,10 @@ export default function TemplatesSettingsPage() {
             >
               Settings
             </p>
-            <h1 className='flex items-center gap-3 text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+            <h1
+              className='flex items-center gap-3 text-xl font-bold tracking-tight'
+              style={{ color: 'var(--app-text-primary)' }}
+            >
               <FileText size={32} />
               Ticket Templates
             </h1>
@@ -281,8 +278,8 @@ export default function TemplatesSettingsPage() {
             </div>
             <TemplateForm
               onSave={async (data) => {
-                await createTemplate(data);
-                setShowForm(false);
+                const result = await createTemplate(data);
+                if (result) setShowForm(false);
               }}
               onCancel={() => setShowForm(false)}
             />
@@ -304,10 +301,11 @@ export default function TemplatesSettingsPage() {
               </p>
             </div>
             <TemplateForm
+              key={editingId}
               initial={editingTemplate}
               onSave={async (data) => {
-                await updateTemplate(editingId, data);
-                setEditingId(null);
+                const result = await updateTemplate(editingId, data);
+                if (result) setEditingId(null);
               }}
               onCancel={() => setEditingId(null)}
             />

@@ -79,10 +79,12 @@ export function useTemplates() {
         setTemplates((prev) =>
           prev.map((t) => (t.id === id ? { ...t, ...updates } : t)),
         );
+        return true;
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Failed to update template',
         );
+        return false;
       }
     },
     [],

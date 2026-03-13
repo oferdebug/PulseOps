@@ -46,8 +46,11 @@ export function AttachmentList({
   async function handleDelete(id: string) {
     if (!onDelete) return;
     setDeletingId(id);
-    await onDelete(id);
-    setDeletingId(null);
+    try {
+      await onDelete(id);
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   if (attachments.length === 0) return null;
@@ -83,7 +86,7 @@ export function AttachmentList({
                     size='sm'
                     className='h-6 w-6 p-0'
                     onClick={() => setPreviewAttachment(a)}
-                    title='Preview'
+                    aria-label={`Preview ${a.file_name}`}
                   >
                     <Eye size={14} />
                   </Button>
@@ -99,7 +102,7 @@ export function AttachmentList({
                     <a
                       href={url}
                       download={a.file_name}
-                      title='Download'
+                      aria-label={`Download ${a.file_name}`}
                       target='_blank'
                       rel='noopener noreferrer'
                     >
@@ -115,7 +118,7 @@ export function AttachmentList({
                     className='h-6 w-6 p-0 text-destructive hover:bg-destructive/10'
                     onClick={() => handleDelete(a.id)}
                     disabled={deletingId === a.id}
-                    title='Delete'
+                    aria-label={`Delete ${a.file_name}`}
                   >
                     {deletingId === a.id ? (
                       <Loader2 size={14} className='animate-spin' />

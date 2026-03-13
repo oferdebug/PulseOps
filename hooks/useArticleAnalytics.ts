@@ -40,8 +40,15 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
               .eq('article_id', articleId)
               .eq('user_id', userId)
               .maybeSingle()
-          : Promise.resolve({ data: null }),
+          : Promise.resolve({ data: null, error: null }),
       ]);
+
+      if (viewsRes.error)
+        console.error('Failed to fetch views:', viewsRes.error);
+      if (ratingsRes.error)
+        console.error('Failed to fetch ratings:', ratingsRes.error);
+      if (userRatingRes.error)
+        console.error('Failed to fetch user rating:', userRatingRes.error);
 
       const ratings = ratingsRes.data ?? [];
       const avg =

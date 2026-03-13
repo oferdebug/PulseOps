@@ -42,10 +42,14 @@ export function TagInput({ entityType, entityId }: TagInputProps) {
   async function handleAdd() {
     const trimmed = name.trim();
     if (!trimmed) return;
-    await addTag(trimmed, color);
-    setName('');
-    setColor(PRESET_COLORS[0]);
-    setOpen(false);
+    try {
+      await addTag(trimmed, color);
+      setName('');
+      setColor(PRESET_COLORS[0]);
+      setOpen(false);
+    } catch {
+      /* keep popover open so the user can retry */
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

@@ -51,6 +51,8 @@ export default function OnboardingPage() {
       .eq('id', user.id);
 
     if (profileErr) {
+      // Rollback: delete the created organization
+      await supabase.from('organizations').delete().eq('id', data.org_id);
       setError(profileErr.message);
       setLoading(false);
       return;

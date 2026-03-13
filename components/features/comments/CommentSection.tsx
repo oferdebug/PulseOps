@@ -44,7 +44,7 @@ export function CommentSection({
       )}
 
       {/* Comments list */}
-      {!loading && comments.length === 0 && (
+      {!loading && !error && comments.length === 0 && (
         <p className='py-6 text-center text-sm text-muted-foreground'>
           No comments yet. Be the first to comment.
         </p>

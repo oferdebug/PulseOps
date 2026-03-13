@@ -26,17 +26,18 @@ export default function PortalLayout({
     const supabase = createClient();
     supabase
       .from('profiles')
-      .select('organization_id')
+      .select('organization_id, organizations(name)')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.organization_id) {
-          setOrgName('Support Portal');
+          const org = data.organizations as { name: string } | null;
+          setOrgName(org?.name ?? 'Support Portal');
         }
       });
   }, [user?.id]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div
         className='flex min-h-screen items-center justify-center'

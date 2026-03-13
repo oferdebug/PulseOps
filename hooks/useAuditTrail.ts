@@ -47,7 +47,10 @@ export function useAuditTrail() {
       if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
       if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
-      const { data, count } = await query;
+      const { data, count, error } = await query;
+      if (error) {
+        console.error('Failed to fetch audit entries:', error);
+      }
       setEntries((data ?? []) as AuditEntry[]);
       setTotalCount(count ?? 0);
       setLoading(false);
@@ -70,7 +73,11 @@ export function useAuditTrail() {
     if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom);
     if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to export audit data:', error);
+      return;
+    }
     if (!data || data.length === 0) return;
 
     const headers = [
@@ -85,12 +92,12 @@ export function useAuditTrail() {
 
     const rows = data.map((e) => [
       new Date(e.created_at).toISOString(),
-      e.user_email,
-      e.action,
-      e.entity,
-      e.entity_id ?? '',
+      (e.user_email ?? '').replace(/"/g, '""'),
+      (e.action ?? '').replace(/"/g, '""'),
+      (e.entity ?? '').replace(/"/g, '""'),
+      (e.entity_id ?? '').replace(/"/g, '""'),
       (e.description ?? '').replace(/"/g, '""'),
-      JSON.stringify(e.metadata ?? {}),
+      JSON.stringify(e.metadata ?? {}).replace(/"/g, '""'),
     ]);
 
     const csv = [

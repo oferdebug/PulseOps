@@ -15,23 +15,49 @@ export function useCurrentUser() {
 
 
     useEffect(()=>{
-        const supabase=createClient();
+        const supabase = createClient();
+
+        async function loadProfile(authUser: {
+          id: string;
+          email?: string | null;
+          user_metadata?: Record<string, unknown>;
+        }) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .eq('id', authUser.id)
+            .single();
+          setUser({
+            id: authUser.id,
+            email: authUser.email ?? '',
+            fullName:
+              (authUser.user_metadata?.full_name as string) ??
+              authUser.email ??
+              '',
+            organizationId: profile?.organization_id ?? null,
+          });
+        }
+
         supabase.auth.getUser().then(async ({ data: { user } }) => {
           if (user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('organization_id')
-              .eq('id', user.id)
-              .single();
-            setUser({
-              id: user.id,
-              email: user.email ?? '',
-              fullName: user.user_metadata?.full_name ?? user.email ?? '',
-              organizationId: profile?.organization_id ?? null,
-            });
+            await loadProfile(user);
           }
           setLoading(false);
         });
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (session?.user) {
+            loadProfile(session.user);
+          } else {
+            setUser(null);
+          }
+        });
+
+        return () => {
+          subscription.unsubscribe();
+        };
     },[])
    return {user, loading};
 } 

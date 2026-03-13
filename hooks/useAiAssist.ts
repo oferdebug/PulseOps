@@ -31,9 +31,11 @@ export function useAiAssist() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description }),
       });
-      if (!res.ok) throw new Error('Classification request failed');
+      if (!res.ok) return;
       const data = await res.json();
       if (data.priority) setClassification(data);
+    } catch {
+      /* swallow – don't break analyzeTicket's Promise.all */
     } finally {
       setLoading(false);
     }
@@ -48,6 +50,10 @@ export function useAiAssist() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, description }),
         });
+        if (!res.ok) {
+          setSuggestions([]);
+          return;
+        }
         const data = await res.json();
         setSuggestions(data.suggestions ?? []);
       } catch {
