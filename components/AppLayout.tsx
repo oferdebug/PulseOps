@@ -404,9 +404,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-
     // Wire search triggers (buttons with data-search-trigger)
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [router]);
 
   // Listen for clicks on search trigger buttons inside sidebar

@@ -11,7 +11,7 @@ END $$;
 create table if not exists activity_logs (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid references auth.users(id) on delete set null,
-  user_email  text,
+  user_email  text,           -- NOTE: PII field, stored for audit display; consider joining via user_id instead
   action      log_action not null,
   entity      log_entity not null,
   entity_id   text,

@@ -106,20 +106,13 @@ $$ language sql stable security invoker;
 create or replace function notify_mentioned_users()
 returns trigger as $
 declare
-  user_id uuid;
+  mentioned_id uuid;
 begin
-  -- Loop through mentioned user IDs
-  for user_id in select jsonb_array_elements_text(new.mentions)::uuid
+  -- Loop through mentioned user IDs safely
+  for mentioned_id in
+    select v::uuid from jsonb_array_elements_text(new.mentions) as v
+    where v ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
   loop
-    -- Insert notification (assumes you have a notifications table)
-    -- insert into notifications (user_id, type, entity_type, entity_id, message)
-    -- values (
-    --   user_id,
-    --   'mention',
-    --   'ticket_comment',
-    --   new.id,
-    --   'You were mentioned in a ticket comment'
-    -- );
     null; -- Replace with actual notification logic
   end loop;
   return new;

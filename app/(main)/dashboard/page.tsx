@@ -1279,7 +1279,8 @@ export default function DashboardPage() {
                         className='text-[10px]'
                         style={{ color: 'var(--app-text-faint)' }}
                       >
-                        {a.user_email} · {timeAgo(a.created_at)}
+                        {a.user_email?.replace(/^(.{2})[^@]*/, '$1***')} ·{' '}
+                        {timeAgo(a.created_at)}
                       </p>
                     </div>
                   </div>
