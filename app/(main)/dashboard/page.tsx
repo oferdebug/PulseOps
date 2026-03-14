@@ -945,29 +945,27 @@ export default function DashboardPage() {
               />
             </>
           ) : (
-            <>
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className='overflow-hidden rounded-xl'
-                  style={{
-                    background: 'var(--app-surface)',
-                    border: '1px solid var(--app-border)',
-                  }}
-                >
-                  <Skeleton className='h-1 w-full' />
-                  <div className='p-5 space-y-3'>
-                    <div className='flex items-start justify-between'>
-                      <Skeleton className='h-3 w-20' />
-                      <Skeleton className='h-9 w-9 rounded-lg' />
-                    </div>
-                    <Skeleton className='h-8 w-24' />
-                    <Skeleton className='h-8 w-full' />
-                    <Skeleton className='h-3 w-28' />
+            [1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className='overflow-hidden rounded-xl'
+                style={{
+                  background: 'var(--app-surface)',
+                  border: '1px solid var(--app-border)',
+                }}
+              >
+                <Skeleton className='h-1 w-full' />
+                <div className='p-5 space-y-3'>
+                  <div className='flex items-start justify-between'>
+                    <Skeleton className='h-3 w-20' />
+                    <Skeleton className='h-9 w-9 rounded-lg' />
                   </div>
+                  <Skeleton className='h-8 w-24' />
+                  <Skeleton className='h-8 w-full' />
+                  <Skeleton className='h-3 w-28' />
                 </div>
-              ))}
-            </>
+              </div>
+            ))
           )}
         </div>
 
