@@ -32,7 +32,7 @@ export default function FileUpload({
   entityType,
   entityId,
   maxSizeMB = 10,
-  maxFiles: _maxFiles = 5,
+  maxFiles = 5,
   accept,
   disabled = false,
   onUploadComplete,
@@ -44,7 +44,10 @@ export default function FileUpload({
 
   const handleFiles = useCallback(
     async (files: FileList | File[]) => {
-      const fileArray = Array.from(files);
+      const fileArray = Array.from(files).slice(0, maxFiles);
+      if (Array.from(files).length > maxFiles) {
+        toast.error(`You can upload at most ${maxFiles} files at once.`);
+      }
       for (const file of fileArray) {
         if (file.size > maxSizeMB * 1024 * 1024) {
           toast.error(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
@@ -56,7 +59,7 @@ export default function FileUpload({
         }
       }
     },
-    [maxSizeMB, uploadFile, onUploadComplete],
+    [maxSizeMB, maxFiles, uploadFile, onUploadComplete],
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {

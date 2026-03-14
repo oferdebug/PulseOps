@@ -176,7 +176,7 @@ export default function UsersPage() {
           }
         >
           <div className='flex flex-wrap items-center gap-3 p-4'>
-            <div className='min-w-[200px] flex-1'>
+            <div className='relative min-w-[200px] flex-1'>
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'
@@ -193,8 +193,7 @@ export default function UsersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-            </div>
-            <div className='flex flex-wrap gap-1.5'>
+            </div>            <div className='flex flex-wrap gap-1.5'>
               {ALL_ROLES.map((r) => (
                 <Pill
                   key={r}

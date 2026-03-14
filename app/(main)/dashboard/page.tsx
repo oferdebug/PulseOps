@@ -380,9 +380,11 @@ function useDashboardData() {
   const [tickets, setTickets] = useState<RecentTicket[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     const supabase = createClient();
     const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
@@ -398,6 +400,22 @@ function useDashboardData() {
         .select('id', { count: 'exact', head: true })
         .lt('created_at', oneWeekAgo),
     ]);
+
+    if (ticketsRes.error || usersRes.error || usersLastWeekRes.error) {
+      const msg =
+        ticketsRes.error?.message ||
+        usersRes.error?.message ||
+        usersLastWeekRes.error?.message ||
+        'Failed to load dashboard data';
+      console.error('Dashboard query errors:', {
+        tickets: ticketsRes.error,
+        users: usersRes.error,
+        usersLastWeek: usersLastWeekRes.error,
+      });
+      setError(msg);
+      setLoading(false);
+      return;
+    }
 
     const allTickets = ticketsRes.data ?? [];
 
@@ -608,7 +626,7 @@ function useDashboardData() {
     load();
   }, [load]);
 
-  return { stats, tickets, activities, loading, refresh: load };
+  return { stats, tickets, activities, loading, error, refresh: load };
 }
 
 const ACTION_ICONS: Record<string, string> = {
@@ -628,6 +646,7 @@ export default function DashboardPage() {
     tickets,
     activities,
     loading: dataLoading,
+    error: dataError,
   } = useDashboardData();
   const [greeting, setGreeting] = useState('Good morning');
   const clock = useLiveClock();
@@ -660,10 +679,7 @@ export default function DashboardPage() {
     }) ?? '';
 
   return (
-    <div
-      className='min-h-screen'
-      style={{ background: 'var(--app-bg)' }}
-    >
+    <div className='min-h-screen' style={{ background: 'var(--app-bg)' }}>
       <div className='space-y-6 p-6'>
         {/* ── Header ── */}
         <div
@@ -672,7 +688,9 @@ export default function DashboardPage() {
         >
           <div>
             <h1 className='text-2xl font-bold tracking-tight'>
-              <span style={{ color: 'var(--app-text-primary)' }}>{greeting}, </span>
+              <span style={{ color: 'var(--app-text-primary)' }}>
+                {greeting},{' '}
+              </span>
               <span style={{ color: 'var(--app-accent)' }}>
                 {userLoading ? '…' : (user?.fullName ?? '—')}
               </span>
@@ -787,6 +805,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ── Error Banner ── */}
+        {dataError && (
+          <div
+            className='animate-fade-in-up opacity-0 rounded-lg px-4 py-3 text-sm'
+            style={{
+              animationFillMode: 'forwards',
+              background:
+                'color-mix(in srgb, var(--destructive) 12%, transparent)',
+              border:
+                '1px solid color-mix(in srgb, var(--destructive) 25%, transparent)',
+              color: 'var(--destructive)',
+            }}
+          >
+            Failed to load dashboard data: {dataError}
+          </div>
+        )}
+
         {/* ── Urgent Focus Banner ── */}
         {stats?.urgentTicket && (
           <Link
@@ -895,7 +930,9 @@ export default function DashboardPage() {
               />
             </>
           ) : (
-            <>                {[1, 2, 3, 4].map((i) => (
+            <>
+              {' '}
+              {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   className='overflow-hidden rounded-xl'

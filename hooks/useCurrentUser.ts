@@ -45,19 +45,31 @@ export function useCurrentUser() {
           });
         }
 
-        supabase.auth.getUser().then(async ({ data: { user } }) => {
-          if (user) {
-            await loadProfile(user);
-          }
-          setLoading(false);
-        });
+        supabase.auth
+          .getUser()
+          .then(async ({ data: { user } }) => {
+            if (user) {
+              await loadProfile(user);
+            }
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error('Failed to get auth user:', err);
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setLoading(false);
+          });
 
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
             setLoading(true);
-            loadProfile(session.user).finally(() => setLoading(false));
+            loadProfile(session.user)
+              .catch((err) => {
+                console.error('Failed to load profile on auth change:', err);
+                setError(err instanceof Error ? err : new Error(String(err)));
+              })
+              .finally(() => setLoading(false));
           } else {
             setUser(null);
             setLoading(false);

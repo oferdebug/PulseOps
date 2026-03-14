@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS ticket_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   description TEXT,
   category TEXT NOT NULL DEFAULT 'general',
   default_priority TEXT NOT NULL DEFAULT 'medium',   -- low, medium, high, critical
@@ -94,4 +94,4 @@ INSERT INTO ticket_templates (name, description, category, default_priority, tit
   '[Brief description of request]',
   E'**Description:**\n\n**Impact:**\n\n**Preferred resolution timeframe:**'
 )
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;

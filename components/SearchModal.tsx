@@ -180,9 +180,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose();
-      }}
+      onKeyDown={() => {}}
       role='dialog'
       aria-modal='true'
       aria-label='Command palette'
@@ -239,11 +237,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
           </div>
         </div>
 
-        <div
-          id='search-results'
-          className='max-h-[60vh] overflow-y-auto p-4'
-          role='listbox'
-        >
+        <div id='search-results' className='max-h-[60vh] overflow-y-auto p-4'>
+          {' '}
           {/* ── Default view: Recent searches + Quick actions ── */}
           {showingDefaultView && (
             <div className='space-y-4'>
@@ -383,7 +378,6 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               </p>
             </div>
           )}
-
           {/* ── Search results ── */}
           {!showingDefaultView && loading && !hasResults && (
             <div
@@ -394,7 +388,6 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               Searching…
             </div>
           )}
-
           {!showingDefaultView && !loading && isEmpty && (
             <p
               className='py-8 text-center text-sm'
@@ -403,7 +396,6 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               No results for &quot;{query.trim()}&quot;
             </p>
           )}
-
           {!showingDefaultView && hasResults && (
             <div
               className='space-y-4'

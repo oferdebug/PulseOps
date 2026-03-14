@@ -26,11 +26,9 @@ const PRESET_COLORS = [
 interface TagInputProps {
   entityType: 'ticket' | 'article';
   entityId: string;
-  onTagsChange?: (tags: Tag[]) => void;
 }
 
-export function TagInput({ entityType, entityId }: TagInputProps) {
-  const { tags, loading, error, addTag, removeTag } = useTags({
+export function TagInput({ entityType, entityId }: TagInputProps) {  const { tags, loading, error, addTag, removeTag } = useTags({
     entityId,
     entityType,
   });

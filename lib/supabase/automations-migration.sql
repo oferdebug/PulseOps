@@ -30,7 +30,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS automation_rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   description TEXT,
   trigger automation_trigger NOT NULL,
   conditions JSONB NOT NULL DEFAULT '{}',
@@ -123,4 +123,4 @@ VALUES
   ('Notify on SLA breach', 'Send notification when SLA is breached', 'sla_breached',
    '{}', 'send_notification',
    '{"message": "SLA has been breached on this ticket"}')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;

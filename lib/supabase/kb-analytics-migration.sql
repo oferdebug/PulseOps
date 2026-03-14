@@ -35,8 +35,7 @@ CREATE POLICY "Authenticated users can view article_views"
 
 DROP POLICY IF EXISTS "Authenticated users can insert article_views" ON article_views;
 CREATE POLICY "Authenticated users can insert article_views"
-  ON article_views FOR INSERT TO authenticated WITH CHECK (true);
-
+  ON article_views FOR INSERT TO authenticated WITH CHECK (user_id IS NULL OR auth.uid() = user_id);
 -- Ratings: anyone authenticated can read, insert, and update their own
 DROP POLICY IF EXISTS "Authenticated users can view ratings" ON article_ratings;
 CREATE POLICY "Authenticated users can view ratings"
