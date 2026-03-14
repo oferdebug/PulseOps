@@ -3,8 +3,8 @@
 import { LogOut, Moon, Sun, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 import {
   Sidebar,
   SidebarContent,

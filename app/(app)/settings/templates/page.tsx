@@ -410,16 +410,15 @@ export default function TemplatesSettingsPage() {
                   </button>
                   <button
                     type='button'
-                    onClick={() => {
+                    onClick={async () => {
                       if (window.confirm(`Delete template "${t.name}"?`))
-                        deleteTemplate(t.id);
+                        await deleteTemplate(t.id);
                     }}
                     className='rounded-lg p-1.5 transition-colors hover:bg-(--app-surface-raised)'
                     style={{ color: 'var(--destructive)' }}
                   >
                     <Trash2 size={13} />
-                  </button>
-                </div>
+                  </button>                </div>
               </div>
             ))}
         </Panel>

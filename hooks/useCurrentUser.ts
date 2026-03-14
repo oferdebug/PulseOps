@@ -56,7 +56,8 @@ export function useCurrentUser() {
           data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
-            loadProfile(session.user);
+            setLoading(true);
+            loadProfile(session.user).finally(() => setLoading(false));
           } else {
             setUser(null);
             setLoading(false);

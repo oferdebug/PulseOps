@@ -14,8 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createClient } from '@/lib/supabase/client';
 import type { UserRole } from '@/hooks/useRole';
+import { createClient } from '@/lib/supabase/client';
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--app-surface)',

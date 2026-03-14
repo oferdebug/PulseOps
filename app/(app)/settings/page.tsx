@@ -16,8 +16,8 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Panel } from '@/components/ui/panel';
 import { RequireRole } from '@/components/RequireRole';
+import { Panel } from '@/components/ui/panel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDbNotifications } from '@/hooks/useDbNotifications';
 import { createClient } from '@/lib/supabase/client';
@@ -500,13 +500,22 @@ function SecurityTab() {
 // ─── Appearance Tab ───────────────────────────────────────────────────────────
 function AppearanceTab() {
   const [accent, setAccent] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem('pulseops_accent') ?? '#10b981';
+    if (typeof window !== 'undefined')
+      return localStorage.getItem('pulseops_accent') ?? '#10b981';
     return '#10b981';
   });
-  const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(() => {
-    if (typeof window !== 'undefined') return (localStorage.getItem('pulseops_density') as 'compact' | 'normal' | 'comfortable') ?? 'normal';
-    return 'normal';
-  });
+  const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(
+    () => {
+      if (typeof window !== 'undefined')
+        return (
+          (localStorage.getItem('pulseops_density') as
+            | 'compact'
+            | 'normal'
+            | 'comfortable') ?? 'normal'
+        );
+      return 'normal';
+    },
+  );
 
   useEffect(() => {
     localStorage.setItem('pulseops_accent', accent);

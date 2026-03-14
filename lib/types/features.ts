@@ -4,7 +4,7 @@
  * Centralized type definitions for new features.
  * Import these in your components as needed.
  */
-/** biome-ignore-all lint/suspicious/noExplicitAny: needed for flexible JSON structures */
+// biome-ignore-all lint/suspicious/noExplicitAny: needed for flexible JSON structures
 
 // ============================================================
 // ATTACHMENTS
@@ -86,7 +86,7 @@ export interface TicketComment {
   is_edited: boolean;
   edited_at?: string | null;
   mentions: string[]; // Array of user IDs
-  parent_id?: string | null; // For nested comments
+  parent_id: string | null; // For nested comments
 
   // Joined data (when fetching with relations)
   author?: {
