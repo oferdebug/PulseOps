@@ -62,7 +62,7 @@ function TemplateForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onSave({
+    const payload = {
       name: name.trim(),
       description: description.trim() || null,
       category,
@@ -70,8 +70,9 @@ function TemplateForm({
       title_template: titleTpl,
       body_template: bodyTpl,
       is_active: initial?.is_active ?? true,
-      created_by: initial ? undefined : null,
-    } as Omit<TicketTemplate, 'id' | 'created_at' | 'updated_at'>);
+      ...(initial ? {} : { created_by: null }),
+    } satisfies Omit<TicketTemplate, 'id' | 'created_at' | 'updated_at'>;
+    onSave(payload);
   }
 
   return (
@@ -410,16 +411,15 @@ export default function TemplatesSettingsPage() {
                   </button>
                   <button
                     type='button'
-                    onClick={() => {
+                    onClick={async () => {
                       if (window.confirm(`Delete template "${t.name}"?`))
-                        deleteTemplate(t.id);
+                        await deleteTemplate(t.id);
                     }}
                     className='rounded-lg p-1.5 transition-colors hover:bg-(--app-surface-raised)'
                     style={{ color: 'var(--destructive)' }}
                   >
                     <Trash2 size={13} />
-                  </button>
-                </div>
+                  </button>                </div>
               </div>
             ))}
         </Panel>

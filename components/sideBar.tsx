@@ -3,8 +3,9 @@
 import { LogOut, Moon, Sun, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import {
   Sidebar,
   SidebarContent,
@@ -32,8 +33,16 @@ export default function AppSidebar() {
 
   async function handleLogout() {
     const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/Login');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error(`Logout failed: ${error.message}. Please try again.`);
+        return;
+      }
+      router.push('/Login');
+    } catch {
+      toast.error('Logout failed, please try again.');
+    }
   }
 
   return (

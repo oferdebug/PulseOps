@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -144,14 +145,12 @@ function PortalNavLink({
   href: string;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const isActive = pathname === href;
 
   return (
-    <button
-      type='button'
-      onClick={() => router.push(href)}
+    <Link
+      href={href}
       className='rounded-lg px-3 py-1.5 text-xs font-semibold transition-all'
       style={
         isActive
@@ -168,6 +167,6 @@ function PortalNavLink({
       }
     >
       {children}
-    </button>
+    </Link>
   );
 }

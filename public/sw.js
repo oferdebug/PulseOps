@@ -39,11 +39,24 @@ sw.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(request, clone))
+              .catch((err) => {
+                console.error('SW: cache.put failed for navigation:', err);
+              });
           }
           return response;
         })
-        .catch(() => caches.match(request).then((r) => r ?? caches.match('/offline') ?? new Response('Offline', { status: 503 }))),
+        .catch(() =>
+          caches
+            .match(request)
+            .then((r) => r ?? caches.match('/offline'))
+            .then(
+              (offlinePage) =>
+                offlinePage ?? new Response('Offline', { status: 503 }),
+            ),
+        ),
     );
     return;
   }
@@ -57,15 +70,29 @@ sw.addEventListener('fetch', (event) => {
       caches.match(request).then(
         (cached) =>
           cached ??
-          fetch(request).then((response) => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches
-                .open(CACHE_NAME)
-                .then((cache) => cache.put(request, clone));
-            }
-            return response;
-          }),
+          fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const clone = response.clone();
+                caches
+                  .open(CACHE_NAME)
+                  .then((cache) => cache.put(request, clone))
+                  .catch((err) => {
+                    console.error(
+                      'SW: cache.put failed for static asset:',
+                      err,
+                    );
+                  });
+              }
+              return response;
+            })
+            .catch(
+              () =>
+                new Response('', {
+                  status: 503,
+                  statusText: 'Service Unavailable - offline asset',
+                }),
+            ),
       ),
     );
     return;

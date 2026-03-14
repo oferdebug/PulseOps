@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(fallbackCategorize(title, description));
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -21,6 +23,7 @@ export async function POST(req: NextRequest) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 300,
@@ -40,6 +43,7 @@ ${description ? `Description: ${description.slice(0, 2000)}` : ''}`,
         ],
       }),
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       return NextResponse.json(fallbackCategorize(title, description));

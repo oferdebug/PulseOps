@@ -1,7 +1,8 @@
-/** biome-ignore-all lint/style/noNonNullAssertion: API env vars validated at runtime */
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const controller = new AbortController();
   try {
     const { title: rawTitle } = await req.json();
 
@@ -19,6 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -26,8 +29,9 @@ export async function POST(req: NextRequest) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
+      signal: controller.signal,
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         messages: [
           {
@@ -48,6 +52,7 @@ Keep it concise, professional, and actionable. No fluff.`,
     });
 
     if (!response.ok) {
+      clearTimeout(timeoutId);
       let upstreamBody: string;
       try {
         upstreamBody = await response.text();
@@ -57,14 +62,28 @@ Keep it concise, professional, and actionable. No fluff.`,
       console.error(
         `Anthropic API error: status=${response.status} body=${upstreamBody}`,
       );
-      return NextResponse.json({ error: 'Upstream service error' }, { status: 502 });
+      return NextResponse.json(
+        { error: 'Upstream service error' },
+        { status: 502 },
+      );
     }
 
+    clearTimeout(timeoutId);
     const data = await response.json();
     const text = data.content?.[0]?.text ?? '';
     return NextResponse.json({ content: text });
-  } catch (error) {
+  } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    if (
+      error instanceof Error &&
+      (error.name === 'AbortError' || controller.signal.aborted)
+    ) {
+      return NextResponse.json({ error: 'Request timed out' }, { status: 504 });
+    }
     console.error('generate-article error:', error);
-    return NextResponse.json({ content: '' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

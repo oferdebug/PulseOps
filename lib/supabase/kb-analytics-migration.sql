@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS article_ratings (
 CREATE INDEX IF NOT EXISTS idx_article_views_article_id ON article_views(article_id);
 CREATE INDEX IF NOT EXISTS idx_article_views_created_at ON article_views(created_at);
 CREATE INDEX IF NOT EXISTS idx_article_ratings_article_id ON article_ratings(article_id);
+CREATE INDEX IF NOT EXISTS idx_article_ratings_user_id ON article_ratings(user_id);
 
 -- Enable RLS
 ALTER TABLE article_views ENABLE ROW LEVEL SECURITY;
@@ -35,7 +36,7 @@ CREATE POLICY "Authenticated users can view article_views"
 
 DROP POLICY IF EXISTS "Authenticated users can insert article_views" ON article_views;
 CREATE POLICY "Authenticated users can insert article_views"
-  ON article_views FOR INSERT TO authenticated WITH CHECK (true);
+  ON article_views FOR INSERT TO authenticated WITH CHECK (user_id IS NULL OR auth.uid() = user_id);
 
 -- Ratings: anyone authenticated can read, insert, and update their own
 DROP POLICY IF EXISTS "Authenticated users can view ratings" ON article_ratings;

@@ -34,7 +34,7 @@ BEGIN
     SELECT 1 FROM profiles WHERE id = auth.uid() AND role = required_role
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Function to check if current user is admin or agent (staff)
 CREATE OR REPLACE FUNCTION is_staff()
@@ -44,4 +44,4 @@ BEGIN
     SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

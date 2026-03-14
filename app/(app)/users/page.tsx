@@ -11,13 +11,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Panel } from '@/components/ui/panel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import type { UserRole } from '@/hooks/useRole';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-
-type UserRole = 'admin' | 'technician' | 'user';
 
 interface Profile {
   id: string;
@@ -32,24 +31,24 @@ interface Profile {
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Admin',
-  technician: 'Technician',
-  user: 'User',
+  agent: 'Agent',
+  customer: 'Customer',
 };
 const ROLE_ICON: Record<UserRole, React.ElementType> = {
   admin: Shield,
-  technician: Wrench,
-  user: User,
+  agent: Wrench,
+  customer: User,
 };
 const ROLE_VAR: Record<UserRole, string> = {
   admin: 'var(--app-stat-open)',
-  technician: 'var(--app-stat-resolution)',
-  user: 'var(--app-stat-users)',
+  agent: 'var(--app-stat-resolution)',
+  customer: 'var(--app-stat-users)',
 };
 const ALL_ROLES: Array<UserRole | 'all'> = [
   'all',
   'admin',
-  'technician',
-  'user',
+  'agent',
+  'customer',
 ];
 
 function Pill({
@@ -87,12 +86,15 @@ function Pill({
 }
 
 export default function UsersPage() {
+  // Side-effect: ensures user session is initialized
   useCurrentUser();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [hasMore, setHasMore] = useState(false);
+  const PAGE_SIZE = 50;
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
@@ -103,9 +105,15 @@ export default function UsersPage() {
       .select(
         'id, full_name, email, role, department, phone, is_active, created_at',
       )
-      .order('created_at', { ascending: false });
-    if (err) setError(err.message);
-    else setProfiles(data ?? []);
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE + 1);
+    if (err) {
+      setError(err.message);
+    } else {
+      const rows = data ?? [];
+      setHasMore(rows.length > PAGE_SIZE);
+      setProfiles(rows.slice(0, PAGE_SIZE));
+    }
     setLoading(false);
   }, []);
 
@@ -119,6 +127,20 @@ export default function UsersPage() {
         (p.email ?? '').toLowerCase().includes(search.toLowerCase())) &&
       (roleFilter === 'all' || p.role === roleFilter),
   );
+
+  const statusMessage = useMemo(() => {
+    if (loading) return 'Loading…';
+    if (hasMore && filtered.length === 0) {
+      return `No results in first ${PAGE_SIZE} fetched — try clearing filters; more users may exist.`;
+    }
+    if (hasMore && filtered.length < profiles.length) {
+      return `Showing ${filtered.length} filtered user${filtered.length !== 1 ? 's' : ''} (from more than ${PAGE_SIZE} fetched)`;
+    }
+    if (hasMore) {
+      return `Showing ${filtered.length} of more than ${PAGE_SIZE} users`;
+    }
+    return `${filtered.length} user${filtered.length !== 1 ? 's' : ''} found`;
+  }, [loading, hasMore, filtered.length, profiles.length]);
 
   return (
     <div
@@ -148,9 +170,7 @@ export default function UsersPage() {
               className='mt-1 text-sm'
               style={{ color: 'var(--app-text-muted)' }}
             >
-              {loading
-                ? 'Loading…'
-                : `${filtered.length} user${filtered.length !== 1 ? 's' : ''} found`}
+              {statusMessage}
             </p>
           </div>
           <Link
@@ -176,7 +196,7 @@ export default function UsersPage() {
           }
         >
           <div className='flex flex-wrap items-center gap-3 p-4'>
-            <div className='min-w-[200px] flex-1'>
+            <div className='relative min-w-[200px] flex-1'>
               <Search
                 size={13}
                 className='absolute left-3 top-1/2 -translate-y-1/2'
@@ -366,6 +386,22 @@ export default function UsersPage() {
                 </Link>
               );
             })}
+
+          {hasMore && !loading && (
+            <div
+              className='px-5 py-4 text-center'
+              style={{ borderTop: '1px solid var(--app-border)' }}
+            >
+              <p
+                className='text-xs font-medium'
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                Showing the first {PAGE_SIZE} users. To view more users or
+                perform an advanced search, please contact support or your
+                account administrator.
+              </p>
+            </div>
+          )}
         </Panel>
       </div>
     </div>

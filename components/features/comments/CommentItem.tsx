@@ -47,15 +47,19 @@ export function CommentItem({
       return;
     }
     setSaving(true);
-    await onUpdate(comment.id, trimmed);
-    setSaving(false);
-    setIsEditing(false);
+    try {
+      await onUpdate(comment.id, trimmed);
+      setIsEditing(false);
+    } finally {
+      setSaving(false);
+    }
   }
-
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      handleSave();
+      handleSave().catch(() => {
+        // onUpdate handles its own error feedback; catch prevents unhandled rejection
+      });
     }
     if (e.key === 'Escape') {
       setIsEditing(false);
@@ -136,9 +140,10 @@ export function CommentItem({
             </DropdownMenuItem>
             <DropdownMenuItem
               className='text-destructive'
-              onClick={() => {
-                if (window.confirm('Delete this comment?'))
-                  onDelete(comment.id);
+              onClick={async () => {
+                if (window.confirm('Delete this comment?')) {
+                  await onDelete(comment.id);
+                }
               }}
             >
               <Trash2 className='mr-2 h-3.5 w-3.5' />

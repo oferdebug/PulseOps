@@ -21,13 +21,13 @@ export function useRole(userId?: string) {
       .select('role')
       .eq('id', userId)
       .single()
-      .then(({ data }) => {
-        if (data?.role) setRole(data.role as UserRole);
-        setError(null);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)));
+      .then(({ data, error: queryErr }) => {
+        if (queryErr) {
+          setError(new Error(queryErr.message));
+        } else {
+          if (data?.role) setRole(data.role as UserRole);
+          setError(null);
+        }
         setLoading(false);
       });
   }, [userId]);
@@ -51,10 +51,13 @@ export function useRoleManagement() {
 
   const fetchUsers = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('profiles')
       .select('id, email, full_name, role')
       .order('full_name');
+    if (fetchErr) {
+      console.error('Failed to fetch users:', fetchErr);
+    }
     setUsers(
       (data ?? []).map((u) => ({
         ...u,

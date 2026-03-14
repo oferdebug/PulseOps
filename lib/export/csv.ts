@@ -17,7 +17,8 @@ export function exportToCSV(rows: Record<string, unknown>[], filename: string) {
     csvRows.push(values.join(','));
   }
 
-  const blob = new Blob([csvRows.join('\n')], {
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvRows.join('\n')], {
     type: 'text/csv;charset=utf-8;',
   });
   const url = URL.createObjectURL(blob);

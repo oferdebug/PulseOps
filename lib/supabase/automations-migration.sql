@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS automation_rules (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Organization-scoped uniqueness for rule names
+CREATE UNIQUE INDEX IF NOT EXISTS idx_automation_rules_name_org
+  ON automation_rules(name, organization_id) WHERE organization_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_automation_rules_name_global
+  ON automation_rules(name) WHERE organization_id IS NULL;
+
 -- Auto-update timestamps
 CREATE OR REPLACE TRIGGER automation_rules_updated_at
   BEFORE UPDATE ON automation_rules
@@ -123,4 +129,4 @@ VALUES
   ('Notify on SLA breach', 'Send notification when SLA is breached', 'sla_breached',
    '{}', 'send_notification',
    '{"message": "SLA has been breached on this ticket"}')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;

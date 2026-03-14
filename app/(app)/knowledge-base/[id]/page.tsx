@@ -16,6 +16,13 @@ import { TagInput } from '@/components/features/tags/TagInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useArticleAnalytics } from '@/hooks/useArticleAnalytics';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -76,7 +83,13 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
           .eq('id', id)
           .single();
         if (err) setError(err.message);
-        else setArticle(data);
+        else {
+          setArticle({
+            ...data,
+            content: (data.content ?? '').replace(/\\n/g, '\n'),
+          });
+          if (user?.id) analytics.recordView();
+        }
       } catch (error) {
         setError(
           error instanceof Error ? error.message : 'An unknown error occurred',
@@ -85,11 +98,7 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
         setLoading(false);
       }
     })();
-  }, [id]);
-
-  useEffect(() => {
-    if (article && user?.id) analytics.recordView();
-  }, [article, user?.id, analytics]);
+  }, [id, user?.id, analytics]);
 
   function enterEditMode() {
     if (!article) return;
@@ -103,42 +112,59 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
   async function handleSave() {
     if (!article) return;
     setSaving(true);
-    const supabase = createClient();
-    const { data, error: err } = await supabase
-      .from('articles')
-      .update({
-        title: editTitle.trim(),
-        content: editContent.trim(),
-        category: editCategory,
-        status: editStatus,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    if (err) toast.error(err.message);
-    else {
-      setArticle(data);
-      setEditing(false);
-      toast.success('Article updated');
+    try {
+      const supabase = createClient();
+      const { data, error: err } = await supabase
+        .from('articles')
+        .update({
+          title: editTitle.trim(),
+          content: editContent.trim(),
+          category: editCategory,
+          status: editStatus,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (err) toast.error(err.message);
+      else {
+        setArticle({
+          ...data,
+          content: (data.content ?? '').replace(/\\n/g, '\n'),
+        });
+        setEditing(false);
+        toast.success('Article updated');
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to save article',
+      );
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function handleDelete() {
     if (!window.confirm('Delete this article? This action cannot be undone.'))
       return;
     setDeleting(true);
-    const supabase = createClient();
-    const { error: err } = await supabase
-      .from('articles')
-      .delete()
-      .eq('id', id);
-    if (err) {
-      toast.error(err.message);
+    try {
+      const supabase = createClient();
+      const { error: err } = await supabase
+        .from('articles')
+        .delete()
+        .eq('id', id);
+      if (err) {
+        toast.error(err.message);
+        setDeleting(false);
+      } else {
+        toast.success('Article deleted');
+        await router.push('/knowledge-base');
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to delete article',
+      );
       setDeleting(false);
-    } else {
-      toast.success('Article deleted');
-      await router.push('/knowledge-base');
     }
   }
 
@@ -250,23 +276,26 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
                 >
                   Category
                 </label>
-                <select
-                  id='category'
+                <Select
                   value={editCategory}
-                  onChange={(e) =>
-                    setEditCategory(e.target.value as ArticleCategory)
-                  }
-                  className='w-full px-3 py-2 rounded-md border border-border bg-background text-foreground'
+                  onValueChange={(v) => setEditCategory(v as ArticleCategory)}
                   disabled={saving}
                 >
-                  <option value='general'>General</option>
-                  <option value='networking'>Networking</option>
-                  <option value='hardware'>Hardware</option>
-                  <option value='software'>Software</option>
-                  <option value='security'>Security</option>
-                  <option value='active-directory'>Active Directory</option>
-                  <option value='email'>Email</option>
-                </select>
+                  <SelectTrigger id='category' className='w-full'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='general'>General</SelectItem>
+                    <SelectItem value='networking'>Networking</SelectItem>
+                    <SelectItem value='hardware'>Hardware</SelectItem>
+                    <SelectItem value='software'>Software</SelectItem>
+                    <SelectItem value='security'>Security</SelectItem>
+                    <SelectItem value='active-directory'>
+                      Active Directory
+                    </SelectItem>
+                    <SelectItem value='email'>Email</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label
@@ -275,18 +304,19 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
                 >
                   Status
                 </label>
-                <select
-                  id='status'
+                <Select
                   value={editStatus}
-                  onChange={(e) =>
-                    setEditStatus(e.target.value as ArticleStatus)
-                  }
-                  className='w-full px-3 py-2 rounded-md border border-border bg-background text-foreground'
+                  onValueChange={(v) => setEditStatus(v as ArticleStatus)}
                   disabled={saving}
                 >
-                  <option value='draft'>Draft</option>
-                  <option value='published'>Published</option>
-                </select>
+                  <SelectTrigger id='status' className='w-full'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='draft'>Draft</SelectItem>
+                    <SelectItem value='published'>Published</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Textarea
                 value={editContent}
@@ -301,7 +331,7 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSanitize]}
               >
-                {(article.content ?? '').replace(/\\n/g, '\n')}
+                {article.content ?? ''}
               </ReactMarkdown>
             </article>
           )}

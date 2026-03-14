@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/a11y/noNoninteractiveElementToInteractiveRole: roles needed for combobox pattern */
 'use client';
 
 import {
@@ -174,14 +173,12 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
   if (!open) return null;
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Escape handled by window-level keydown listener
     <div
       className='fixed inset-0 z-50 flex items-start justify-center pt-[15vh] backdrop-blur-md'
       style={{ background: 'var(--app-surface-overlay)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose();
       }}
       role='dialog'
       aria-modal='true'
@@ -239,11 +236,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
           </div>
         </div>
 
-        <div
-          id='search-results'
-          className='max-h-[60vh] overflow-y-auto p-4'
-          role='listbox'
-        >
+        <div id='search-results' className='max-h-[60vh] overflow-y-auto p-4'>
           {/* ── Default view: Recent searches + Quick actions ── */}
           {showingDefaultView && (
             <div className='space-y-4'>
@@ -298,6 +291,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                 >
                   Quick Actions
                 </span>
+                {/* biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Custom accessible listbox widget for combobox pattern */}
                 <ul
                   className='space-y-0.5 list-none p-0 m-0'
                   role='listbox'
@@ -383,7 +377,6 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               </p>
             </div>
           )}
-
           {/* ── Search results ── */}
           {!showingDefaultView && loading && !hasResults && (
             <div
@@ -394,7 +387,6 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               Searching…
             </div>
           )}
-
           {!showingDefaultView && !loading && isEmpty && (
             <p
               className='py-8 text-center text-sm'
@@ -403,8 +395,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               No results for &quot;{query.trim()}&quot;
             </p>
           )}
-
           {!showingDefaultView && hasResults && (
+            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Custom accessible listbox widget for search results
             <div
               className='space-y-4'
               role='listbox'
@@ -432,7 +424,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                         <li key={ticket.id}>
                           <button
                             id={
-                              flatIdx === highlightIndex
+                              isHighlight
                                 ? `search-result-${flatIdx}`
                                 : undefined
                             }
@@ -510,7 +502,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                         <li key={article.id}>
                           <button
                             id={
-                              flatIdx === highlightIndex
+                              isHighlight
                                 ? `search-result-${flatIdx}`
                                 : undefined
                             }

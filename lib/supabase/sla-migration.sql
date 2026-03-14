@@ -46,31 +46,41 @@ CREATE TRIGGER sla_rules_updated_at
 ALTER TABLE sla_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_sla ENABLE ROW LEVEL SECURITY;
 
--- SLA Rules: everyone can read, only admins can modify (via service role or check)
+-- SLA Rules: everyone can read, only admins can modify
 DROP POLICY IF EXISTS "Authenticated users can view SLA rules" ON sla_rules;
 CREATE POLICY "Authenticated users can view SLA rules"
   ON sla_rules FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Authenticated users can insert SLA rules" ON sla_rules;
-CREATE POLICY "Authenticated users can insert SLA rules"
-  ON sla_rules FOR INSERT TO authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "Admins can insert SLA rules" ON sla_rules;
+CREATE POLICY "Admins can insert SLA rules"
+  ON sla_rules FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
 DROP POLICY IF EXISTS "Authenticated users can update SLA rules" ON sla_rules;
-CREATE POLICY "Authenticated users can update SLA rules"
-  ON sla_rules FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admins can update SLA rules" ON sla_rules;
+CREATE POLICY "Admins can update SLA rules"
+  ON sla_rules FOR UPDATE TO authenticated
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- Ticket SLA: everyone can read, system can insert/update
+-- Ticket SLA: everyone can read, only staff/system can insert/update
 DROP POLICY IF EXISTS "Authenticated users can view ticket SLA" ON ticket_sla;
 CREATE POLICY "Authenticated users can view ticket SLA"
   ON ticket_sla FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Authenticated users can insert ticket SLA" ON ticket_sla;
-CREATE POLICY "Authenticated users can insert ticket SLA"
-  ON ticket_sla FOR INSERT TO authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "Staff can insert ticket SLA" ON ticket_sla;
+CREATE POLICY "Staff can insert ticket SLA"
+  ON ticket_sla FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')));
 
 DROP POLICY IF EXISTS "Authenticated users can update ticket SLA" ON ticket_sla;
-CREATE POLICY "Authenticated users can update ticket SLA"
-  ON ticket_sla FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Staff can update ticket SLA" ON ticket_sla;
+CREATE POLICY "Staff can update ticket SLA"
+  ON ticket_sla FOR UPDATE TO authenticated
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')))
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')));
 
 -- Seed default SLA rules
 INSERT INTO sla_rules (name, priority, first_response_hours, resolution_hours, escalation_hours)
@@ -105,7 +115,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS ticket_sla_trigger ON tickets;
 CREATE TRIGGER ticket_sla_trigger
@@ -127,7 +137,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS ticket_sla_close_trigger ON tickets;
 CREATE TRIGGER ticket_sla_close_trigger

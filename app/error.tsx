@@ -1,17 +1,17 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default function OfflinePage() {
-  const router = useRouter();
-
-  function handleRetry() {
-    if (navigator.onLine) {
-      router.replace('/');
-    } else {
-      window.location.reload();
-    }
-  }
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error('Unhandled error:', error);
+  }, [error]);
 
   return (
     <div
@@ -28,23 +28,23 @@ export default function OfflinePage() {
           border: '1px solid var(--app-border)',
         }}
       >
-        <span aria-hidden='true'>📡</span>
+        <span aria-hidden='true'>⚠️</span>
       </div>
-      <h1 className='text-xl font-bold'>You&apos;re Offline</h1>
+      <h1 className='text-xl font-bold'>Something Went Wrong</h1>
       <p
         className='max-w-sm text-center text-sm'
         style={{ color: 'var(--app-text-muted)' }}
       >
-        PulseOps requires an internet connection. Please check your network and
-        try again.
+        An unexpected error occurred. Please try again or contact support if the
+        problem persists.
       </p>
       <button
         type='button'
-        onClick={handleRetry}
-        className='mt-2 rounded-md px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--app-accent)]'
+        onClick={reset}
+        className='mt-2 rounded-md px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90'
         style={{ background: 'var(--app-accent)', color: '#fff' }}
       >
-        Retry
+        Try Again
       </button>
     </div>
   );

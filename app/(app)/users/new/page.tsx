@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createClient } from '@/lib/supabase/client';
 import type { UserRole } from '@/hooks/useRole';
 
 const inputStyle: React.CSSProperties = {
@@ -56,26 +55,37 @@ export default function NewUserPage() {
     }
     setSubmitting(true);
     setError(null);
-    const supabase = createClient();
-    const { data, error: err } = await supabase
-      .from('profiles')
-      .insert({
-        full_name: fullName.trim(),
-        email: email.trim(),
-        role,
-        department: department.trim() || null,
-        phone: phone.trim() || null,
-      })
-      .select('id')
-      .single();
-    if (err) {
-      setError(err.message);
-      toast.error(err.message);
+
+    try {
+      // Call server-side API that uses the service role key
+      const res = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          fullName: fullName.trim(),
+          role,
+          department: department.trim() || null,
+          phone: phone.trim() || null,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        const msg = result.error ?? 'Failed to create user';
+        setError(msg);
+        toast.error(msg);
+        setSubmitting(false);
+        return;
+      }
+      toast.success('User created');
+      router.push(`/users/${result.id}`);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Network error creating user';
+      setError(msg);
+      toast.error(msg);
       setSubmitting(false);
-      return;
     }
-    toast.success('User created');
-    router.push(`/users/${data.id}`);
   }
 
   return (

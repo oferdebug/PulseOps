@@ -405,11 +405,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-
-    // Wire search triggers (buttons with data-search-trigger)
   }, [router]);
 
-  // Listen for clicks on search trigger buttons inside sidebar
+  // Wire search triggers (buttons with data-search-trigger)
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('[data-search-trigger]');

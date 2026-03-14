@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   type AutomationAction,
   type AutomationTrigger,
@@ -57,12 +58,16 @@ export default function AutomationsPage() {
     try {
       conditions = JSON.parse(conditionsJson);
     } catch {
-      /* keep empty */
+      toast.error('Invalid JSON in Conditions field');
+      setSaving(false);
+      return;
     }
     try {
       action_params = JSON.parse(actionParamsJson);
     } catch {
-      /* keep empty */
+      toast.error('Invalid JSON in Action Params field');
+      setSaving(false);
+      return;
     }
     try {
       const { error } = await createRule({
@@ -74,7 +79,7 @@ export default function AutomationsPage() {
         action_params,
       });
       if (error) {
-        console.error('Failed to create rule:', error);
+        toast.error(`Failed to create rule: ${error.message}`);
         return;
       }
       setShowForm(false);
@@ -82,8 +87,8 @@ export default function AutomationsPage() {
       setDescription('');
       setConditionsJson('{}');
       setActionParamsJson('{}');
-    } catch (err) {
-      console.error('Failed to create rule:', err);
+    } catch {
+      toast.error('Failed to create rule');
     } finally {
       setSaving(false);
     }

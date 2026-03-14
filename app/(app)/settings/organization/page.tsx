@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { RequireRole } from '@/components/RequireRole';
 import { Panel } from '@/components/ui/panel';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -94,8 +95,8 @@ function OrgContent() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      console.error('Failed to save org:', err);
+    } catch {
+      toast.error('Failed to save organization settings');
     } finally {
       setSaving(false);
     }
@@ -108,8 +109,8 @@ function OrgContent() {
     try {
       await inviteMember(inviteEmail, inviteRole);
       setInviteEmail('');
-    } catch (err) {
-      console.error('Failed to invite:', err);
+    } catch {
+      toast.error('Failed to send invite');
     } finally {
       setInviting(false);
     }
@@ -339,7 +340,14 @@ function OrgContent() {
                           </span>
                           <button
                             type='button'
-                            onClick={() => removeMember(m.id)}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Remove ${m.full_name ?? m.email}?`,
+                                )
+                              )
+                                removeMember(m.id);
+                            }}
                             className='flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-red-500/10'
                             style={{ color: 'var(--app-text-faint)' }}
                             title='Remove member'

@@ -65,7 +65,6 @@ export default function OnboardingPage() {
     }
 
     router.push('/dashboard');
-    setLoading(false);
   }
 
   return (

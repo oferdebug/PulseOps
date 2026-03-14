@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export interface ArticleStats {
@@ -108,5 +108,15 @@ export function useArticleAnalytics(articleId: string, userId?: string) {
     if (articleId) fetchStats();
   }, [articleId, fetchStats]);
 
-  return { stats, loading, error, recordView, rateArticle, refresh: fetchStats };
+  return useMemo(
+    () => ({
+      stats,
+      loading,
+      error,
+      recordView,
+      rateArticle,
+      refresh: fetchStats,
+    }),
+    [stats, loading, error, recordView, rateArticle, fetchStats],
+  );
 }
