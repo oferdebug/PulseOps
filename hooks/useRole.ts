@@ -21,13 +21,13 @@ export function useRole(userId?: string) {
       .select('role')
       .eq('id', userId)
       .single()
-      .then(({ data }) => {
-        if (data?.role) setRole(data.role as UserRole);
-        setError(null);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)));
+      .then(({ data, error: queryErr }) => {
+        if (queryErr) {
+          setError(new Error(queryErr.message));
+        } else {
+          if (data?.role) setRole(data.role as UserRole);
+          setError(null);
+        }
         setLoading(false);
       });
   }, [userId]);
