@@ -36,3 +36,17 @@ create index if not exists logs_user_id_idx   on activity_logs (user_id);
 create index if not exists logs_action_idx    on activity_logs (action);
 create index if not exists logs_entity_idx    on activity_logs (entity);
 create index if not exists logs_created_at_idx on activity_logs (created_at desc);
+
+-- Anonymize PII when an auth user is deleted
+create or replace function anonymize_activity_logs_on_user_delete()
+returns trigger as $$
+begin
+  update public.activity_logs set user_email = '<deleted>' where user_id = old.id;
+  return old;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+
+drop trigger if exists anonymize_logs_trigger on auth.users;
+create trigger anonymize_logs_trigger
+  before delete on auth.users
+  for each row execute function anonymize_activity_logs_on_user_delete();

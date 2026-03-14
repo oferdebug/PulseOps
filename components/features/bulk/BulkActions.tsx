@@ -40,17 +40,27 @@ export function BulkActions({
     setProcessing(true);
     const supabase = createClient();
     const ids = Array.from(selectedIds);
-    const { error } = await supabase
-      .from('tickets')
-      .update({ status: newStatus })
-      .in('id', ids);
-    if (error) {
-      toast.error(`Failed to update status: ${error.message}`);
-    } else {
-      onClearSelection();
-      onActionComplete();
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ status: newStatus })
+        .in('id', ids);
+      if (error) {
+        toast.error(`Failed to update status: ${error.message}`);
+      } else {
+        const statusLabel =
+          STATUS_OPTIONS.find((o) => o.value === newStatus)?.label ?? newStatus;
+        toast.success(
+          `Status updated to "${statusLabel}" for ${ids.length} ticket(s)`,
+        );
+        onClearSelection();
+        onActionComplete();
+      }
+    } catch {
+      toast.error('An unexpected error occurred while updating status.');
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   }
 
   async function handleBulkPriorityChange(newPriority: TicketPriority) {
@@ -58,17 +68,24 @@ export function BulkActions({
     setProcessing(true);
     const supabase = createClient();
     const ids = Array.from(selectedIds);
-    const { error } = await supabase
-      .from('tickets')
-      .update({ priority: newPriority })
-      .in('id', ids);
-    if (error) {
-      toast.error(`Failed to update priority: ${error.message}`);
-    } else {
-      onClearSelection();
-      onActionComplete();
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ priority: newPriority })
+        .in('id', ids);
+      if (error) {
+        toast.error(`Failed to update priority: ${error.message}`);
+      } else {
+        const priorityLabel = PRIORITY_OPTIONS.find((o) => o.value === newPriority)?.label ?? newPriority;
+        toast.success(`Priority updated to "${priorityLabel}" for ${ids.length} ticket(s)`);
+        onClearSelection();
+        onActionComplete();
+      }
+    } catch {
+      toast.error('An unexpected error occurred while updating priority.');
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   }
 
   async function handleBulkAssign(userId: string | null) {
@@ -76,17 +93,23 @@ export function BulkActions({
     setProcessing(true);
     const supabase = createClient();
     const ids = Array.from(selectedIds);
-    const { error } = await supabase
-      .from('tickets')
-      .update({ assigned_to: userId })
-      .in('id', ids);
-    if (error) {
-      toast.error(`Failed to assign tickets: ${error.message}`);
-    } else {
-      onClearSelection();
-      onActionComplete();
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ assigned_to: userId })
+        .in('id', ids);
+      if (error) {
+        toast.error(`Failed to assign tickets: ${error.message}`);
+      } else {
+        toast.success(`${ids.length} ticket(s) reassigned successfully`);
+        onClearSelection();
+        onActionComplete();
+      }
+    } catch {
+      toast.error('An unexpected error occurred while assigning tickets.');
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   }
 
   async function handleBulkDelete() {
@@ -100,14 +123,23 @@ export function BulkActions({
     setProcessing(true);
     const supabase = createClient();
     const ids = Array.from(selectedIds);
-    const { error } = await supabase.from('tickets').delete().in('id', ids);
-    if (error) {
-      toast.error(`Failed to delete tickets: ${error.message}`);
-    } else {
-      onClearSelection();
-      onActionComplete();
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', ids);
+      if (error) {
+        toast.error(`Failed to delete tickets: ${error.message}`);
+      } else {
+        toast.success(`${ids.length} ticket(s) deleted successfully`);
+        onClearSelection();
+        onActionComplete();
+      }
+    } catch {
+      toast.error('An unexpected error occurred while deleting tickets.');
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   }
 
   return (
@@ -201,7 +233,8 @@ export function BulkActions({
         type='button'
         onClick={() => handleBulkAssign(null)}
         disabled={processing}
-        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-[var(--app-surface-raised)] disabled:opacity-50'        style={{
+        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-[var(--app-surface-raised)] disabled:opacity-50'
+        style={{
           border: '1px solid var(--app-border)',
           color: 'var(--app-text-muted)',
         }}
@@ -214,7 +247,8 @@ export function BulkActions({
         type='button'
         onClick={handleBulkDelete}
         disabled={processing}
-        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-[var(--app-surface-raised)] disabled:opacity-50'        style={{
+        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-[var(--app-surface-raised)] disabled:opacity-50'
+        style={{
           border:
             '1px solid color-mix(in srgb, var(--destructive) 30%, transparent)',
           color: 'var(--destructive)',

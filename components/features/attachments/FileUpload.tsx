@@ -44,8 +44,9 @@ export default function FileUpload({
 
   const handleFiles = useCallback(
     async (files: FileList | File[]) => {
-      const fileArray = Array.from(files).slice(0, maxFiles);
-      if (Array.from(files).length > maxFiles) {
+      const allFiles = Array.from(files);
+      const fileArray = allFiles.slice(0, maxFiles);
+      if (allFiles.length > maxFiles) {
         toast.error(`You can upload at most ${maxFiles} files at once.`);
       }
       for (const file of fileArray) {

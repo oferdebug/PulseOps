@@ -101,6 +101,7 @@ export function AiTicketAssist({
                     onClick={() => onApplyPriority(classification.priority)}
                     className='text-[10px] font-semibold'
                     style={{ color: 'var(--app-accent-text)' }}
+                    aria-label={`Apply priority: ${classification.priority}`}
                   >
                     Apply
                   </button>
@@ -123,7 +124,7 @@ export function AiTicketAssist({
             </div>
           </div>
 
-          {classification.tags?.length > 0 && (
+          {classification.tags && classification.tags.length > 0 && (
             <div>
               <div className='flex items-center gap-2'>
                 <Tag size={11} style={{ color: 'var(--app-text-faint)' }} />
@@ -139,13 +140,15 @@ export function AiTicketAssist({
                     onClick={() => onApplyTags(classification.tags)}
                     className='text-[10px] font-semibold'
                     style={{ color: 'var(--app-accent-text)' }}
+                    aria-label={`Apply tags: ${classification.tags.join(', ')}`}
                   >
                     Apply
                   </button>
                 )}
               </div>
               <div className='mt-1 flex flex-wrap gap-1.5'>
-                {classification.tags?.map((tag) => (                  <span
+                {classification.tags.map((tag) => (
+                  <span
                     key={tag}
                     className='rounded-lg px-2 py-0.5 text-[10px] font-bold'
                     style={{

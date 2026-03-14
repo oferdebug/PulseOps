@@ -39,7 +39,12 @@ sw.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(request, clone))
+              .catch((err) => {
+                console.error('SW: cache.put failed for navigation:', err);
+              });
           }
           return response;
         })
@@ -71,15 +76,21 @@ sw.addEventListener('fetch', (event) => {
                 const clone = response.clone();
                 caches
                   .open(CACHE_NAME)
-                  .then((cache) => cache.put(request, clone));
+                  .then((cache) => cache.put(request, clone))
+                  .catch((err) => {
+                    console.error(
+                      'SW: cache.put failed for static asset:',
+                      err,
+                    );
+                  });
               }
               return response;
             })
             .catch(
               () =>
                 new Response('', {
-                  status: 408,
-                  statusText: 'Asset unavailable offline',
+                  status: 503,
+                  statusText: 'Service Unavailable - offline asset',
                 }),
             ),
       ),

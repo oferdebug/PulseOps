@@ -62,7 +62,7 @@ function TemplateForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onSave({
+    const payload = {
       name: name.trim(),
       description: description.trim() || null,
       category,
@@ -71,7 +71,8 @@ function TemplateForm({
       body_template: bodyTpl,
       is_active: initial?.is_active ?? true,
       ...(initial ? {} : { created_by: null }),
-    } as Omit<TicketTemplate, 'id' | 'created_at' | 'updated_at'>);
+    } satisfies Omit<TicketTemplate, 'id' | 'created_at' | 'updated_at'>;
+    onSave(payload);
   }
 
   return (

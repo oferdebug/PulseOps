@@ -1,10 +1,10 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: needed for flexible JSON structures
 /**
  * PulseOps TypeScript Type Definitions
  *
  * Centralized type definitions for new features.
  * Import these in your components as needed.
  */
-// biome-ignore-all lint/suspicious/noExplicitAny: needed for flexible JSON structures
 
 // ============================================================
 // ATTACHMENTS

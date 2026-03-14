@@ -57,7 +57,9 @@ export function CommentItem({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      handleSave();
+      handleSave().catch(() => {
+        // onUpdate handles its own error feedback; catch prevents unhandled rejection
+      });
     }
     if (e.key === 'Escape') {
       setIsEditing(false);
@@ -140,11 +142,7 @@ export function CommentItem({
               className='text-destructive'
               onClick={async () => {
                 if (window.confirm('Delete this comment?')) {
-                  try {
-                    await onDelete(comment.id);
-                  } catch {
-                    // Error handling delegated to parent or hook
-                  }
+                  await onDelete(comment.id);
                 }
               }}
             >

@@ -340,6 +340,29 @@ function SecurityTab() {
     }
     setLoading(true);
     const supabase = createClient();
+
+    // Verify current password by re-authenticating
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.email) {
+      toast.error('Unable to verify identity. Please log in again.');
+      setLoading(false);
+      return;
+    }
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: current,
+    });
+    if (signInError) {
+      toast.error('Current password is incorrect.');
+      setCurrent('');
+      setNewPw('');
+      setConfirm('');
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password: newPw });
     if (error) toast.error(error.message);
     else {
@@ -350,21 +373,6 @@ function SecurityTab() {
     }
     setLoading(false);
   }
-
-  const sessions = [
-    {
-      device: 'Chrome on Windows',
-      location: 'Tel Aviv, IL',
-      time: 'Now (current)',
-      current: true,
-    },
-    {
-      device: 'Firefox on macOS',
-      location: 'Tel Aviv, IL',
-      time: '2 days ago',
-      current: false,
-    },
-  ];
 
   return (
     <div className='space-y-8'>
@@ -445,52 +453,19 @@ function SecurityTab() {
         >
           Active Sessions
         </p>
-        <div className='space-y-2'>
-          {sessions.map((s) => (
-            <div
-              key={s.device}
-              className='flex items-center justify-between rounded-md px-4 py-3'
-              style={{
-                background: 'var(--app-surface)',
-                border: '1px solid var(--app-border)',
-              }}
-            >
-              <div>
-                <p
-                  className='text-xs font-semibold'
-                  style={{ color: 'var(--app-text-primary)' }}
-                >
-                  {s.device}
-                </p>
-                <p
-                  className='text-[11px]'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  {s.location} · {s.time}
-                </p>
-              </div>
-              {s.current ? (
-                <span
-                  className='rounded-lg px-2 py-0.5 text-[10px] font-bold'
-                  style={{
-                    background:
-                      'color-mix(in srgb, var(--app-health-healthy) 15%, transparent)',
-                    color: 'var(--app-health-healthy)',
-                  }}
-                >
-                  Active
-                </span>
-              ) : (
-                <button
-                  type='button'
-                  className='rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors hover:bg-(--app-logout-hover)'
-                  style={{ color: 'var(--destructive)' }}
-                >
-                  Revoke
-                </button>
-              )}
-            </div>
-          ))}
+        <div
+          className='rounded-md px-4 py-6 text-center'
+          style={{
+            background: 'var(--app-surface)',
+            border: '1px solid var(--app-border)',
+          }}
+        >
+          <p
+            className='text-sm font-medium'
+            style={{ color: 'var(--app-text-muted)' }}
+          >
+            Session management — Coming Soon
+          </p>
         </div>
       </div>
     </div>
@@ -549,8 +524,14 @@ function AppearanceTab() {
             <button
               key={t}
               type='button'
-              className='flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 text-left'
-              onClick={() => {}}
+              className={`flex flex-col items-center gap-2 border-0 bg-transparent p-0 text-left${
+                t === 'light'
+                  ? ' cursor-not-allowed opacity-40'
+                  : ' cursor-pointer'
+              }`}
+              disabled={t === 'light'}
+              aria-disabled={t === 'light' || undefined}
+              tabIndex={t === 'light' ? -1 : 0}
             >
               <div
                 className='flex h-20 w-32 items-center justify-center rounded-md'

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS ticket_templates (
   name TEXT NOT NULL UNIQUE,
   description TEXT,
   category TEXT NOT NULL DEFAULT 'general',
-  default_priority TEXT NOT NULL DEFAULT 'medium',   -- low, medium, high, critical
+  default_priority TEXT NOT NULL DEFAULT 'medium' CHECK (default_priority IN ('low','medium','high','critical')),
   title_template TEXT NOT NULL DEFAULT '',
   body_template TEXT NOT NULL DEFAULT '',
   is_active BOOLEAN NOT NULL DEFAULT true,

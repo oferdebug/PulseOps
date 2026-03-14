@@ -22,6 +22,20 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Dedupe: remove duplicate (user_id, type, ticket_id) rows before adding unique constraint
+DELETE FROM notifications n
+  USING notifications n2
+  WHERE n.user_id = n2.user_id
+    AND n.type = n2.type
+    AND n.ticket_id = n2.ticket_id
+    AND n.ticket_id IS NOT NULL
+    AND n.id > n2.id;
+
+-- Dedupe constraint: prevents duplicate notifications for the same user, type, and ticket
+CREATE UNIQUE INDEX IF NOT EXISTS notifications_user_type_ticket_uniq
+  ON notifications (user_id, type, ticket_id)
+  WHERE ticket_id IS NOT NULL;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS notifications_user_id_idx ON notifications (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS notifications_unread_idx ON notifications (user_id) WHERE read_at IS NULL;
@@ -84,20 +98,26 @@ CREATE TRIGGER notification_prefs_updated_at
 -- Auto-create notification on ticket changes (database trigger)
 CREATE OR REPLACE FUNCTION notify_ticket_change()
 RETURNS TRIGGER AS $$
+DECLARE
+  pref_record RECORD;
 BEGIN
   -- On INSERT: notify the assigned user (if different from creator)
   IF TG_OP = 'INSERT' THEN
     IF NEW.assigned_to IS NOT NULL AND NEW.assigned_to != NEW.created_by THEN
-      INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
-      VALUES (
-        NEW.assigned_to,
-        'assigned',
-        'New ticket assigned to you',
-        'Ticket: ' || NEW.title,
-        NEW.id,
-        NEW.title,
-        '/tickets/' || NEW.id
-      );
+      SELECT ticket_assigned INTO pref_record
+        FROM notification_preferences WHERE user_id = NEW.assigned_to;
+      IF NOT FOUND OR pref_record.ticket_assigned THEN
+        INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
+        VALUES (
+          NEW.assigned_to,
+          'assigned',
+          'New ticket assigned to you',
+          'Ticket: ' || NEW.title,
+          NEW.id,
+          NEW.title,
+          '/tickets/' || NEW.id
+        );
+      END IF;
     END IF;
     RETURN NEW;
   END IF;
@@ -106,30 +126,57 @@ BEGIN
   IF TG_OP = 'UPDATE' THEN
     -- Status changed to closed
     IF NEW.status = 'closed' AND OLD.status != 'closed' THEN
-      INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
-      VALUES (
-        NEW.created_by,
-        'closed',
-        'Ticket closed',
-        'Ticket closed: ' || NEW.title,
-        NEW.id,
-        NEW.title,
-        '/tickets/' || NEW.id
-      );
+      -- Notify creator
+      SELECT ticket_closed INTO pref_record
+        FROM notification_preferences WHERE user_id = NEW.created_by;
+      IF NOT FOUND OR pref_record.ticket_closed THEN
+        INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
+        VALUES (
+          NEW.created_by,
+          'closed',
+          'Ticket closed',
+          'Ticket closed: ' || NEW.title,
+          NEW.id,
+          NEW.title,
+          '/tickets/' || NEW.id
+        );
+      END IF;
+
+      -- Notify assigned user if different from creator
+      IF NEW.assigned_to IS NOT NULL AND NEW.assigned_to != NEW.created_by THEN
+        SELECT ticket_closed INTO pref_record
+          FROM notification_preferences WHERE user_id = NEW.assigned_to;
+        IF NOT FOUND OR pref_record.ticket_closed THEN
+          INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
+          VALUES (
+            NEW.assigned_to,
+            'closed',
+            'Ticket closed',
+            'Ticket closed: ' || NEW.title,
+            NEW.id,
+            NEW.title,
+            '/tickets/' || NEW.id
+          );
+        END IF;
+      END IF;
     END IF;
 
     -- Assignment changed
     IF NEW.assigned_to IS DISTINCT FROM OLD.assigned_to AND NEW.assigned_to IS NOT NULL THEN
-      INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
-      VALUES (
-        NEW.assigned_to,
-        'assigned',
-        'Ticket assigned to you',
-        'Ticket: ' || NEW.title,
-        NEW.id,
-        NEW.title,
-        '/tickets/' || NEW.id
-      );
+      SELECT ticket_assigned INTO pref_record
+        FROM notification_preferences WHERE user_id = NEW.assigned_to;
+      IF NOT FOUND OR pref_record.ticket_assigned THEN
+        INSERT INTO notifications (user_id, type, title, message, ticket_id, ticket_title, link)
+        VALUES (
+          NEW.assigned_to,
+          'assigned',
+          'Ticket assigned to you',
+          'Ticket: ' || NEW.title,
+          NEW.id,
+          NEW.title,
+          '/tickets/' || NEW.id
+        );
+      END IF;
     END IF;
 
     RETURN NEW;

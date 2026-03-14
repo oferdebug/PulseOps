@@ -30,7 +30,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS automation_rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
   description TEXT,
   trigger automation_trigger NOT NULL,
   conditions JSONB NOT NULL DEFAULT '{}',
@@ -42,6 +42,12 @@ CREATE TABLE IF NOT EXISTS automation_rules (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Organization-scoped uniqueness for rule names
+CREATE UNIQUE INDEX IF NOT EXISTS idx_automation_rules_name_org
+  ON automation_rules(name, organization_id) WHERE organization_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_automation_rules_name_global
+  ON automation_rules(name) WHERE organization_id IS NULL;
 
 -- Auto-update timestamps
 CREATE OR REPLACE TRIGGER automation_rules_updated_at

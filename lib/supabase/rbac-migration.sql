@@ -28,13 +28,14 @@ CREATE POLICY "Admins can update any profile"
 
 -- Function to check if current user has a specific role
 CREATE OR REPLACE FUNCTION has_role(required_role user_role)
-RETURNS BOOLEAN AS $
+RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM profiles WHERE id = auth.uid() AND role = required_role
   );
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 -- Function to check if current user is admin or agent (staff)
 CREATE OR REPLACE FUNCTION is_staff()
 RETURNS BOOLEAN AS $$

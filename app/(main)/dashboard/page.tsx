@@ -605,20 +605,35 @@ function useDashboardData() {
     });
 
     // Recent tickets
-    const { data: recent } = await supabase
+    const { data: recent, error: recentErr } = await supabase
       .from('tickets')
       .select('id, title, priority, status, created_at')
       .order('created_at', { ascending: false })
       .limit(5);
-    setTickets(recent ?? []);
+    if (recentErr) {
+      setError(recentErr.message);
+    } else {
+      setTickets(recent ?? []);
+    }
 
     // Activity
-    const { data: activityData } = await supabase
+    const { data: activityData, error: activityErr } = await supabase
       .from('activity_logs')
       .select('id, action, entity, description, user_email, created_at')
       .order('created_at', { ascending: false })
       .limit(10);
-    setActivities((activityData ?? []) as ActivityItem[]);
+    if (activityErr) {
+      setError((prev) => {
+        if (prev) {
+          console.error('Dashboard activity-logs fetch error (suppressed):', activityErr.message);
+        } else {
+          console.error('Dashboard activity-logs fetch error:', activityErr.message);
+        }
+        return prev ?? activityErr.message;
+      });
+    } else {
+      setActivities((activityData ?? []) as ActivityItem[]);
+    }
     setLoading(false);
   }, []);
 
@@ -931,7 +946,6 @@ export default function DashboardPage() {
             </>
           ) : (
             <>
-              {' '}
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}

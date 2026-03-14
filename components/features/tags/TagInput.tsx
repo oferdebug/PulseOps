@@ -28,7 +28,8 @@ interface TagInputProps {
   entityId: string;
 }
 
-export function TagInput({ entityType, entityId }: TagInputProps) {  const { tags, loading, error, addTag, removeTag } = useTags({
+export function TagInput({ entityType, entityId }: TagInputProps) {
+  const { tags, loading, error, addTag, removeTag } = useTags({
     entityId,
     entityType,
   });
