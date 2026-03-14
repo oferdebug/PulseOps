@@ -20,11 +20,16 @@ import {
 } from '@/hooks/useDbNotifications';
 
 function timeAgo(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 0) return 'just now';
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  const days = Math.floor(diff / 86400);
+  if (days > 365) return date.toLocaleDateString();
+  return `${days}d ago`;
 }
 
 const TYPE_ICON: Record<string, React.ElementType> = {

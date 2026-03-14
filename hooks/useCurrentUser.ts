@@ -59,6 +59,7 @@ export function useCurrentUser() {
             loadProfile(session.user);
           } else {
             setUser(null);
+            setLoading(false);
           }
         });
 

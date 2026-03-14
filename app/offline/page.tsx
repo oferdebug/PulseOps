@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 export default function OfflinePage() {
   const router = useRouter();
 
-  async function handleRetry() {
-    try {
-      await router.replace('/');
-    } catch {
+  function handleRetry() {
+    if (navigator.onLine) {
+      router.replace('/');
+    } else {
       window.location.reload();
     }
   }
@@ -41,7 +41,7 @@ export default function OfflinePage() {
       <button
         type='button'
         onClick={handleRetry}
-        className='mt-2 rounded-md px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90'
+        className='mt-2 rounded-md px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--app-accent)]'
         style={{ background: 'var(--app-accent)', color: '#fff' }}
       >
         Retry

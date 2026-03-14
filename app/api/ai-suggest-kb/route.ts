@@ -15,11 +15,18 @@ export async function POST(req: NextRequest) {
     );
 
     // Fetch published articles
-    const { data: articles } = await supabase
+    const { data: articles, error: dbErr } = await supabase
       .from('articles')
       .select('id, title, category')
       .eq('status', 'published')
       .limit(100);
+
+    if (dbErr) {
+      return NextResponse.json(
+        { error: 'Database query failed' },
+        { status: 500 },
+      );
+    }
 
     if (!articles || articles.length === 0) {
       return NextResponse.json({ suggestions: [] });

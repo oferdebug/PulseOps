@@ -130,7 +130,7 @@ export default function RolesPage() {
             </thead>
             <tbody>
               {users.map((u) => {
-                const cfg = ROLE_CONFIG[u.role];
+                const cfg = ROLE_CONFIG[u.role] ?? ROLE_CONFIG.customer;
                 const Icon = cfg.icon;
                 const isSelf = u.id === user?.id;
                 return (

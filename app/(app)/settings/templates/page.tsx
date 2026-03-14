@@ -70,7 +70,7 @@ function TemplateForm({
       title_template: titleTpl,
       body_template: bodyTpl,
       is_active: initial?.is_active ?? true,
-      created_by: initial ? undefined : null,
+      ...(initial ? {} : { created_by: null }),
     } as Omit<TicketTemplate, 'id' | 'created_at' | 'updated_at'>);
   }
 

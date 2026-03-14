@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Panel } from '@/components/ui/panel';
+import { RequireRole } from '@/components/RequireRole';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDbNotifications } from '@/hooks/useDbNotifications';
 import { createClient } from '@/lib/supabase/client';
@@ -680,7 +681,7 @@ export default function SettingsPage() {
       className='min-h-screen space-y-6 p-8'
       style={{ background: 'var(--app-bg)' }}
     >
-      <div className='relative' >
+      <div className='relative'>
         {/* Header */}
         <div
           className='animate-fade-in-up opacity-0 mb-6'
@@ -692,7 +693,10 @@ export default function SettingsPage() {
           >
             Configuration
           </p>
-          <h1 className='text-xl font-bold tracking-tight' style={{ color: 'var(--app-text-primary)' }}>
+          <h1
+            className='text-xl font-bold tracking-tight'
+            style={{ color: 'var(--app-text-primary)' }}
+          >
             Settings
           </h1>
           <p
@@ -763,111 +767,113 @@ export default function SettingsPage() {
             </Panel>
 
             {/* Admin Links */}
-            <Panel className='mt-6'>
-              <div
-                className='px-6 py-4'
-                style={{ borderBottom: '1px solid var(--app-border)' }}
-              >
-                <p
-                  className='text-sm font-bold'
-                  style={{ color: 'var(--app-text-primary)' }}
+            <RequireRole allowed={['admin']}>
+              <Panel className='mt-6'>
+                <div
+                  className='px-6 py-4'
+                  style={{ borderBottom: '1px solid var(--app-border)' }}
                 >
-                  Administration
-                </p>
-                <p
-                  className='text-xs mt-0.5'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  Manage system-wide settings
-                </p>
-              </div>
-              <nav className='py-2'>
-                <Link
-                  href='/settings/sla'
-                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  <div className='flex items-center gap-3'>
-                    <Clock size={14} />
-                    SLA Management
-                  </div>
-                  <ChevronRight
-                    size={12}
-                    style={{ color: 'var(--app-text-faint)' }}
-                  />
-                </Link>
-                <Link
-                  href='/settings/templates'
-                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  <div className='flex items-center gap-3'>
-                    <FileText size={14} />
-                    Ticket Templates
-                  </div>
-                  <ChevronRight
-                    size={12}
-                    style={{ color: 'var(--app-text-faint)' }}
-                  />
-                </Link>
-                <Link
-                  href='/settings/notifications'
-                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  <div className='flex items-center gap-3'>
-                    <Bell size={14} />
-                    Notification Preferences
-                  </div>
-                  <ChevronRight
-                    size={12}
-                    style={{ color: 'var(--app-text-faint)' }}
-                  />
-                </Link>
-                <Link
-                  href='/settings/roles'
-                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  <div className='flex items-center gap-3'>
-                    <Shield size={14} />
-                    Roles &amp; Permissions
-                  </div>
-                  <ChevronRight
-                    size={12}
-                    style={{ color: 'var(--app-text-faint)' }}
-                  />
-                </Link>
-                <Link
-                  href='/settings/automations'
-                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  <div className='flex items-center gap-3'>
-                    <Bot size={14} />
-                    Automations
-                  </div>
-                  <ChevronRight
-                    size={12}
-                    style={{ color: 'var(--app-text-faint)' }}
-                  />
-                </Link>
-                <Link
-                  href='/settings/organization'
-                  className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  <div className='flex items-center gap-3'>
-                    <Building2 size={14} />
-                    Organization
-                  </div>
-                  <ChevronRight
-                    size={12}
-                    style={{ color: 'var(--app-text-faint)' }}
-                  />
-                </Link>
-              </nav>
-            </Panel>
+                  <p
+                    className='text-sm font-bold'
+                    style={{ color: 'var(--app-text-primary)' }}
+                  >
+                    Administration
+                  </p>
+                  <p
+                    className='text-xs mt-0.5'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    Manage system-wide settings
+                  </p>
+                </div>
+                <nav className='py-2'>
+                  <Link
+                    href='/settings/sla'
+                    className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    <div className='flex items-center gap-3'>
+                      <Clock size={14} />
+                      SLA Management
+                    </div>
+                    <ChevronRight
+                      size={12}
+                      style={{ color: 'var(--app-text-faint)' }}
+                    />
+                  </Link>
+                  <Link
+                    href='/settings/templates'
+                    className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    <div className='flex items-center gap-3'>
+                      <FileText size={14} />
+                      Ticket Templates
+                    </div>
+                    <ChevronRight
+                      size={12}
+                      style={{ color: 'var(--app-text-faint)' }}
+                    />
+                  </Link>
+                  <Link
+                    href='/settings/notifications'
+                    className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    <div className='flex items-center gap-3'>
+                      <Bell size={14} />
+                      Notification Preferences
+                    </div>
+                    <ChevronRight
+                      size={12}
+                      style={{ color: 'var(--app-text-faint)' }}
+                    />
+                  </Link>
+                  <Link
+                    href='/settings/roles'
+                    className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    <div className='flex items-center gap-3'>
+                      <Shield size={14} />
+                      Roles &amp; Permissions
+                    </div>
+                    <ChevronRight
+                      size={12}
+                      style={{ color: 'var(--app-text-faint)' }}
+                    />
+                  </Link>
+                  <Link
+                    href='/settings/automations'
+                    className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    <div className='flex items-center gap-3'>
+                      <Bot size={14} />
+                      Automations
+                    </div>
+                    <ChevronRight
+                      size={12}
+                      style={{ color: 'var(--app-text-faint)' }}
+                    />
+                  </Link>
+                  <Link
+                    href='/settings/organization'
+                    className='flex w-full items-center justify-between px-6 py-3 text-sm font-semibold transition-all hover:bg-(--app-surface-raised)'
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    <div className='flex items-center gap-3'>
+                      <Building2 size={14} />
+                      Organization
+                    </div>
+                    <ChevronRight
+                      size={12}
+                      style={{ color: 'var(--app-text-faint)' }}
+                    />
+                  </Link>
+                </nav>
+              </Panel>
+            </RequireRole>
           </div>
         </div>
       </div>

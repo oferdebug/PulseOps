@@ -96,12 +96,14 @@ export function useAuditTrail() {
 
     const rows = data.map((e) => [
       new Date(e.created_at).toISOString(),
-      (e.user_email ?? '').replace(/"/g, '""'),
-      (e.action ?? '').replace(/"/g, '""'),
-      (e.entity ?? '').replace(/"/g, '""'),
-      (e.entity_id ?? '').replace(/"/g, '""'),
-      (e.description ?? '').replace(/"/g, '""'),
-      JSON.stringify(e.metadata ?? {}).replace(/"/g, '""'),
+      (e.user_email ?? '').replace(/"/g, '""').replace(/[\r\n]+/g, ' '),
+      (e.action ?? '').replace(/"/g, '""').replace(/[\r\n]+/g, ' '),
+      (e.entity ?? '').replace(/"/g, '""').replace(/[\r\n]+/g, ' '),
+      (e.entity_id ?? '').replace(/"/g, '""').replace(/[\r\n]+/g, ' '),
+      (e.description ?? '').replace(/"/g, '""').replace(/[\r\n]+/g, ' '),
+      JSON.stringify(e.metadata ?? {})
+        .replace(/"/g, '""')
+        .replace(/[\r\n]+/g, ' '),
     ]);
 
     const csv = [

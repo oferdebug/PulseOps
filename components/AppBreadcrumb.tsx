@@ -22,6 +22,9 @@ const SEGMENT_LABELS: Record<string, string> = {
   new: 'New',
 };
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface AppBreadcrumbProps {
   /** Override the last segment label (e.g. ticket title) */
   current?: string;
@@ -43,7 +46,9 @@ export function AppBreadcrumb({ current }: AppBreadcrumbProps) {
 
   const lastSegment = segments[segments.length - 1];
   const lastLabel =
-    current ?? SEGMENT_LABELS[lastSegment] ?? lastSegment;
+    current ??
+    SEGMENT_LABELS[lastSegment] ??
+    (UUID_REGEX.test(lastSegment) ? 'Details' : lastSegment);
 
   return (
     <Breadcrumb>

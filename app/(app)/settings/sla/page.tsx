@@ -4,6 +4,7 @@
 import { ArrowLeft, Clock, Loader2, Save, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Panel } from '@/components/ui/panel';
 import { type SLARule, useSLARules } from '@/hooks/useSLA';
 
@@ -37,8 +38,8 @@ function RuleRow({
         escalation_hours: escalation ? Number(escalation) : null,
         is_active: active,
       });
-    } catch (err) {
-      console.error('Failed to save SLA rule:', err);
+    } catch {
+      toast.error('Failed to save SLA rule');
     } finally {
       setSaving(false);
     }

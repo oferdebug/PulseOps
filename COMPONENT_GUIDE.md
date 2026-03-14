@@ -150,7 +150,8 @@ export function CommentSection({ ticketId, canAddInternal }: CommentSectionProps
       </div>
     </div>
   );
-}```
+}
+```
 
 ### Example 3: Custom Hook Pattern
 

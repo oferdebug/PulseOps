@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { AttachmentEntityType } from '@/hooks/useFileUpload';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -46,7 +47,7 @@ export default function FileUpload({
       const fileArray = Array.from(files);
       for (const file of fileArray) {
         if (file.size > maxSizeMB * 1024 * 1024) {
-          alert(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
+          toast.error(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
           continue;
         }
         const result = await uploadFile(file);

@@ -41,11 +41,10 @@ export function useOrganization() {
   const [invites, setInvites] = useState<OrgInvite[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
-
   const fetchOrg = useCallback(async () => {
     if (!user?.organizationId) return;
     setLoading(true);
+    const supabase = createClient();
     const { data } = await supabase
       .from('organizations')
       .select('*')
@@ -53,20 +52,22 @@ export function useOrganization() {
       .single();
     if (data) setOrg(data as Organization);
     setLoading(false);
-  }, [user?.organizationId, supabase]);
+  }, [user?.organizationId]);
 
   const fetchMembers = useCallback(async () => {
     if (!user?.organizationId) return;
+    const supabase = createClient();
     const { data } = await supabase
       .from('profiles')
       .select('id, full_name, email, role, created_at')
       .eq('organization_id', user.organizationId)
       .order('full_name');
     if (data) setMembers(data as OrgMember[]);
-  }, [user?.organizationId, supabase]);
+  }, [user?.organizationId]);
 
   const fetchInvites = useCallback(async () => {
     if (!user?.organizationId) return;
+    const supabase = createClient();
     const { data } = await supabase
       .from('organization_invites')
       .select('*')
@@ -74,7 +75,7 @@ export function useOrganization() {
       .is('accepted_at', null)
       .order('created_at', { ascending: false });
     if (data) setInvites(data as OrgInvite[]);
-  }, [user?.organizationId, supabase]);
+  }, [user?.organizationId]);
 
   useEffect(() => {
     fetchOrg();
@@ -88,6 +89,7 @@ export function useOrganization() {
     >,
   ) {
     if (!org) return;
+    const supabase = createClient();
     const { error } = await supabase
       .from('organizations')
       .update({ ...fields, updated_at: new Date().toISOString() })
@@ -98,6 +100,7 @@ export function useOrganization() {
 
   async function inviteMember(email: string, role = 'agent') {
     if (!user?.organizationId || !user.id) return;
+    const supabase = createClient();
     const { error } = await supabase.from('organization_invites').insert({
       organization_id: user.organizationId,
       email: email.trim().toLowerCase(),
@@ -109,6 +112,7 @@ export function useOrganization() {
   }
 
   async function revokeInvite(inviteId: string) {
+    const supabase = createClient();
     const { error } = await supabase
       .from('organization_invites')
       .delete()
@@ -119,6 +123,7 @@ export function useOrganization() {
 
   async function removeMember(memberId: string) {
     if (memberId === user?.id) return { message: 'Cannot remove yourself' };
+    const supabase = createClient();
     // Unlink from org by nulling organization_id
     const { error } = await supabase
       .from('profiles')

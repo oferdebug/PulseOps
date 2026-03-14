@@ -63,6 +63,7 @@ export function FilePreview({
               size='sm'
               className='h-7 w-7 p-0'
               onClick={onClose}
+              aria-label='Close preview'
             >
               <X className='h-4 w-4' />
             </Button>

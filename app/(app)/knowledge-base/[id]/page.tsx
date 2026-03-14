@@ -76,7 +76,10 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
           .eq('id', id)
           .single();
         if (err) setError(err.message);
-        else setArticle(data);
+        else {
+          setArticle(data);
+          if (user?.id) analytics.recordView();
+        }
       } catch (error) {
         setError(
           error instanceof Error ? error.message : 'An unknown error occurred',
@@ -85,11 +88,7 @@ export default function ArticleDetailPage({ params }: ArticlePageProps) {
         setLoading(false);
       }
     })();
-  }, [id]);
-
-  useEffect(() => {
-    if (article && user?.id) analytics.recordView();
-  }, [article, user?.id, analytics]);
+  }, [id, user?.id, analytics]);
 
   function enterEditMode() {
     if (!article) return;

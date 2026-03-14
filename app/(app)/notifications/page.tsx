@@ -53,7 +53,10 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  const diff = Date.now() - date.getTime();
+  if (diff < 0) return 'just now';
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
@@ -61,7 +64,7 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return date.toLocaleDateString();
 }
 
 function Pill({

@@ -27,7 +27,7 @@ export default function NotFound() {
       </p>
       <Link
         href='/'
-        className='mt-2 rounded-md px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90'
+        className='mt-2 rounded-md px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--app-accent)]'
         style={{ background: 'var(--app-accent)', color: '#fff' }}
       >
         Back to Home

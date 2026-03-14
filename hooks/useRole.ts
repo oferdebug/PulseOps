@@ -51,10 +51,13 @@ export function useRoleManagement() {
 
   const fetchUsers = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error: fetchErr } = await supabase
       .from('profiles')
       .select('id, email, full_name, role')
       .order('full_name');
+    if (fetchErr) {
+      console.error('Failed to fetch users:', fetchErr);
+    }
     setUsers(
       (data ?? []).map((u) => ({
         ...u,
