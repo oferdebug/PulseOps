@@ -45,8 +45,9 @@ reviews:
     labels: []
     drafts: false
     base_branches:
-      - Main
-      - Master
+      - main
+      - develop
+      - master
     ignore_usernames: []
   finishing_touches:
     docstrings:
