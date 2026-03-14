@@ -201,8 +201,7 @@ export function BulkActions({
         type='button'
         onClick={() => handleBulkAssign(null)}
         disabled={processing}
-        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-(--app-surface-raised) disabled:opacity-50'
-        style={{
+        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-[var(--app-surface-raised)] disabled:opacity-50'        style={{
           border: '1px solid var(--app-border)',
           color: 'var(--app-text-muted)',
         }}
@@ -215,8 +214,7 @@ export function BulkActions({
         type='button'
         onClick={handleBulkDelete}
         disabled={processing}
-        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-(--app-surface-raised) disabled:opacity-50'
-        style={{
+        className='rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors hover:bg-[var(--app-surface-raised)] disabled:opacity-50'        style={{
           border:
             '1px solid color-mix(in srgb, var(--destructive) 30%, transparent)',
           color: 'var(--destructive)',

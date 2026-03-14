@@ -94,12 +94,17 @@ create or replace function get_comment_count(p_ticket_id uuid)
 returns bigint as $$
   select count(*)
   from ticket_comments
-  where ticket_id = p_ticket_id;
-$$ language sql stable;
+  where ticket_id = p_ticket_id
+  and (
+    comment_type = 'public'
+    or created_by = auth.uid()
+    or exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'agent'))
+  );
+$$ language sql stable security invoker;
 
 -- Function: Notify mentioned users (integrate with your notification system)
 create or replace function notify_mentioned_users()
-returns trigger as $$
+returns trigger as $
 declare
   user_id uuid;
 begin
@@ -119,7 +124,45 @@ begin
   end loop;
   return new;
 end;
-$$ language plpgsql;
+$ language plpgsql;
+
+-- Trigger to notify on mentions
+-- TODO: Enable when notification system is implemented
+-- drop trigger if exists notify_on_comment_mention on ticket_comments;
+-- create trigger notify_on_comment_mention
+--   after insert on ticket_comments
+--   for each row
+--   when (new.mentions <> '[]'::jsonb)
+--   execute function notify_mentioned_users();
+-- Function: Notify mentioned users (integrate with your notification system)
+create or replace function notify_mentioned_users()
+returns trigger as $
+declare
+  user_id uuid;
+  mention_text text;
+begin
+  -- Loop through mentioned user IDs
+  for mention_text in select jsonb_array_elements_text(new.mentions)
+  loop
+    begin
+      user_id := mention_text::uuid;
+    exception when invalid_text_representation then
+      continue; -- Skip invalid UUIDs
+    end;
+    -- Insert notification (assumes you have a notifications table)
+    -- insert into notifications (user_id, type, entity_type, entity_id, message)
+    -- values (
+    --   user_id,
+    --   'mention',
+    --   'ticket_comment',
+    --   new.id,
+    --   'You were mentioned in a ticket comment'
+    -- );
+    null; -- Replace with actual notification logic
+  end loop;
+  return new;
+end;
+$ language plpgsql;
 
 -- Trigger to notify on mentions
 drop trigger if exists notify_on_comment_mention on ticket_comments;

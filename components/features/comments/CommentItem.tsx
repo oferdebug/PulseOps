@@ -47,11 +47,13 @@ export function CommentItem({
       return;
     }
     setSaving(true);
-    await onUpdate(comment.id, trimmed);
-    setSaving(false);
-    setIsEditing(false);
+    try {
+      await onUpdate(comment.id, trimmed);
+      setIsEditing(false);
+    } finally {
+      setSaving(false);
+    }
   }
-
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -136,9 +138,14 @@ export function CommentItem({
             </DropdownMenuItem>
             <DropdownMenuItem
               className='text-destructive'
-              onClick={() => {
-                if (window.confirm('Delete this comment?'))
-                  onDelete(comment.id);
+              onClick={async () => {
+                if (window.confirm('Delete this comment?')) {
+                  try {
+                    await onDelete(comment.id);
+                  } catch {
+                    // Error handling delegated to parent or hook
+                  }
+                }
               }}
             >
               <Trash2 className='mr-2 h-3.5 w-3.5' />
